@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.4 2021-03-18 18:08";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.4 2021-03-20 03:18";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -3521,7 +3521,10 @@ function GetAccessCode() {
                         oCM = myJSON.parse(xhttp.responseText);
                         checkTDAPIError(oCM);
                         gAccessToken.access_token = oCM["access_token"];
-                        gAccessToken.refresh_token = oCM["refresh_token"];
+                        if (!isUndefined(oCM["refresh_token"])) {
+                            gAccessToken.refresh_token = DoURLEncode(oCM["refresh_token"]);
+                        }
+                        //gAccessToken.refresh_token = oCM["refresh_token"];
                         gAccessToken.token_type = oCM["token_type"];
                         gAccessToken.expires_in = oCM["expires_in"];
                         gAccessToken.scope = oCM["scope"];
@@ -3577,7 +3580,8 @@ function GetAccessCodeUsingRefreshToken() {
         urlEncodedDataPairs = [];
 
     urlEncodedDataPairs.push("grant_type=" + DoURLEncode("refresh_token"));
-    urlEncodedDataPairs.push("refresh_token=" + DoURLEncode(gAccessToken.refresh_token));
+    //urlEncodedDataPairs.push("refresh_token=" + DoURLEncode(gAccessToken.refresh_token));
+    urlEncodedDataPairs.push("refresh_token=" + gAccessToken.refresh_token);
     urlEncodedDataPairs.push("client_id=" + DoURLEncode(gsTDAPIKey));
 
 
@@ -9711,9 +9715,21 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    debugger
+    //debugger
     let sBearerCode = location.search;
-    gsBearerCode = sBearerCode.substr(1, sBearerCode.length - 1);
+//    alert("sBearerCode = " + sBearerCode);
+    try {
+        if (sBearerCode.startsWith("?code=")) {
+            gsBearerCode = sBearerCode.split('=')[1];
+        } else {
+            gsAccess_token_expiration_time = sBearerCode.split('&')[0].split('=')[1];
+            gsRefreshToken = sBearerCode.split('&')[1].split('=')[1];
+        }
+    } catch (e1) {
+        gsBearerCode = "";
+        gsAccess_token_expiration_time = "";
+        gsRefreshToken = "";
+    }
     //        gsBearerCode = location.search.split('=')[1];
     document.getElementById("TheBody").style.backgroundColor = gsBodyBackgroundColor;
     if (gbUsingCell) {
