@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.4 2021-03-20 19:11";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.4 2021-03-20 19:23";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -9715,7 +9715,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    //debugger
+    debugger
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
     try {
