@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.4 2021-03-20 19:23";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.4 2021-03-20 19:46";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -3482,8 +3482,7 @@ function GetAccessCode() {
 
     urlEncodedDataPairs.push("grant_type=" + DoURLEncode("authorization_code"));
     urlEncodedDataPairs.push("access_type=" + DoURLEncode("offline"));
-    urlEncodedDataPairs.push(gsBearerCode);
-    //urlEncodedDataPairs.push("code=" + gsBearerCode);
+    urlEncodedDataPairs.push("code=" + gsBearerCode);
     urlEncodedDataPairs.push("client_id=" + DoURLEncode(gsTDAPIKey));
     urlEncodedDataPairs.push("redirect_uri=" + DoURLEncode(gsRedirectURL));
     //urlEncodedDataPairs.push("redirect_uri=" + DoURLEncode("https://localhost:8080"));
