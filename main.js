@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.4 2021-03-20 03:18";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.4 2021-03-20 19:11";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -9719,7 +9719,8 @@ function PageLoad() {
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
     try {
-        if (sBearerCode.startsWith("?code=")) {
+        let sTmp = sBearerCode.substr(0, "?code=".length);
+        if (sTmp == "?code=") {
             gsBearerCode = sBearerCode.split('=')[1];
         } else {
             gsAccess_token_expiration_time = sBearerCode.split('&')[0].split('=')[1];
