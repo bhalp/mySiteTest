@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.4 2021-03-20 19:46";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.5 2021-03-24 22:41";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -197,6 +197,10 @@ function WLItemDetail() {
     this.gain = 0.0; //total gain = shares * (regularMarketLastPrice - shareCost)
     this.gainPercent = 0.0; // (regularMarketLastPrice / shareCost) - 1 * 100
     this.averagePrice = 0.0;
+    this.peRatio = 0.0; //only used if WL name contains the word "dividend"
+    this.divAmount = 0.0; //only used if WL name contains the word "dividend"
+    this.divYield = 0.0; //only used if WL name contains the word "dividend"
+    this.divDate = ""; //only used if WL name contains the word "dividend"
 }
 
 function WLDisplayed() {
@@ -206,6 +210,43 @@ function WLDisplayed() {
 }
 var gWLDisplayed = new Array(); //array of WLDisplayed objects
 var goWLDisplayed = []; //will contain the last WL item values to be used to determine if the display should be highlighted
+
+function WLSummaryDayItemDetail() {
+    this.watchlistName = "";
+    this.watchlistId = "";
+    this.up = 0;
+    this.down = 0;
+    this.cost = 0.0;
+    this.gain = 0.0;
+    this.gainPercent = 0.0;
+}
+
+function WLSummaryHoldingItemDetail() {
+    this.watchlistName = "";
+    this.watchlistId = "";
+    this.up = 0;
+    this.down = 0;
+    this.gain = 0.0;
+    this.gainPercent = 0.0;
+}
+
+function WLSummaryPortfolioItemDetail() {
+    this.watchlistName = "";
+    this.watchlistId = "";
+    this.gain = 0.0;
+}
+
+function WLSummaryDisplayed() {
+    this.accountId = "";
+    this.accountName = "";
+    this.WLSummaryDayItemDetails = new Array(); //array of WLSummaryDayItemDetail objects - sorted by gainPercent
+    this.WLSummaryHoldingItemDetails = new Array(); //array of WLSummaryHoldingItemDetail objects - sorted by gainPercent
+    this.WLSummaryPortfolioItemDetails = new Array(); //array of WLSummaryPortfolioItemDetail objects - sorted by gain
+}
+
+var gWLSummaryDisplayed = new Array(); //array of WLSummaryDisplayed objects
+var goWLSummaryDisplayed = []; //will contain the last WLSummary item values to be used to determine if the display should be highlighted
+
 
 function WLItem() {
     this.bSelected = true;
@@ -236,6 +277,7 @@ function WLItemSavedOrder() {
     this.symbol = ""; //like "XYZ"
 }
 
+var gsAccountWLSummary = "Watchlist Performance";
 var gsAccountSavedOrders = "Account Saved Orders";
 var gOrdersToDelete = new Array();
 
@@ -246,6 +288,8 @@ function WLWatchList() {
     this.bSelectedTempSymbols = false;
     this.bSelectedSO = false;
     this.bSelectedSOTemp = false;
+    this.bSelectedWLSummary = false;
+    this.bSelectedWLSummaryTemp = false;
     this.bShowAllAccountsForEachSymbol = false;
     this.iSortOrderFields = 0; //0 - symbol, 1 - qty, 2 - last, 3 - net chng, 
     //4 - net chng %, 5 - bid, 6 - ask, 7 - high, 
@@ -4908,6 +4952,7 @@ function GetTDData(bFirstTime) {
                             GetWatchlistPrices();
                             GetIndexValues();
                             GetWatchlistSO();
+                            GetWatchlistSummary();
                         }
 
                     } else if (mySock.readyState == 3) { //socket is closed or couldn't be opened
@@ -4920,6 +4965,7 @@ function GetTDData(bFirstTime) {
                                 GetWatchlistPrices();
                                 GetIndexValues();
                                 GetWatchlistSO();
+                                GetWatchlistSummary();
                             } else {
                                 bOkToContinue = false;
                             }
@@ -6493,6 +6539,23 @@ function GetWatchlistPrices() {
                         if (!isUndefined(oMDQ[sSymbol].regularMarketPercentChangeInDouble)) {
                             oWLItemDetail.regularMarketPercentChangeInDouble = oMDQ[sSymbol].regularMarketPercentChangeInDouble;
                         }
+                        //"peRatio": 33.3568,
+                        if (!isUndefined(oMDQ[sSymbol].peRatio)) {
+                            oWLItemDetail.peRatio = oMDQ[sSymbol].peRatio;
+                        }
+                        //"divAmount": 0.82,
+                        if (!isUndefined(oMDQ[sSymbol].divAmount)) {
+                            oWLItemDetail.divAmount = oMDQ[sSymbol].divAmount;
+                        }
+                        //"divYield": 0.67,
+                        if (!isUndefined(oMDQ[sSymbol].divYield)) {
+                            oWLItemDetail.divYield = oMDQ[sSymbol].divYield;
+                        }
+                        //"divDate": "2021-02-05 00:00:00.000",
+                        if (!isUndefined(oMDQ[sSymbol].divDate)) {
+                            oWLItemDetail.divDate = oMDQ[sSymbol].divDate;
+                        }
+
                     }
                     if (oPositions.length > 0) {
                         let sWLAccountIds = "";
@@ -6522,6 +6585,11 @@ function GetWatchlistPrices() {
                         oWLItemDetailOrig.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
                         oWLItemDetailOrig.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
                         oWLItemDetailOrig.shares = oWLItemDetail.shares;
+
+                        oWLItemDetailOrig.peRatio = oWLItemDetail.peRatio;
+                        oWLItemDetailOrig.divAmount = oWLItemDetail.divAmount;
+                        oWLItemDetailOrig.divDate = oWLItemDetail.divDate;
+                        oWLItemDetailOrig.divYield = oWLItemDetail.divYield;
 
                         for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
                             let oPosition = new Position();
@@ -6567,6 +6635,11 @@ function GetWatchlistPrices() {
                             oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
                             oWLItemDetailTmp.shares = oWLItemDetail.shares;
 
+                            oWLItemDetailTmp.peRatio = oWLItemDetail.peRatio;
+                            oWLItemDetailTmp.divAmount = oWLItemDetail.divAmount;
+                            oWLItemDetailTmp.divDate = oWLItemDetail.divDate;
+                            oWLItemDetailTmp.divYield = oWLItemDetail.divYield;
+
                             oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
                         }
                         if (sWLAccountIds.length > 0) {
@@ -6594,6 +6667,12 @@ function GetWatchlistPrices() {
                                 oWLItemDetailTmp.regularMarketNetChange = oWLItemDetailOrig.regularMarketNetChange;
                                 oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetailOrig.regularMarketPercentChangeInDouble;
                                 oWLItemDetailTmp.shares = oWLItemDetailOrig.shares;
+
+                                oWLItemDetailTmp.peRatio = oWLItemDetailOrig.peRatio;
+                                oWLItemDetailTmp.divAmount = oWLItemDetailOrig.divAmount;
+                                oWLItemDetailTmp.divDate = oWLItemDetailOrig.divDate;
+                                oWLItemDetailTmp.divYield = oWLItemDetailOrig.divYield;
+
                                 oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
                             }
                         }
@@ -6618,6 +6697,12 @@ function GetWatchlistPrices() {
                         oWLItemDetailTmp.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
                         oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
                         oWLItemDetailTmp.shares = oWLItemDetail.shares;
+
+                        oWLItemDetailTmp.peRatio = oWLItemDetail.peRatio;
+                        oWLItemDetailTmp.divAmount = oWLItemDetail.divAmount;
+                        oWLItemDetailTmp.divDate = oWLItemDetail.divDate;
+                        oWLItemDetailTmp.divYield = oWLItemDetail.divYield;
+
                         oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
                     }
                     gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
@@ -6653,6 +6738,12 @@ function GetWatchlistPrices() {
                         let sSymbolsSelectedForOrderThisWL = "";
                         let sSep = "";
                         let sSepForOrder = "|";
+
+                        let bDoingDividendWL = false;
+                        if (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") != -1) {
+                            bDoingDividendWL = true;
+                        }
+
                         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                             if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
                                 sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
@@ -6684,8 +6775,13 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<tr>";
 
                             } else {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                if (bDoingDividendWL) {
+                                    sThisDiv = sThisDiv + "<div style=\"width:950px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                    sThisDiv = sThisDiv + "<table style=\"width::950px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                } else {
+                                    sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                    sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                }
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
@@ -6756,8 +6852,13 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
 
                             } else {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                if (bDoingDividendWL) {
+                                    sThisDiv = sThisDiv + "<div style=\"width:950px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                    sThisDiv = sThisDiv + "<table style=\"width:950px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                } else {
+                                    sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                    sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                }
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
@@ -6820,19 +6921,46 @@ function GetWatchlistPrices() {
                             "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
                             "<b><I>Symbol&nbsp;&nbsp;</I ></b></span></td > ";
 
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Acquired</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Qty</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Price</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg(%)</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg($)</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Bid</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Ask</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;gain($)</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain($)</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain(%)</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Cost</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Old&nbsp;G/L</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Mkt&nbsp;Value</I></b></td>";
+                        let sAcquiredSpaces = "";
+                        if (bDoingDividendWL) {
+                            sAcquiredSpaces = "";
+                        }
+
+                        if (bDoingDividendWL) {
+                            //doing dividend WL
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Div%</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Div$</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Div&nbsp;Date</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>P/E</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Price</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg(%)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg($)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;gain($)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain($)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain(%)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Qty</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Cost</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Mkt&nbsp;Value</I></b></td>";
+
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Old&nbsp;G/L</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sAcquiredSpaces + "Acquired</I></b></td>";
+
+                        } else {
+                            //not doing dividend WL
+                            sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Acquired</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Qty</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Price</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg(%)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg($)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Bid</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Ask</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;gain($)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain($)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain(%)</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Cost</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Old&nbsp;G/L</I></b></td>";
+                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Mkt&nbsp;Value</I></b></td>";
+                        }
 
                         sThisTable = sThisTable + "</tr>";
 
@@ -6927,46 +7055,110 @@ function GetWatchlistPrices() {
                                                 "marketValue": oWLItemDetail.marketValue,
                                                 "gain": oWLItemDetail.gain,
                                                 "gainPercent": oWLItemDetail.gainPercent,
-                                                "averagePrice": dCurrentAveragePrice
+                                                "averagePrice": dCurrentAveragePrice,
+                                                "peRatio": oWLItemDetail.peRatio,
+                                                "divAmount": oWLItemDetail.divAmount,
+                                                "divDate": oWLItemDetail.divDate,
+                                                "divYield": oWLItemDetail.divYield
                                             }
                                             goWLDisplayed[sThisId + sSymbol] = oT;
                                         }
-                                        //Acquired
-                                        sTmp = "";
-                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                            if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                sTmp = gWatchlists[idxWL].WLItems[idxTmp].purchasedDate;
-                                                break;
+
+                                        if (bDoingDividendWL) {
+                                            //Div Yield
+                                            sTmp = FormatDecimalNumber(oWLItemDetail.divYield, 5, 2, "") + "%";
+                                            if (goWLDisplayed[sThisId + sSymbol].divYield == oWLItemDetail.divYield) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                goWLDisplayed[sThisId + sSymbol].divYield = oWLItemDetail.divYield;
+                                            }
+
+                                            //Div Amount
+                                            sTmp = "&nbsp;&nbsp;" + FormatDecimalNumber(oWLItemDetail.divAmount, 5, 2, "");
+                                            if (goWLDisplayed[sThisId + sSymbol].divAmount == oWLItemDetail.divAmount) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                goWLDisplayed[sThisId + sSymbol].divAmount = oWLItemDetail.divAmount;
+                                            }
+
+                                            //Div Date
+                                            sTmp = oWLItemDetail.divDate;
+                                            if (sTmp != "") {
+                                                sTmp = "&nbsp;&nbsp;&nbsp;&nbsp;" + sTmp.split(" ")[0];
+                                            } 
+                                            if (goWLDisplayed[sThisId + sSymbol].divDate == oWLItemDetail.divDate) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                goWLDisplayed[sThisId + sSymbol].divDate = oWLItemDetail.divDate;
+                                            }
+
+                                            //P/E
+                                            sTmp = FormatDecimalNumber(oWLItemDetail.peRatio, 5, 0, "");
+                                            if (goWLDisplayed[sThisId + sSymbol].peRatio == oWLItemDetail.peRatio) {
+                                                if (parseFloat(sTmp) < 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else if (parseFloat(sTmp) > 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                            } else {
+                                                if (parseFloat(sTmp) < 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                } else if (parseFloat(sTmp) > 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                                goWLDisplayed[sThisId + sSymbol].peRatio = oWLItemDetail.peRatio;
                                             }
                                         }
-                                        if (goWLDisplayed[sThisId + sSymbol].purchasedDate == sTmp) {
-                                            if (sTmp == "") {
-                                                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                                            } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+
+                                        if (!bDoingDividendWL) {
+                                            //Acquired
+                                            sTmp = "";
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
+                                                    sTmp = gWatchlists[idxWL].WLItems[idxTmp].purchasedDate;
+                                                    break;
+                                                }
                                             }
-                                        } else {
-                                            if (sTmp == "") {
-                                                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">nbsp;</td>";
+                                            if (goWLDisplayed[sThisId + sSymbol].purchasedDate == sTmp) {
+                                                if (sTmp == "") {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + sTmp + "</td>";
+                                                }
                                             } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                if (sTmp == "") {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sAcquiredSpaces + sTmp + "</b></td>";
+                                                }
+                                                goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
                                             }
-                                            goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
                                         }
 
                                         //Qty
                                         sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
                                         dQty = parseFloat(sTmp);
-                                        if (dQty == 0.0) {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                                            goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                                        } else {
-                                            if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                            } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+
+                                        if (!bDoingDividendWL) {
+                                            if (dQty == 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                                 goWLDisplayed[sThisId + sSymbol].shares = dQty;
+                                            } else {
+                                                if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
+                                                }
                                             }
+
                                         }
 
                                         sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketLastPrice, 5, 2, "");
@@ -7017,20 +7209,22 @@ function GetWatchlistPrices() {
                                             goWLDisplayed[sThisId + sSymbol].regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
                                         }
 
-                                        sTmp = FormatDecimalNumber(oWLItemDetail.bidPrice, 5, 2, "");
-                                        if (goWLDisplayed[sThisId + sSymbol].bidPrice == oWLItemDetail.bidPrice) {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                        } else {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                            goWLDisplayed[sThisId + sSymbol].bidPrice = oWLItemDetail.bidPrice;
-                                        }
+                                        if (!bDoingDividendWL) {
+                                            sTmp = FormatDecimalNumber(oWLItemDetail.bidPrice, 5, 2, "");
+                                            if (goWLDisplayed[sThisId + sSymbol].bidPrice == oWLItemDetail.bidPrice) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                goWLDisplayed[sThisId + sSymbol].bidPrice = oWLItemDetail.bidPrice;
+                                            }
 
-                                        sTmp = FormatDecimalNumber(oWLItemDetail.askPrice, 5, 2, "");
-                                        if (goWLDisplayed[sThisId + sSymbol].askPrice == oWLItemDetail.askPrice) {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                        } else {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                            goWLDisplayed[sThisId + sSymbol].askPrice = oWLItemDetail.askPrice;
+                                            sTmp = FormatDecimalNumber(oWLItemDetail.askPrice, 5, 2, "");
+                                            if (goWLDisplayed[sThisId + sSymbol].askPrice == oWLItemDetail.askPrice) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                goWLDisplayed[sThisId + sSymbol].askPrice = oWLItemDetail.askPrice;
+                                            }
                                         }
 
                                         sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
@@ -7132,6 +7326,23 @@ function GetWatchlistPrices() {
                                             goWLDisplayed[sThisId + sSymbol].gainPercent = oWLItemDetail.gainPercent;
                                         }
 
+                                        if (bDoingDividendWL) {
+                                            sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
+                                            dQty = parseFloat(sTmp);
+                                            if (dQty == 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                goWLDisplayed[sThisId + sSymbol].shares = dQty;
+                                            } else {
+                                                if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
+                                                }
+                                            }
+
+                                        }
+
                                         //Cost
                                         sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
                                         dCost = parseFloat(sTmp);
@@ -7159,39 +7370,41 @@ function GetWatchlistPrices() {
                                         }
                                         dTotalCost = dTotalCost + (dCost * dQty);
 
-                                        //Old G/L
-                                        let dTmpOrig = 0.0;
-                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                            if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
-                                                break;
+                                        if (!bDoingDividendWL) {
+                                            //Old G/L
+                                            let dTmpOrig = 0.0;
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
+                                                    dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                                    break;
+                                                }
                                             }
-                                        }
-                                        sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-                                        let dTmp = parseFloat(sTmp);
-                                        dTotalGain = dTotalGain + dTmp;
-                                        if (dTmp == 0) {
-                                            sTmp = "";
-                                        }
-                                        if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
-                                            if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                            } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                            let dTmp = parseFloat(sTmp);
+                                            dTotalGain = dTotalGain + dTmp;
+                                            if (dTmp == 0) {
+                                                sTmp = "";
+                                            }
+                                            if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
+                                                if (dTmp < 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else if (dTmp > 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
                                             } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                if (dTmp < 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                } else if (dTmp > 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                                goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
                                             }
-                                        } else {
-                                            if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                            } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                            } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                                            }
-                                            goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
-                                        }
 
+                                        }
 
                                         //Mkt Value
                                         sTmp = FormatDecimalNumber(oWLItemDetail.marketValue, 5, 2, "");
@@ -7210,6 +7423,65 @@ function GetWatchlistPrices() {
                                             goWLDisplayed[sThisId + sSymbol].marketValue = oWLItemDetail.marketValue;
                                         }
 
+                                        if (bDoingDividendWL) {
+
+                                            //Old G/L
+                                            let dTmpOrig = 0.0;
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
+                                                    dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                                    break;
+                                                }
+                                            }
+                                            sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                            let dTmp = parseFloat(sTmp);
+                                            dTotalGain = dTotalGain + dTmp;
+                                            if (dTmp == 0) {
+                                                sTmp = "";
+                                            }
+                                            if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
+                                                if (dTmp < 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else if (dTmp > 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                            } else {
+                                                if (dTmp < 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                } else if (dTmp > 0.0) {
+                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                                goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
+                                            }
+
+                                            //Acquired
+                                            sTmp = "";
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
+                                                    sTmp = gWatchlists[idxWL].WLItems[idxTmp].purchasedDate;
+                                                    break;
+                                                }
+                                            }
+                                            if (goWLDisplayed[sThisId + sSymbol].purchasedDate == sTmp) {
+                                                if (sTmp == "") {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + sTmp + "</td>";
+                                                }
+                                            } else {
+                                                if (sTmp == "") {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sAcquiredSpaces + sTmp + "</b></td>";
+                                                }
+                                                goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
+                                            }
+                                        }
+
                                         sThisTable = sThisTable + "</tr>";
                                     //    iLineCnt++;
                                     }
@@ -7223,8 +7495,14 @@ function GetWatchlistPrices() {
                                 sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
                             }
 
-                            sThisTable = sThisTable + "<tr><td colspan=\"14\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
+                            if (bDoingDividendWL) {
+                                sThisTable = sThisTable + "<tr><td colspan=\"16\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
+                            } else {
+                                sThisTable = sThisTable + "<tr><td colspan=\"14\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
+                            }
                             if (iLineCnt != gWatchlists[idxWL].WLItems.length) {
+                                //debugger
+                                return;
                                 sThisTable = sThisTable + "<I>*Day</I>";
                             } else {
                                 sThisTable = sThisTable + "<I>Day</I>";
@@ -8605,6 +8883,30 @@ function GetWatchlists(bDoingReset) {
                 }
             }
         }
+
+        //add an Account Watchlist Summary for each account that has a watchlist
+        if (gAccounts.length > 0) {
+            for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+                oAccount = new Account();
+                oAccount = gAccounts[idxAccounts];
+
+                if (gWatchlists.length > 0) {
+                    for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+                        if ((gWatchlists[idxWL].accountId == oAccount.accountId) &&
+                            (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) ) {
+                            let oWL = new WLWatchList();
+                            oWL.accountId = oAccount.accountId;
+                            oWL.accountName = oAccount.accountName;
+                            oWL.watchlistId = oAccount.accountId + "AccountWLSummary";
+                            oWL.name = gsAccountWLSummary;
+                            gWatchlists[gWatchlists.length] = oWL;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         //add an Account watchlist for each account that has stock positions
         if (gAccounts.length > 0) {
             for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
@@ -8686,12 +8988,825 @@ function GetWatchlists(bDoingReset) {
                     oWL.accountName = oAccount.accountName;
                     oWL.watchlistId = oAccount.accountId + "AccountSavedOrders";
                     oWL.name = gsAccountSavedOrders;
+
+                    if (bDoingReset) {
+                        //check to see if the Account Saved Orders watchlist has been selected
+                        for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                            if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                                (oWL.name == oOldWL[idxWLCur].name)) {
+                                oWL.spanName = oOldWL[idxWLCur].spanName;
+                                if (oOldWL[idxWLCur].bSelectedSO) {
+                                    oWL.bSelectedSO = true;
+                                    oWL.bSelectedSOTemp = true;
+
+                                    // now copy all existing items
+                                    if (oOldWL[idxWLCur].WLItems.length > 0) {
+                                        for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
+                                            let oWLItem = new WLItemSavedOrder();
+                                            oWLItem.bSelected = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelected;
+                                            oWLItem.bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                            oWLItem.bSelectedTemp = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedTemp;
+                                            oWLItem.cancelTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].cancelTime;
+                                            oWLItem.duration = oOldWL[idxWLCur].WLItems[idxWLItemOld].duration;
+                                            oWLItem.instruction = oOldWL[idxWLCur].WLItems[idxWLItemOld].instruction;
+                                            oWLItem.orderType = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderType;
+                                            oWLItem.price = oOldWL[idxWLCur].WLItems[idxWLItemOld].price;
+                                            oWLItem.quantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].quantity;
+                                            oWLItem.savedOrderId = oOldWL[idxWLCur].WLItems[idxWLItemOld].savedOrderId;
+                                            oWLItem.savedTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].savedTime;
+                                            oWLItem.session = oOldWL[idxWLCur].WLItems[idxWLItemOld].session;
+                                            oWLItem.stopPriceLinkType = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceLinkType;
+                                            oWLItem.stopPriceOffset = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceOffset;
+                                            oWLItem.symbol = oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol;
+                                            oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                       }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+
                     gWatchlists[gWatchlists.length] = oWL;
                 }
             }
         }
 
         gWatchlists.sort(sortByWLAccountandWLName);
+    }
+}
+
+function GetWatchlistSummary() {
+
+    let oWLItemDetail = new WLItemDetail();
+    let dt = new Date();
+    let sDate = FormatDateWithTime(dt, true, false);
+
+    if (gWatchlists.length > 0) {
+        let sSymbols = "";
+        let sSep = "";
+        let sWLAccountIdsMaster = "";
+        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+            if (gWatchlists[idxWL].bSelectedWLSummary) {
+                if (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") == -1) {
+                    sWLAccountIdsMaster = sWLAccountIdsMaster + "," + gWatchlists[idxWL].accountId + ",";
+                }
+            }
+        }
+        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+            if ((gWatchlists[idxWL].name != gsAccountSavedOrders) && 
+                (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&  
+                (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
+                (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") != -1)  ) {
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
+                        sSymbols = sSymbols + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                        sSep = ",";
+                    }
+                }
+                sSymbols = GetUniqueListOfSymbols(sSymbols);
+            }
+        }
+        if (sSymbols.length > 0) {
+            let aSymbolsToUse = sSymbols.split(",");
+            gWLDisplayed.length = 0;
+            for (let idxSymbol = 0; idxSymbol < aSymbolsToUse.length; idxSymbol++) {
+                let sSymbol = aSymbolsToUse[idxSymbol];
+                if (!isUndefined(oMDQ[sSymbol])) {
+                    let oWLDisplayed = new WLDisplayed();
+                    oWLDisplayed.symbol = sSymbol;
+                    oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
+
+                    //get account position info if it exists
+                    let oPositions = new Array();
+                    for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                        if (gAccounts[idxAccount].positions.length > 0) {
+                            for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
+                                    let oPosition = new Position();
+                                    oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                    oPosition.accountId = gAccounts[idxAccount].accountId;
+                                    oPosition.accountName = gAccounts[idxAccount].accountName;
+                                    oPositions[oPositions.length] = oPosition;
+                                }
+                            }
+                        }
+                    }
+
+                    oWLItemDetail = new WLItemDetail();
+                    if (oWLDisplayed.assetType == "OPTION") {
+                        if (!isUndefined(oMDQ[sSymbol].mark)) {
+                            oWLItemDetail.lastPrice = oMDQ[sSymbol].mark;
+                        }
+                    } else if (oWLDisplayed.assetType == "INDEX") {
+                        if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
+                            oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].highPrice)) {
+                            oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
+                            oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].netChange)) {
+                            oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
+                            oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
+                        }
+                    } else {
+                        if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
+                            oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].askPrice)) {
+                            oWLItemDetail.askPrice = oMDQ[sSymbol].askPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].bidPrice)) {
+                            oWLItemDetail.bidPrice = oMDQ[sSymbol].bidPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].highPrice)) {
+                            oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
+                            oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].netChange)) {
+                            oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
+                            oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
+                        }
+
+                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                            oWLItemDetail.regularMarketLastPrice = oMDQ[sSymbol].regularMarketLastPrice;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].regularMarketNetChange)) {
+                            oWLItemDetail.regularMarketNetChange = oMDQ[sSymbol].regularMarketNetChange;
+                        }
+                        if (!isUndefined(oMDQ[sSymbol].regularMarketPercentChangeInDouble)) {
+                            oWLItemDetail.regularMarketPercentChangeInDouble = oMDQ[sSymbol].regularMarketPercentChangeInDouble;
+                        }
+                    }
+                    if (oPositions.length > 0) {
+                        let sWLAccountIds = "";
+                        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+                            if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                                (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                                (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&  
+                                (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
+                                (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") != -1)) {
+                                if (sWLAccountIds.indexOf("," + gWatchlists[idxWL].accountId + ",") == -1) {
+                                    sWLAccountIds = sWLAccountIds + "," + gWatchlists[idxWL].accountId + ",";
+                                }
+                            }
+                        }
+                        let oWLItemDetailOrig = new WLItemDetail();
+                        oWLItemDetailOrig.accountId = oWLItemDetail.accountId;
+                        oWLItemDetailOrig.accountName = oWLItemDetail.accountName;
+                        oWLItemDetailOrig.askPrice = oWLItemDetail.askPrice;
+                        oWLItemDetailOrig.bidPrice = oWLItemDetail.bidPrice;
+                        oWLItemDetailOrig.costPerShare = oWLItemDetail.costPerShare;
+                        oWLItemDetailOrig.marketValue = oWLItemDetail.marketValue;
+                        oWLItemDetailOrig.dayGain = oWLItemDetail.dayGain;
+                        oWLItemDetailOrig.gain = oWLItemDetail.gain;
+                        oWLItemDetailOrig.gainPercent = oWLItemDetail.gainPercent;
+                        oWLItemDetailOrig.highPrice = oWLItemDetail.highPrice;
+                        oWLItemDetailOrig.lastPrice = oWLItemDetail.lastPrice;
+                        oWLItemDetailOrig.lowPrice = oWLItemDetail.lowPrice;
+                        oWLItemDetailOrig.netChange = oWLItemDetail.netChange;
+                        oWLItemDetailOrig.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
+                        oWLItemDetailOrig.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
+                        oWLItemDetailOrig.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
+                        oWLItemDetailOrig.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
+                        oWLItemDetailOrig.shares = oWLItemDetail.shares;
+
+                        for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
+                            let oPosition = new Position();
+                            oPosition = oPositions[idxPositions];
+                            sWLAccountIds = sWLAccountIds.replace("," + oPosition.accountId + ",", "");
+
+                            oWLItemDetail.shares = 0;
+                            oWLItemDetail.dayGain = 0.0;
+                            oWLItemDetail.costPerShare = 0.0;
+                            oWLItemDetail.gain = 0.0;
+                            oWLItemDetail.gainPercent = 0.0;
+                            oWLItemDetail.accountId = "";
+                            oWLItemDetail.marketValue = oPosition.marketValue;
+
+                            oWLItemDetail.accountId = oPosition.accountId;
+                            oWLItemDetail.accountName = oPosition.accountName;
+                            oWLItemDetail.shares = oPosition.longQuantity;
+                            oWLItemDetail.dayGain = oPosition.currentDayProfitLoss;
+                            oWLItemDetail.costPerShare = oPosition.averagePrice;
+                            if (oWLItemDetail.shares > 0) {
+                                oWLItemDetail.gain = oWLItemDetail.shares * (oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare);
+                                if (oWLItemDetail.costPerShare != 0.0) {
+                                    oWLItemDetail.gainPercent = ((oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare) / oWLItemDetail.costPerShare) * 100.0;
+                                }
+                            }
+                            let oWLItemDetailTmp = new WLItemDetail();
+                            oWLItemDetailTmp.accountId = oWLItemDetail.accountId;
+                            oWLItemDetailTmp.accountName = oWLItemDetail.accountName;
+                            oWLItemDetailTmp.askPrice = oWLItemDetail.askPrice;
+                            oWLItemDetailTmp.bidPrice = oWLItemDetail.bidPrice;
+                            oWLItemDetailTmp.costPerShare = oWLItemDetail.costPerShare;
+                            oWLItemDetailTmp.marketValue = oWLItemDetail.marketValue;
+                            oWLItemDetailTmp.dayGain = oWLItemDetail.dayGain;
+                            oWLItemDetailTmp.gain = oWLItemDetail.gain;
+                            oWLItemDetailTmp.gainPercent = oWLItemDetail.gainPercent;
+                            oWLItemDetailTmp.highPrice = oWLItemDetail.highPrice;
+                            oWLItemDetailTmp.lastPrice = oWLItemDetail.lastPrice;
+                            oWLItemDetailTmp.lowPrice = oWLItemDetail.lowPrice;
+                            oWLItemDetailTmp.netChange = oWLItemDetail.netChange;
+                            oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
+                            oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
+                            oWLItemDetailTmp.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
+                            oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
+                            oWLItemDetailTmp.shares = oWLItemDetail.shares;
+
+                            oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
+                        }
+                        if (sWLAccountIds.length > 0) {
+                            let re = /,,/g;
+                            sWLAccountIds = sWLAccountIds.replace(re, ",");
+                            sWLAccountIds = sWLAccountIds.substr(1, sWLAccountIds.length - 2);
+                            let aWLAccountIds = sWLAccountIds.split(",");
+                            for (let idxWLAccountIds = 0; idxWLAccountIds < aWLAccountIds.length; idxWLAccountIds++) {
+                                let oWLItemDetailTmp = new WLItemDetail();
+                                oWLItemDetailTmp.accountId = aWLAccountIds[idxWLAccountIds];
+                                oWLItemDetailTmp.accountName = "";
+                                oWLItemDetailTmp.askPrice = oWLItemDetailOrig.askPrice;
+                                oWLItemDetailTmp.bidPrice = oWLItemDetailOrig.bidPrice;
+                                oWLItemDetailTmp.costPerShare = oWLItemDetailOrig.costPerShare;
+                                oWLItemDetailTmp.marketValue = oWLItemDetailOrig.marketValue;
+                                oWLItemDetailTmp.dayGain = oWLItemDetailOrig.dayGain;
+                                oWLItemDetailTmp.gain = oWLItemDetailOrig.gain;
+                                oWLItemDetailTmp.gainPercent = oWLItemDetailOrig.gainPercent;
+                                oWLItemDetailTmp.highPrice = oWLItemDetailOrig.highPrice;
+                                oWLItemDetailTmp.lastPrice = oWLItemDetailOrig.lastPrice;
+                                oWLItemDetailTmp.lowPrice = oWLItemDetailOrig.lowPrice;
+                                oWLItemDetailTmp.netChange = oWLItemDetailOrig.netChange;
+                                oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetailOrig.netPercentChangeInDouble;
+                                oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetailOrig.regularMarketLastPrice;
+                                oWLItemDetailTmp.regularMarketNetChange = oWLItemDetailOrig.regularMarketNetChange;
+                                oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetailOrig.regularMarketPercentChangeInDouble;
+                                oWLItemDetailTmp.shares = oWLItemDetailOrig.shares;
+                                oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
+                            }
+                        }
+
+                    } else {
+                        let oWLItemDetailTmp = new WLItemDetail();
+                        oWLItemDetailTmp.accountId = oWLItemDetail.accountId;
+                        oWLItemDetailTmp.accountName = oWLItemDetail.accountName;
+                        oWLItemDetailTmp.askPrice = oWLItemDetail.askPrice;
+                        oWLItemDetailTmp.bidPrice = oWLItemDetail.bidPrice;
+                        oWLItemDetailTmp.costPerShare = oWLItemDetail.costPerShare;
+                        oWLItemDetailTmp.marketValue = oWLItemDetail.marketValue;
+                        oWLItemDetailTmp.dayGain = oWLItemDetail.dayGain;
+                        oWLItemDetailTmp.gain = oWLItemDetail.gain;
+                        oWLItemDetailTmp.gainPercent = oWLItemDetail.gainPercent;
+                        oWLItemDetailTmp.highPrice = oWLItemDetail.highPrice;
+                        oWLItemDetailTmp.lastPrice = oWLItemDetail.lastPrice;
+                        oWLItemDetailTmp.lowPrice = oWLItemDetail.lowPrice;
+                        oWLItemDetailTmp.netChange = oWLItemDetail.netChange;
+                        oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
+                        oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
+                        oWLItemDetailTmp.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
+                        oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
+                        oWLItemDetailTmp.shares = oWLItemDetail.shares;
+                        oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
+                    }
+                    gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
+
+                }
+            }
+
+            //now show the results
+            let sLastWLName = "";
+            let sLastWLId = "";
+            let sLastWLAccountName = "";
+            let sLastWLAccountId = "";
+            let sThisId = "";
+            let sTmp = "";
+
+            if (gWLDisplayed.length > 0) {
+
+                gWLDisplayed.sort(sortBySymbol);
+
+                gWLSummaryDisplayed.length = 0;
+
+                for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+                    if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                        (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                        (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&  
+                        (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
+                        (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") != -1)) {
+
+                        let iTotalSymbolsUp = 0;
+                        let iTotalSymbolsDown = 0;
+                        let iTotalSymbolsUpDay = 0;
+                        let iTotalSymbolsDownDay = 0;
+                        let sSymbolsThisWL = "";
+                        let sSep = "";
+
+                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
+                                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                                sSep = ",";
+                            }
+                        }
+
+                        sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
+
+                        sLastWLName = gWatchlists[idxWL].name;
+                        sLastWLAccountName = gWatchlists[idxWL].accountName;
+                        sLastWLAccountId = gWatchlists[idxWL].accountId;
+                        sLastWLId = gWatchlists[idxWL].watchlistId;
+                        sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+
+                        let dTotalCost = 0.0;
+                        let iLineCnt = 0;
+                        let dTotalHoldingsGain = 0.0;
+                        let dTotalGain = 0.0;
+                        let dTotalDayGain = 0.0;
+                        for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                            let oWLDisplayed = new WLDisplayed();
+                            oWLDisplayed = gWLDisplayed[idxDisplayed];
+                            let sSymbol = oWLDisplayed.symbol;
+                            let oWLItemDetail = new WLItemDetail();
+                            let dCost = 0.0;
+                            let dQty = 0.0;
+                            if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
+                                for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+                                    oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+                                    if ((gWatchlists[idxWL].accountId == oWLItemDetail.accountId) ||
+                                        (oWLItemDetail.accountId == "")) {
+                                        iLineCnt++;
+
+                                        //Qty
+                                        sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
+                                        dQty = parseFloat(sTmp);
+
+                                        sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
+                                        dTotalDayGain = dTotalDayGain + parseFloat(sTmp);
+                                        if (parseFloat(sTmp) < 0.0) {
+                                            if (oWLItemDetail.shares > 0.0) {
+                                                iTotalSymbolsDownDay++;
+                                            }
+                                        } else if (parseFloat(sTmp) > 0.0) {
+                                            if (oWLItemDetail.shares > 0.0) {
+                                                iTotalSymbolsUpDay++;
+                                            }
+                                        }
+
+                                        sTmp = FormatDecimalNumber(oWLItemDetail.gain, 5, 2, "");
+                                        if (parseFloat(sTmp) < 0.0) {
+                                            if (oWLItemDetail.shares > 0.0) {
+                                                iTotalSymbolsDown++;
+                                            }
+                                        } else if (parseFloat(sTmp) > 0.0) {
+                                            if (oWLItemDetail.shares > 0.0) {
+                                                iTotalSymbolsUp++;
+                                            }
+                                        }
+                                        dTotalGain = dTotalGain + parseFloat(sTmp);
+                                        dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
+
+                                        //Cost
+                                        sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
+                                        dCost = parseFloat(sTmp);
+                                        dTotalCost = dTotalCost + (dCost * dQty);
+
+                                        //Old G/L
+                                        let dTmpOrig = 0.0;
+                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
+                                            if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
+                                                dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                                break;
+                                            }
+                                        }
+                                        sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                        let dTmp = parseFloat(sTmp);
+                                        dTotalGain = dTotalGain + dTmp;
+
+                                    }
+                                //    iLineCnt++;
+
+                                //    //Qty
+                                //    sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
+                                //    dQty = parseFloat(sTmp);
+
+                                //    sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
+                                //    dTotalDayGain = dTotalDayGain + parseFloat(sTmp);
+                                //    if (parseFloat(sTmp) < 0.0) {
+                                //        if (oWLItemDetail.shares > 0.0) {
+                                //            iTotalSymbolsDownDay++;
+                                //        }
+                                //    } else if (parseFloat(sTmp) > 0.0) {
+                                //        if (oWLItemDetail.shares > 0.0) {
+                                //            iTotalSymbolsUpDay++;
+                                //        }
+                                //    }
+
+                                //    sTmp = FormatDecimalNumber(oWLItemDetail.gain, 5, 2, "");
+                                //    if (parseFloat(sTmp) < 0.0) {
+                                //        if (oWLItemDetail.shares > 0.0) {
+                                //            iTotalSymbolsDown++;
+                                //        }
+                                //    } else if (parseFloat(sTmp) > 0.0) {
+                                //        if (oWLItemDetail.shares > 0.0) {
+                                //            iTotalSymbolsUp++;
+                                //        }
+                                //    }
+                                //    dTotalGain = dTotalGain + parseFloat(sTmp);
+                                //    dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
+
+                                //    //Cost
+                                //    sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
+                                //    dCost = parseFloat(sTmp);
+                                //    dTotalCost = dTotalCost + (dCost * dQty);
+
+                                //    //Old G/L
+                                //    let dTmpOrig = 0.0;
+                                //    for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
+                                //        if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
+                                //            dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                //            break;
+                                //        }
+                                //    }
+                                //    sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                //    let dTmp = parseFloat(sTmp);
+                                //    dTotalGain = dTotalGain + dTmp;
+                                }
+                            }
+
+                        }
+                        if (iLineCnt != 0) {
+
+                            if ((isUndefined(goWLSummaryDisplayed)) || (isUndefined(goWLSummaryDisplayed[sThisId]))) {
+                                let oT = {
+                                    "watchlistName": sLastWLName,
+                                    "dayUp": iTotalSymbolsUpDay,
+                                    "dayDown": iTotalSymbolsDownDay,
+                                    "dayCost": dTotalCost,
+                                    "dayGain": dTotalDayGain,
+                                    "dayGainPercent": (dTotalCost == 0 ? 0 : (dTotalDayGain / dTotalCost) * 100),
+                                    "holdingsGain": dTotalHoldingsGain,
+                                    "holdingsGainPercent": (dTotalCost == 0 ? 0 : (dTotalHoldingsGain / dTotalCost) * 100),
+                                    "holdingsUp": iTotalSymbolsUp,
+                                    "holdingsDown": iTotalSymbolsDown,
+                                    "portfolioGain": dTotalGain
+                                }
+                                goWLSummaryDisplayed[sThisId] = oT;
+                            }
+                            let oSummaryDisplay = new WLSummaryDisplayed();
+                            oSummaryDisplay.accountId = sLastWLAccountId;
+                            oSummaryDisplay.accountName = sLastWLAccountName;
+                            let idxSummaryDisplayed = -1;
+                            if (gWLSummaryDisplayed.length == 0) {
+                                gWLSummaryDisplayed[gWLSummaryDisplayed.length] = oSummaryDisplay;
+                                idxSummaryDisplayed = 0;
+                            } else {
+                                for (let idx = 0; idx < gWLSummaryDisplayed.length; idx++) {
+                                    if (gWLSummaryDisplayed[idx].accountId == oSummaryDisplay.accountId) {
+                                        idxSummaryDisplayed = idx;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (idxSummaryDisplayed > -1) {
+                                let oItemDay = new WLSummaryDayItemDetail();
+                                let oItemHolding = new WLSummaryHoldingItemDetail();
+                                let oItemPortfolio = new WLSummaryPortfolioItemDetail();
+                                oItemDay.cost = dTotalCost;
+                                oItemDay.down = iTotalSymbolsDownDay;
+                                oItemDay.gain = dTotalDayGain;
+                                if (dTotalCost == 0) {
+                                    oItemDay.gainPercent = 0;
+                                } else {
+                                    oItemDay.gainPercent = (dTotalDayGain / dTotalCost) * 100;
+                                }
+                                oItemDay.up = iTotalSymbolsUpDay;
+                                oItemDay.watchlistName = sLastWLName;
+                                oItemDay.watchlistId = sLastWLId;
+
+                                oItemHolding.gain = dTotalHoldingsGain;
+                                if (dTotalCost == 0) {
+                                    oItemHolding.gainPercent = 0;
+                                } else {
+                                    oItemHolding.gainPercent = (dTotalHoldingsGain / dTotalCost) * 100;
+                                }
+                                oItemHolding.up = iTotalSymbolsUp;
+                                oItemHolding.down = iTotalSymbolsDown;
+                                oItemHolding.watchlistName = sLastWLName;
+                                oItemHolding.watchlistId = sLastWLId;
+
+                                oItemPortfolio.gain = dTotalGain;
+                                oItemPortfolio.watchlistName = sLastWLName;
+                                oItemPortfolio.watchlistId = sLastWLId;
+
+                                gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryDayItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryDayItemDetails.length] = oItemDay;
+                                gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryHoldingItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryHoldingItemDetails.length] = oItemHolding;
+                                gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryPortfolioItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryPortfolioItemDetails.length] = oItemPortfolio;
+                            } else {
+                                //should never get here
+                            }
+                        }
+
+                    }
+                }
+                //-------------------------------------------------------------------------------
+                //have all data so show results
+                let sHeadingTextAlign = "center";
+                let sBodyTextAlign = "center";
+                let sTableRowVerticalAlignment = "middle";
+                let iLineCnt = 0;
+                let sThisDiv = "";
+                let sThisTable = "";
+                if (gWLSummaryDisplayed.length > 0) {
+                    for (let idxWLSummary = 0; idxWLSummary < gWLSummaryDisplayed.length; idxWLSummary++) {
+                        gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.sort(sortByDayGainPercent);
+                        gWLSummaryDisplayed[idxWLSummary].WLSummaryHoldingItemDetails.sort(sortByHoldingGainPercent);
+                        gWLSummaryDisplayed[idxWLSummary].WLSummaryPortfolioItemDetails.sort(sortByPortfolioGain);
+
+                        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+                            if ((gWatchlists[idxWL].bSelectedWLSummary) && (gWatchlists[idxWL].accountId == gWLSummaryDisplayed[idxWLSummary].accountId)) {
+
+                                sThisDiv = "";
+                                sLastWLName = gWatchlists[idxWL].name;
+                                sLastWLAccountName = gWatchlists[idxWL].accountName;
+                                sLastWLAccountId = gWatchlists[idxWL].accountId;
+                                sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+
+                                sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                sThisDiv = sThisDiv + "<tr>";
+
+                                sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol1Width.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + sLastWLAccountName + "--" + sLastWLName + "<span id=\"spanSummaryDate" + sThisId + "\" name=\"spanSummaryDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;"  + sDate + "</b></span></th>";
+                                sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                                sThisDiv = sThisDiv + "</tr>";
+
+                                sThisDiv = sThisDiv + "<tr>";
+
+                                sThisDiv = sThisDiv + "<td colspan=\"2\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+
+
+                                sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                sThisTable = "";
+                                sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+
+                                sThisTable = sThisTable + "<tr height=\"20\">";
+                                let sEndSpaces = "&nbsp;"
+                                let sNameSpaces = ""
+                                let sColumnSeparator = "border-top-width:0px; border-bottom-width:0px; border-left-width:0px; border-right-width:1.5px; border-style:solid; border-spacing:1px; border-color:black;";
+                                sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\"><b><I>&nbsp;&nbsp;</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sNameSpaces + "Name" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;Gain(%)" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;Gain($)" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\"><b><I>Cost" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sNameSpaces + "Name" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Hold&nbsp;Gain(%)" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\"><b><I>Hold&nbsp;Gain($)" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sNameSpaces + "Name" + sEndSpaces + "</I></b></td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Portfolio&nbsp;Gain($)" + sEndSpaces + "</I></b></td>";
+
+                                sThisTable = sThisTable + "</tr>";
+
+                                for (let idxDisplayed = 0; idxDisplayed < gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.length; idxDisplayed++) {
+                                    let oWLSummaryDayItem = new WLSummaryDayItemDetail();
+                                    let oWLSummaryHoldingItem = new WLSummaryHoldingItemDetail();
+                                    let oWLSummaryPortfolioItem = new WLSummaryPortfolioItemDetail();
+                                    oWLSummaryDayItem = gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed];
+                                    oWLSummaryHoldingItem = gWLSummaryDisplayed[idxWLSummary].WLSummaryHoldingItemDetails[idxDisplayed];
+                                    oWLSummaryPortfolioItem = gWLSummaryDisplayed[idxWLSummary].WLSummaryPortfolioItemDetails[idxDisplayed];
+
+                                    let sSummaryOldId = oWLSummaryDayItem.watchlistId + sLastWLAccountId;
+
+                                    iLineCnt++;
+                                    if ((iLineCnt % 2) == 0) {
+                                        sThisTable = sThisTable + "<tr  height=\"20\" style=\"background-color:" + gsWLTableEvenRowBackgroundColor + ";\">";
+                                    } else {
+                                        sThisTable = sThisTable + "<tr  height=\"20\" style=\"background-color:" + gsWLTableOddRowBackgroundColor + ";\">";
+                                    }
+
+                                    //line number
+                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">" + iLineCnt.toString() + "</td>";
+
+                                    //Day WL Name
+                                    sTmp = sNameSpaces + oWLSummaryDayItem.watchlistName;
+                                    sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">&nbsp;(</span>";
+                                    sTmp = sTmp + "<span style=\"color:green;vertical-align:" + sTableRowVerticalAlignment + ";\">" + oWLSummaryDayItem.up.toString() + "</span>"
+                                    sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">,</span>";
+                                    sTmp = sTmp + "<span style=\"color:" + gsNegativeColor + ";vertical-align:" + sTableRowVerticalAlignment + ";\">" + oWLSummaryDayItem.down.toString() + "</span>";
+                                    sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)</span>";
+                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+
+                                    //Day gain percent
+                                    sTmp = FormatDecimalNumber(oWLSummaryDayItem.gainPercent, 5, 2, "");
+                                    if (goWLSummaryDisplayed[sSummaryOldId].dayGainPercent == oWLSummaryDayItem.gainPercent) {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            }
+                                        }
+                                    } else {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            }
+                                        }
+                                        goWLSummaryDisplayed[sSummaryOldId].dayGainPercent = oWLSummaryDayItem.gainPercent;
+                                    }
+
+                                    //Day gain
+                                    sTmp = FormatDecimalNumber(oWLSummaryDayItem.gain, 5, 2, "");
+                                    if (goWLSummaryDisplayed[sSummaryOldId].dayGain == oWLSummaryDayItem.gain) {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            }
+                                        }
+                                    } else {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            }
+                                        }
+                                        goWLSummaryDisplayed[sSummaryOldId].dayGain = oWLSummaryDayItem.gain;
+                                    }
+
+                                    //Day cost
+                                    sTmp = FormatDecimalNumber(oWLSummaryDayItem.cost, 5, 2, "");
+                                    if (goWLSummaryDisplayed[sSummaryOldId].dayCost == oWLSummaryDayItem.cost) {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">&nbsp;</td>";
+                                        } else {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">" + sTmp + "</td>";
+                                        }
+                                    } else {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">nbsp;</td>";
+                                        } else {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\"><b>" + sTmp + "</b></td>";
+                                        }
+                                        goWLSummaryDisplayed[sSummaryOldId].dayCost = oWLSummaryDayItem.cost;
+                                    }
+
+                                    //Holding WL Name
+                                    sTmp = sNameSpaces + oWLSummaryHoldingItem.watchlistName;
+                                    sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">&nbsp;(</span>";
+                                    sTmp = sTmp + "<span style=\"color:green;vertical-align:" + sTableRowVerticalAlignment + ";\">" + oWLSummaryHoldingItem.up.toString() + "</span>"
+                                    sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">,</span>";
+                                    sTmp = sTmp + "<span style=\"color:" + gsNegativeColor + ";vertical-align:" + sTableRowVerticalAlignment + ";\">" + oWLSummaryHoldingItem.down.toString() + "</span>";
+                                    sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)</span>";
+                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+
+                                    //Holding gain percent
+                                    sTmp = FormatDecimalNumber(oWLSummaryHoldingItem.gainPercent, 5, 2, "");
+                                    if (goWLSummaryDisplayed[sSummaryOldId].holdingGainPercent == oWLSummaryHoldingItem.gainPercent) {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            }
+                                        }
+                                    } else {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            }
+                                        }
+                                        goWLSummaryDisplayed[sSummaryOldId].holdingGainPercent = oWLSummaryHoldingItem.gainPercent;
+                                    }
+
+                                    //Holding gain
+                                    sTmp = FormatDecimalNumber(oWLSummaryHoldingItem.gain, 5, 2, "");
+                                    if (goWLSummaryDisplayed[sSummaryOldId].holdingGain == oWLSummaryHoldingItem.gain) {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">&nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">" + sTmp + "</td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">" + sTmp + "</td>";
+                                            }
+                                        }
+                                    } else {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\">nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\"><b>" + sTmp + "</b></td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\"><b>" + sTmp + "</b></td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + ";" + sColumnSeparator + "\"><b>" + sTmp + "</b></td>";
+                                            }
+                                        }
+                                        goWLSummaryDisplayed[sSummaryOldId].holdingGain = oWLSummaryHoldingItem.gain;
+                                    }
+
+                                    //Portfolio WL Name
+                                    sTmp = sNameSpaces + oWLSummaryPortfolioItem.watchlistName;
+                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+
+                                    //Portfolio gain percent
+                                    sTmp = FormatDecimalNumber(oWLSummaryPortfolioItem.gain, 5, 2, "");
+                                    if (goWLSummaryDisplayed[sSummaryOldId].portfolioGain == oWLSummaryPortfolioItem.gain) {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            }
+                                        }
+                                    } else {
+                                        if (sTmp == "") {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">nbsp;</td>";
+                                        } else {
+                                            if (parseFloat(sTmp) < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else if (parseFloat(sTmp) > 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            }
+                                        }
+                                        goWLSummaryDisplayed[sSummaryOldId].portfolioGain = oWLSummaryPortfolioItem.gain;
+                                    }
+
+                                    sThisTable = sThisTable + "</tr>";
+
+                                }
+                                sThisTable = sThisTable + "</table >";
+                                sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
+
+                                if (gWatchlists[idxWL].spanName == "") {
+                                    gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+                                    wlAddDiv(gWatchlists[idxWL].spanName, sThisDiv);
+                                } else {
+                                    if (document.getElementById(gWatchlists[idxWL].spanName).innerHTML == "") {
+                                        document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
+                                    } else {
+                                        if (!isUndefined(document.getElementById("spanSummaryDate" + sThisId))) {
+                                            document.getElementById("spanSummaryDate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
+                                        }
+                                        document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                } 
+                //-------------------------------------------------------------------------------
+            } 
+        }
     }
 }
 
@@ -9714,7 +10829,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    debugger
+    //debugger
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
     try {
@@ -11343,7 +12458,9 @@ function SetupWatchlists(bDoingSymbols) {
 
             let sLastAccountname = "";
             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) || (gWatchlists[idxWL].name != gsAccountSavedOrders)) {
+                if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name == gsAccountWLSummary) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name != gsAccountSavedOrders) && (gWatchlists[idxWL].name != gsAccountWLSummary))) {
                     if (gWatchlists[idxWL].accountName != sLastAccountname) {
                         sLastAccountname = gWatchlists[idxWL].accountName;
                         s = s + "<tr>";
@@ -11394,7 +12511,9 @@ function SetupWatchlists(bDoingSymbols) {
 
             let sLastAccountname = "";
             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) || (gWatchlists[idxWL].name != gsAccountSavedOrders)) {
+                if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name == gsAccountWLSummary) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name != gsAccountSavedOrders) && (gWatchlists[idxWL].name != gsAccountWLSummary)) ) {
                     if (sLastAccountname == "") {
                         sLastAccountname = gWatchlists[idxWL].accountName;
                         s = s + "<option selected value=\"\">&nbsp;</option>";
@@ -11539,6 +12658,38 @@ function sortByChgShortValue(a, b) {
     }
     return 0;
 }
+
+function sortByDayGainPercent(a, b) {
+    if (a.gainPercent < b.gainPercent) {
+        return 1;
+    }
+    if (a.gainPercent > b.gainPercent) {
+        return -1;
+    }
+    return 0;
+}
+
+function sortByHoldingGainPercent(a, b) {
+    if (a.gainPercent < b.gainPercent) {
+        return 1;
+    }
+    if (a.gainPercent > b.gainPercent) {
+        return -1;
+    }
+    return 0;
+}
+
+function sortByPortfolioGain(a, b) {
+    if (a.gain < b.gain) {
+        return 1;
+    }
+    if (a.gain > b.gain) {
+        return -1;
+    }
+    return 0;
+}
+
+
 
 function sortBySymbol(a, b) {
     let aSymbol = a.symbol;
@@ -11774,6 +12925,8 @@ function wlDoRemoveDiv(idxWL) {
         gWatchlists[idxWL].bSelectedTemp = false;
         gWatchlists[idxWL].bSelectedSO = false;
         gWatchlists[idxWL].bSelectedSOTemp = false;
+        gWatchlists[idxWL].bSelectedWLSummary = false;
+        gWatchlists[idxWL].bSelectedWLSummaryTemp = false;
 
         for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
             gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = false;
@@ -11803,7 +12956,9 @@ function wlMarkSelected(idxWL) {
     if (gbDoingSymbolsSelect) {
         gWatchlists[idxWL].bSelectedTempSymbols = !gWatchlists[idxWL].bSelectedTempSymbols;
     } else {
-        if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
+        if (gWatchlists[idxWL].name == gsAccountWLSummary) {
+            gWatchlists[idxWL].bSelectedWLSummaryTemp = !gWatchlists[idxWL].bSelectedWLSummaryTemp;
+        } else if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
             gWatchlists[idxWL].bSelectedSOTemp = !gWatchlists[idxWL].bSelectedSOTemp;
         } else {
             gWatchlists[idxWL].bSelectedTemp = !gWatchlists[idxWL].bSelectedTemp;
@@ -11894,6 +13049,20 @@ function wlOKClicked() {
         for (let idx = 0; idx < gWatchlists.length; idx++) {
             if (gbDoingSymbolsSelect) {
                 gWatchlists[idx].bSelectedSymbols = gWatchlists[idx].bSelectedTempSymbols;
+            } else if (gWatchlists[idx].name == gsAccountWLSummary) {
+                gWatchlists[idx].bSelectedWLSummary = gWatchlists[idx].bSelectedWLSummaryTemp;
+                gWatchlists[idx].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
+                if (gWatchlists[idx].bSelectedWLSummary) {
+                    if (gWatchlists[idx].spanName == "") {
+                        gWatchlists[idx].spanName = gWatchlists[idx].watchlistId + gWatchlists[idx].accountId;
+                        wlAddDiv(gWatchlists[idx].spanName, "");
+                    }
+                } else {
+                    if (gWatchlists[idx].spanName != "") {
+                        wlRemoveDiv(gWatchlists[idx].spanName);
+                        gWatchlists[idx].spanName = "";
+                    }
+                }
             } else if (gWatchlists[idx].name == gsAccountSavedOrders) {
                 gWatchlists[idx].bSelectedSO = gWatchlists[idx].bSelectedSOTemp;
                 gWatchlists[idx].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
@@ -12003,7 +13172,11 @@ function wlWatchlistSelected() {
             idxWL = parseInt(x);
             if (!gbDoingSymbolsSelect) {
                 wlAskShowAllAccountsForEachSymbol();
-                if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
+                if (gWatchlists[idxWL].name == gsAccountWLSummary) {
+                    gWatchlists[idxWL].bSelectedWLSummary = true;
+                    gWatchlists[idxWL].bSelectedWLSummaryTemp = true;
+                    gWatchlists[idxWL].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
+                } else if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
                     gWatchlists[idxWL].bSelectedSO = true;
                     gWatchlists[idxWL].bSelectedTempSO = true;
                     gWatchlists[idxWL].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
