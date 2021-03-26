@@ -45,7 +45,7 @@
 
         //------   main.js code starts here   ---------------------------------------------------------------------------------
 
-        var gsCurrentVersion = "6.5 2021-03-26 00:00";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+        var gsCurrentVersion = "6.5 2021-03-26 00:09";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
         var gsInitialStartDate = "2020-05-01";
 
         String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -6766,7 +6766,7 @@
                                     sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
                                 } else { //not using cell
 
-                                    if (gWatchlists[idxWL].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
+                                    if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
                                         sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                                         sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                                         sThisDiv = sThisDiv + "<tr>";
