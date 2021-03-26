@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.5 2021-03-24 22:41";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.5 2021-03-26 00:00";  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -6446,289 +6446,170 @@ function GetWatchlistPrices() {
     let oWLItemDetail = new WLItemDetail();
 
     if (gWatchlists.length > 0) {
-        let sSymbols = "";
-        let sSep = "";
-        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-            if (gWatchlists[idxWL].bSelected) {
-                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
-                        sSymbols = sSymbols + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+        for (let idxWLMain = 0; idxWLMain < gWatchlists.length; idxWLMain++) {
+            if (gWatchlists[idxWLMain].bSelected) {
+                let sSymbols = "";
+                let sSep = "";
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
+                    if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
+                        sSymbols = sSymbols + sSep + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol;
                         sSep = ",";
                     }
                 }
                 sSymbols = GetUniqueListOfSymbols(sSymbols);
-            }
-        }
-        if (sSymbols.length > 0) {
-            let aSymbolsToUse = sSymbols.split(",");
 
-            gWLDisplayed.length = 0;
-            for (let idxSymbol = 0; idxSymbol < aSymbolsToUse.length; idxSymbol++) {
-                let sSymbol = aSymbolsToUse[idxSymbol];
-                if (!isUndefined(oMDQ[sSymbol])) {
-                    let oWLDisplayed = new WLDisplayed();
-                    oWLDisplayed.symbol = sSymbol;
-                    oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
+                if (sSymbols.length > 0) {
+                    let aSymbolsToUse = sSymbols.split(",");
 
-                    //get account position info if it exists
-                    let oPositions = new Array();
-                    for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                        if (gAccounts[idxAccount].positions.length > 0) {
-                            for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
-                                if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
+                    gWLDisplayed.length = 0;
+                    for (let idxSymbol = 0; idxSymbol < aSymbolsToUse.length; idxSymbol++) {
+                        let sSymbol = aSymbolsToUse[idxSymbol];
+                        if (!isUndefined(oMDQ[sSymbol])) {
+                            let oWLDisplayed = new WLDisplayed();
+                            oWLDisplayed.symbol = sSymbol;
+                            oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
+
+                            //get account position info if it exists
+                            let oPositions = new Array();
+                            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                                if ((gAccounts[idxAccount].positions.length > 0) &&
+                                    (gAccounts[idxAccount].accountId == gWatchlists[idxWLMain].accountId)) {
+                                    for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                        if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
+                                            let oPosition = new Position();
+                                            oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                            oPosition.accountId = gAccounts[idxAccount].accountId;
+                                            oPosition.accountName = gAccounts[idxAccount].accountName;
+                                            oPositions[oPositions.length] = oPosition;
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+
+                            oWLItemDetail = new WLItemDetail();
+                            if (oWLDisplayed.assetType == "OPTION") {
+                                if (!isUndefined(oMDQ[sSymbol].mark)) {
+                                    oWLItemDetail.lastPrice = oMDQ[sSymbol].mark;
+                                }
+                            } else if (oWLDisplayed.assetType == "INDEX") {
+                                if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
+                                    oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].highPrice)) {
+                                    oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
+                                    oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netChange)) {
+                                    oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
+                                    oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
+                                }
+                            } else {
+                                if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
+                                    oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].askPrice)) {
+                                    oWLItemDetail.askPrice = oMDQ[sSymbol].askPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].bidPrice)) {
+                                    oWLItemDetail.bidPrice = oMDQ[sSymbol].bidPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].highPrice)) {
+                                    oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
+                                    oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netChange)) {
+                                    oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
+                                    oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
+                                }
+
+                                if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                    oWLItemDetail.regularMarketLastPrice = oMDQ[sSymbol].regularMarketLastPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].regularMarketNetChange)) {
+                                    oWLItemDetail.regularMarketNetChange = oMDQ[sSymbol].regularMarketNetChange;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].regularMarketPercentChangeInDouble)) {
+                                    oWLItemDetail.regularMarketPercentChangeInDouble = oMDQ[sSymbol].regularMarketPercentChangeInDouble;
+                                }
+                                //"peRatio": 33.3568,
+                                if (!isUndefined(oMDQ[sSymbol].peRatio)) {
+                                    oWLItemDetail.peRatio = oMDQ[sSymbol].peRatio;
+                                }
+                                //"divAmount": 0.82,
+                                if (!isUndefined(oMDQ[sSymbol].divAmount)) {
+                                    oWLItemDetail.divAmount = oMDQ[sSymbol].divAmount;
+                                }
+                                //"divYield": 0.67,
+                                if (!isUndefined(oMDQ[sSymbol].divYield)) {
+                                    oWLItemDetail.divYield = oMDQ[sSymbol].divYield;
+                                }
+                                //"divDate": "2021-02-05 00:00:00.000",
+                                if (!isUndefined(oMDQ[sSymbol].divDate)) {
+                                    oWLItemDetail.divDate = oMDQ[sSymbol].divDate;
+                                }
+
+                            }
+                            if (oPositions.length > 0) {
+                                for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
                                     let oPosition = new Position();
-                                    oPosition = gAccounts[idxAccount].positions[idxPositions];
-                                    oPosition.accountId = gAccounts[idxAccount].accountId;
-                                    oPosition.accountName = gAccounts[idxAccount].accountName;
-                                    oPositions[oPositions.length] = oPosition;
+                                    oPosition = oPositions[idxPositions];
+
+                                    oWLItemDetail.shares = 0;
+                                    oWLItemDetail.dayGain = 0.0;
+                                    oWLItemDetail.costPerShare = 0.0;
+                                    oWLItemDetail.gain = 0.0;
+                                    oWLItemDetail.gainPercent = 0.0;
+                                    oWLItemDetail.accountId = "";
+                                    oWLItemDetail.marketValue = oPosition.marketValue;
+
+                                    oWLItemDetail.accountId = oPosition.accountId;
+                                    oWLItemDetail.accountName = oPosition.accountName;
+                                    oWLItemDetail.shares = oPosition.longQuantity;
+                                    oWLItemDetail.dayGain = oPosition.currentDayProfitLoss;
+                                    oWLItemDetail.costPerShare = oPosition.averagePrice;
+                                    if (oWLItemDetail.shares > 0) {
+                                        oWLItemDetail.gain = oWLItemDetail.shares * (oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare);
+                                        if (oWLItemDetail.costPerShare != 0.0) {
+                                            oWLItemDetail.gainPercent = ((oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare) / oWLItemDetail.costPerShare) * 100.0;
+                                        }
+                                    }
+                                    oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
                                 }
+                            } else {
+                                oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
                             }
+                            gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
+
                         }
                     }
 
-                    oWLItemDetail = new WLItemDetail();
-                    if (oWLDisplayed.assetType == "OPTION") {
-                        if (!isUndefined(oMDQ[sSymbol].mark)) {
-                            oWLItemDetail.lastPrice = oMDQ[sSymbol].mark;
-                        }
-                    } else if (oWLDisplayed.assetType == "INDEX") {
-                        if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
-                            oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].highPrice)) {
-                            oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
-                            oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netChange)) {
-                            oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
-                            oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
-                        }
-                    } else {
-                        if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
-                            oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].askPrice)) {
-                            oWLItemDetail.askPrice = oMDQ[sSymbol].askPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].bidPrice)) {
-                            oWLItemDetail.bidPrice = oMDQ[sSymbol].bidPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].highPrice)) {
-                            oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
-                            oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netChange)) {
-                            oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
-                            oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
-                        }
+                    //now show the results
+                    let sThisDiv = "";
+                    let sThisTable = "";
+                    let sLastWLName = "";
+                    let sLastWLAccountName = "";
+                    let sLastWLAccountId = "";
+                    let sThisId = "";
+                    let sHeadingTextAlign = "right";
+                    let sBodyTextAlign = "right";
+                    let sTableRowVerticalAlignment = "middle";
+                    let sTmp = "";
+                    let bEverythingIsChecked = true;
 
-                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
-                            oWLItemDetail.regularMarketLastPrice = oMDQ[sSymbol].regularMarketLastPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].regularMarketNetChange)) {
-                            oWLItemDetail.regularMarketNetChange = oMDQ[sSymbol].regularMarketNetChange;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].regularMarketPercentChangeInDouble)) {
-                            oWLItemDetail.regularMarketPercentChangeInDouble = oMDQ[sSymbol].regularMarketPercentChangeInDouble;
-                        }
-                        //"peRatio": 33.3568,
-                        if (!isUndefined(oMDQ[sSymbol].peRatio)) {
-                            oWLItemDetail.peRatio = oMDQ[sSymbol].peRatio;
-                        }
-                        //"divAmount": 0.82,
-                        if (!isUndefined(oMDQ[sSymbol].divAmount)) {
-                            oWLItemDetail.divAmount = oMDQ[sSymbol].divAmount;
-                        }
-                        //"divYield": 0.67,
-                        if (!isUndefined(oMDQ[sSymbol].divYield)) {
-                            oWLItemDetail.divYield = oMDQ[sSymbol].divYield;
-                        }
-                        //"divDate": "2021-02-05 00:00:00.000",
-                        if (!isUndefined(oMDQ[sSymbol].divDate)) {
-                            oWLItemDetail.divDate = oMDQ[sSymbol].divDate;
-                        }
+                    if (gWLDisplayed.length > 0) {
 
-                    }
-                    if (oPositions.length > 0) {
-                        let sWLAccountIds = "";
-                        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                            if (gWatchlists[idxWL].bSelected) {
-                                if (sWLAccountIds.indexOf("," + gWatchlists[idxWL].accountId + ",") == -1) {
-                                    sWLAccountIds = sWLAccountIds + "," + gWatchlists[idxWL].accountId + ",";
-                                }
-                            }
-                        }
-                        let oWLItemDetailOrig = new WLItemDetail();
-                        oWLItemDetailOrig.accountId = oWLItemDetail.accountId;
-                        oWLItemDetailOrig.accountName = oWLItemDetail.accountName;
-                        oWLItemDetailOrig.askPrice = oWLItemDetail.askPrice;
-                        oWLItemDetailOrig.bidPrice = oWLItemDetail.bidPrice;
-                        oWLItemDetailOrig.costPerShare = oWLItemDetail.costPerShare;
-                        oWLItemDetailOrig.marketValue = oWLItemDetail.marketValue;
-                        oWLItemDetailOrig.dayGain = oWLItemDetail.dayGain;
-                        oWLItemDetailOrig.gain = oWLItemDetail.gain;
-                        oWLItemDetailOrig.gainPercent = oWLItemDetail.gainPercent;
-                        oWLItemDetailOrig.highPrice = oWLItemDetail.highPrice;
-                        oWLItemDetailOrig.lastPrice = oWLItemDetail.lastPrice;
-                        oWLItemDetailOrig.lowPrice = oWLItemDetail.lowPrice;
-                        oWLItemDetailOrig.netChange = oWLItemDetail.netChange;
-                        oWLItemDetailOrig.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
-                        oWLItemDetailOrig.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-                        oWLItemDetailOrig.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-                        oWLItemDetailOrig.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-                        oWLItemDetailOrig.shares = oWLItemDetail.shares;
+                        gWLDisplayed.sort(sortBySymbol);
 
-                        oWLItemDetailOrig.peRatio = oWLItemDetail.peRatio;
-                        oWLItemDetailOrig.divAmount = oWLItemDetail.divAmount;
-                        oWLItemDetailOrig.divDate = oWLItemDetail.divDate;
-                        oWLItemDetailOrig.divYield = oWLItemDetail.divYield;
-
-                        for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
-                            let oPosition = new Position();
-                            oPosition = oPositions[idxPositions];
-                            sWLAccountIds = sWLAccountIds.replace("," + oPosition.accountId + ",", "");
-
-                            oWLItemDetail.shares = 0;
-                            oWLItemDetail.dayGain = 0.0;
-                            oWLItemDetail.costPerShare = 0.0;
-                            oWLItemDetail.gain = 0.0;
-                            oWLItemDetail.gainPercent = 0.0;
-                            oWLItemDetail.accountId = "";
-                            oWLItemDetail.marketValue = oPosition.marketValue;
-
-                            oWLItemDetail.accountId = oPosition.accountId;
-                            oWLItemDetail.accountName = oPosition.accountName;
-                            oWLItemDetail.shares = oPosition.longQuantity;
-                            oWLItemDetail.dayGain = oPosition.currentDayProfitLoss;
-                            oWLItemDetail.costPerShare = oPosition.averagePrice;
-                            if (oWLItemDetail.shares > 0) {
-                                oWLItemDetail.gain = oWLItemDetail.shares * (oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare);
-                                if (oWLItemDetail.costPerShare != 0.0) {
-                                    oWLItemDetail.gainPercent = ((oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare) / oWLItemDetail.costPerShare) * 100.0;
-                                }
-                            }
-                            let oWLItemDetailTmp = new WLItemDetail();
-                            oWLItemDetailTmp.accountId = oWLItemDetail.accountId;
-                            oWLItemDetailTmp.accountName = oWLItemDetail.accountName;
-                            oWLItemDetailTmp.askPrice = oWLItemDetail.askPrice;
-                            oWLItemDetailTmp.bidPrice = oWLItemDetail.bidPrice;
-                            oWLItemDetailTmp.costPerShare = oWLItemDetail.costPerShare;
-                            oWLItemDetailTmp.marketValue = oWLItemDetail.marketValue;
-                            oWLItemDetailTmp.dayGain = oWLItemDetail.dayGain;
-                            oWLItemDetailTmp.gain = oWLItemDetail.gain;
-                            oWLItemDetailTmp.gainPercent = oWLItemDetail.gainPercent;
-                            oWLItemDetailTmp.highPrice = oWLItemDetail.highPrice;
-                            oWLItemDetailTmp.lastPrice = oWLItemDetail.lastPrice;
-                            oWLItemDetailTmp.lowPrice = oWLItemDetail.lowPrice;
-                            oWLItemDetailTmp.netChange = oWLItemDetail.netChange;
-                            oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
-                            oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-                            oWLItemDetailTmp.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-                            oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-                            oWLItemDetailTmp.shares = oWLItemDetail.shares;
-
-                            oWLItemDetailTmp.peRatio = oWLItemDetail.peRatio;
-                            oWLItemDetailTmp.divAmount = oWLItemDetail.divAmount;
-                            oWLItemDetailTmp.divDate = oWLItemDetail.divDate;
-                            oWLItemDetailTmp.divYield = oWLItemDetail.divYield;
-
-                            oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
-                        }
-                        if (sWLAccountIds.length > 0) {
-                            let re = /,,/g;
-                            sWLAccountIds = sWLAccountIds.replace(re, ",");
-                            sWLAccountIds = sWLAccountIds.substr(1, sWLAccountIds.length - 2);
-                            let aWLAccountIds = sWLAccountIds.split(",");
-                            for (let idxWLAccountIds = 0; idxWLAccountIds < aWLAccountIds.length; idxWLAccountIds++) {
-                                let oWLItemDetailTmp = new WLItemDetail();
-                                oWLItemDetailTmp.accountId = aWLAccountIds[idxWLAccountIds];
-                                oWLItemDetailTmp.accountName = "";
-                                oWLItemDetailTmp.askPrice = oWLItemDetailOrig.askPrice;
-                                oWLItemDetailTmp.bidPrice = oWLItemDetailOrig.bidPrice;
-                                oWLItemDetailTmp.costPerShare = oWLItemDetailOrig.costPerShare;
-                                oWLItemDetailTmp.marketValue = oWLItemDetailOrig.marketValue;
-                                oWLItemDetailTmp.dayGain = oWLItemDetailOrig.dayGain;
-                                oWLItemDetailTmp.gain = oWLItemDetailOrig.gain;
-                                oWLItemDetailTmp.gainPercent = oWLItemDetailOrig.gainPercent;
-                                oWLItemDetailTmp.highPrice = oWLItemDetailOrig.highPrice;
-                                oWLItemDetailTmp.lastPrice = oWLItemDetailOrig.lastPrice;
-                                oWLItemDetailTmp.lowPrice = oWLItemDetailOrig.lowPrice;
-                                oWLItemDetailTmp.netChange = oWLItemDetailOrig.netChange;
-                                oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetailOrig.netPercentChangeInDouble;
-                                oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetailOrig.regularMarketLastPrice;
-                                oWLItemDetailTmp.regularMarketNetChange = oWLItemDetailOrig.regularMarketNetChange;
-                                oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetailOrig.regularMarketPercentChangeInDouble;
-                                oWLItemDetailTmp.shares = oWLItemDetailOrig.shares;
-
-                                oWLItemDetailTmp.peRatio = oWLItemDetailOrig.peRatio;
-                                oWLItemDetailTmp.divAmount = oWLItemDetailOrig.divAmount;
-                                oWLItemDetailTmp.divDate = oWLItemDetailOrig.divDate;
-                                oWLItemDetailTmp.divYield = oWLItemDetailOrig.divYield;
-
-                                oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
-                            }
-                        }
-
-                    } else {
-                        let oWLItemDetailTmp = new WLItemDetail();
-                        oWLItemDetailTmp.accountId = oWLItemDetail.accountId;
-                        oWLItemDetailTmp.accountName = oWLItemDetail.accountName;
-                        oWLItemDetailTmp.askPrice = oWLItemDetail.askPrice;
-                        oWLItemDetailTmp.bidPrice = oWLItemDetail.bidPrice;
-                        oWLItemDetailTmp.costPerShare = oWLItemDetail.costPerShare;
-                        oWLItemDetailTmp.marketValue = oWLItemDetail.marketValue;
-                        oWLItemDetailTmp.dayGain = oWLItemDetail.dayGain;
-                        oWLItemDetailTmp.gain = oWLItemDetail.gain;
-                        oWLItemDetailTmp.gainPercent = oWLItemDetail.gainPercent;
-                        oWLItemDetailTmp.highPrice = oWLItemDetail.highPrice;
-                        oWLItemDetailTmp.lastPrice = oWLItemDetail.lastPrice;
-                        oWLItemDetailTmp.lowPrice = oWLItemDetail.lowPrice;
-                        oWLItemDetailTmp.netChange = oWLItemDetail.netChange;
-                        oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
-                        oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-                        oWLItemDetailTmp.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-                        oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-                        oWLItemDetailTmp.shares = oWLItemDetail.shares;
-
-                        oWLItemDetailTmp.peRatio = oWLItemDetail.peRatio;
-                        oWLItemDetailTmp.divAmount = oWLItemDetail.divAmount;
-                        oWLItemDetailTmp.divDate = oWLItemDetail.divDate;
-                        oWLItemDetailTmp.divYield = oWLItemDetail.divYield;
-
-                        oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
-                    }
-                    gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
-
-                }
-            }
-
-            //now show the results
-            let sThisDiv = "";
-            let sThisTable = "";
-            let sLastWLName = "";
-            let sLastWLAccountName = "";
-            let sLastWLAccountId = "";
-            let sThisId = "";
-            let sHeadingTextAlign = "right";
-            let sBodyTextAlign = "right";
-            let sTableRowVerticalAlignment = "middle";
-            let sTmp = "";
-            let bEverythingIsChecked = true;
-
-            if (gWLDisplayed.length > 0) {
-
-                gWLDisplayed.sort(sortBySymbol);
-
-                for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                    if (gWatchlists[idxWL].bSelected) {
                         bEverythingIsChecked = true;
                         let iTotalSymbolsUp = 0;
                         let iTotalSymbolsDown = 0;
@@ -6740,35 +6621,35 @@ function GetWatchlistPrices() {
                         let sSepForOrder = "|";
 
                         let bDoingDividendWL = false;
-                        if (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") != -1) {
+                        if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
                             bDoingDividendWL = true;
                         }
 
-                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
-                                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
+                            if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
+                                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol;
                                 sSep = ",";
 
                                 //sSymbolsSelectedForOrderThisWL will contain: |symbol,idxWLItem,true|symbol,idxWLItem,false...
-                                sSymbolsSelectedForOrderThisWL = sSymbolsSelectedForOrderThisWL + sSepForOrder + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "," + idxWLItem.toString() + "," + gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder;
+                                sSymbolsSelectedForOrderThisWL = sSymbolsSelectedForOrderThisWL + sSepForOrder + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol + "," + idxWLItem.toString() + "," + gWatchlists[idxWLMain].WLItems[idxWLItem].bSelectedForOrder;
                             }
                         }
                         sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
 
                         sThisDiv = "";
-                        sLastWLName = gWatchlists[idxWL].name;
-                        sLastWLAccountName = gWatchlists[idxWL].accountName;
-                        sLastWLAccountId = gWatchlists[idxWL].accountId;
-                        sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+                        sLastWLName = gWatchlists[idxWLMain].name;
+                        sLastWLAccountName = gWatchlists[idxWLMain].accountName;
+                        sLastWLAccountId = gWatchlists[idxWLMain].accountId;
+                        sThisId = gWatchlists[idxWLMain].watchlistId + sLastWLAccountId;
 
                         if (gbUsingCell) {
-                            if (gWatchlists[idxWL].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
+                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
                                 sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                                 sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th colspan=\"3\" style=\"height:30px;vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-                                sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                                sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                                 sThisDiv = sThisDiv + "</tr>";
 
@@ -6785,17 +6666,17 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWL.toString() + ")\" value=\"Add\" >" +
+                                    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
                                     "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                                     "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
 
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
 
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWL.toString() + ")\" value=\"Update G/L\" >" +
+                                    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
                                     "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
-                                sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                                sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
 
                                 sThisDiv = sThisDiv + "</tr>";
@@ -6804,7 +6685,7 @@ function GetWatchlistPrices() {
                             }
 
                             sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWL.toString() + ")\" value=\"Sell\" >" +
+                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
                                 "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:50px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
 
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
@@ -6812,13 +6693,13 @@ function GetWatchlistPrices() {
 
 
                             sThisDiv = sThisDiv + "<th style=\"text-align:center; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWL.toString() + ")\" value=\"Trailing Stop\" >" +
+                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
                                 "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%";
                             sThisDiv = sThisDiv + "</th>";
 
 
                             sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                            sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWL.toString() + ")\" value=\"Buy\" >" +
+                            sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
                                 "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                                 "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
@@ -6844,7 +6725,7 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-                                sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                                sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                                 sThisDiv = sThisDiv + "</tr>";
 
@@ -6862,17 +6743,17 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWL.toString() + ")\" value=\"Add\" >" +
+                                    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
                                     "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                                     "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWL.toString() + ")\" value=\"Update G/L\" >" +
+                                    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
                                     "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
-                                sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                                sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                                 sThisDiv = sThisDiv + "</tr>";
 
@@ -6880,19 +6761,19 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<th colspan=\"4\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
                             }
 
-                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWL.toString() + ")\" value=\"Sell\" >" +
+                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
                                 "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
 
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
 
 
                             sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                                "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWL.toString() + ")\" value=\"Trailing Stop\" >" +
+                                "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
                                 "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
 
 
                             sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWL.toString() + ")\" value=\"Buy\" >" +
+                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
                                 "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                                 "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:45px\" value=\"\">";
@@ -6915,9 +6796,9 @@ function GetWatchlistPrices() {
                         sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
 
                         sThisTable = sThisTable + "<tr>";
-                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
+                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + "000";
                         sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
-                            "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + "-1" + ")\">" +
+                            "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
                             "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
                             "<b><I>Symbol&nbsp;&nbsp;</I ></b></span></td > ";
 
@@ -6961,7 +6842,6 @@ function GetWatchlistPrices() {
                             sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Old&nbsp;G/L</I></b></td>";
                             sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Mkt&nbsp;Value</I></b></td>";
                         }
-
                         sThisTable = sThisTable + "</tr>";
 
                         let dTotalCost = 0.0;
@@ -6980,23 +6860,19 @@ function GetWatchlistPrices() {
                                 for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
                                     oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
                                     let bOkToShowThisDetail = false;
-                                    if (gWatchlists[idxWL].bShowAllAccountsForEachSymbol) {
+                                    if ((gWatchlists[idxWLMain].accountId == oWLItemDetail.accountId) ||
+                                        (oWLItemDetail.accountId == "")) {
                                         bOkToShowThisDetail = true;
-                                    } else {
-                                        if ((gWatchlists[idxWL].accountId == oWLItemDetail.accountId) ||
-                                            (oWLItemDetail.accountId == "")) {
-                                            bOkToShowThisDetail = true;
-                                        }
                                     }
 
                                     if (bOkToShowThisDetail) {
                                         iLineCnt++;
                                         let sCurrentPurchasedDate = "";
                                         let dCurrentAveragePrice = 0.0;
-                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                            if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                sCurrentPurchasedDate = gWatchlists[idxWL].WLItems[idxTmp].purchasedDate;
-                                                dCurrentAveragePrice = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                            if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                                sCurrentPurchasedDate = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
+                                                dCurrentAveragePrice = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
                                                 break;
                                             }
                                         }
@@ -7015,7 +6891,7 @@ function GetWatchlistPrices() {
                                             bEverythingIsChecked = false;
                                         }
 
-                                        let sThisTRId = "TR" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
+                                        let sThisTRId = "TR" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
                                         if (sChecked == "checked") {
                                             sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableSelectedRowBackgroundColor + ";\">";
                                         } else {
@@ -7026,9 +6902,9 @@ function GetWatchlistPrices() {
                                             }
                                         }
 
-                                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
+                                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
                                         sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
-                                            "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + sThisidxWLItem + ")\">" +
+                                            "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
                                             "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
                                             sSymbol + "</span></td>";
 
@@ -7087,7 +6963,7 @@ function GetWatchlistPrices() {
                                             sTmp = oWLItemDetail.divDate;
                                             if (sTmp != "") {
                                                 sTmp = "&nbsp;&nbsp;&nbsp;&nbsp;" + sTmp.split(" ")[0];
-                                            } 
+                                            }
                                             if (goWLDisplayed[sThisId + sSymbol].divDate == oWLItemDetail.divDate) {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
                                             } else {
@@ -7120,9 +6996,9 @@ function GetWatchlistPrices() {
                                         if (!bDoingDividendWL) {
                                             //Acquired
                                             sTmp = "";
-                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                    sTmp = gWatchlists[idxWL].WLItems[idxTmp].purchasedDate;
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                                    sTmp = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
                                                     break;
                                                 }
                                             }
@@ -7373,9 +7249,9 @@ function GetWatchlistPrices() {
                                         if (!bDoingDividendWL) {
                                             //Old G/L
                                             let dTmpOrig = 0.0;
-                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                    dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                                    dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
                                                     break;
                                                 }
                                             }
@@ -7427,9 +7303,9 @@ function GetWatchlistPrices() {
 
                                             //Old G/L
                                             let dTmpOrig = 0.0;
-                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                    dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                                    dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
                                                     break;
                                                 }
                                             }
@@ -7460,9 +7336,9 @@ function GetWatchlistPrices() {
 
                                             //Acquired
                                             sTmp = "";
-                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                                if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                    sTmp = gWatchlists[idxWL].WLItems[idxTmp].purchasedDate;
+                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                                if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                                    sTmp = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
                                                     break;
                                                 }
                                             }
@@ -7483,7 +7359,7 @@ function GetWatchlistPrices() {
                                         }
 
                                         sThisTable = sThisTable + "</tr>";
-                                    //    iLineCnt++;
+                                        //    iLineCnt++;
                                     }
                                 }
                             }
@@ -7500,7 +7376,7 @@ function GetWatchlistPrices() {
                             } else {
                                 sThisTable = sThisTable + "<tr><td colspan=\"14\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
                             }
-                            if (iLineCnt != gWatchlists[idxWL].WLItems.length) {
+                            if (iLineCnt != gWatchlists[idxWLMain].WLItems.length) {
                                 //debugger
                                 return;
                                 sThisTable = sThisTable + "<I>*Day</I>";
@@ -7553,7 +7429,7 @@ function GetWatchlistPrices() {
                             }
                             if (sLastWLName == "Account") {
                                 for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                                    if (gWatchlists[idxWL].accountId == gAccounts[idxAccount].accountId) {
+                                    if (gWatchlists[idxWLMain].accountId == gAccounts[idxAccount].accountId) {
                                         //this.IBliquidationValue = 0.0;
                                         //this.CBliquidationValue = 0.0;
                                         //this.CBcashBalance = 0.0;
@@ -7582,17 +7458,6 @@ function GetWatchlistPrices() {
                                 } else {
                                     sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
                                 }
-                                //sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;";
-                                //if (dTotalCost == 0) {
-                                //    sTmp = "0.00";
-                                //} else {
-                                //    sTmp = FormatDecimalNumber((dTotalGain / dTotalCost) * 100, 5, 2, "");
-                                //}
-                                //if (dTotalGain < 0.0) {
-                                //    sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "%</span>";
-                                //} else {
-                                //    sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
-                                //}
                                 sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
                                 sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
                             }
@@ -7606,33 +7471,26 @@ function GetWatchlistPrices() {
 
                             sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
                         }
-                        if (gWatchlists[idxWL].spanName == "") {
-                            gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-                            wlAddDiv(gWatchlists[idxWL].spanName, sThisDiv);
+                        if (gWatchlists[idxWLMain].spanName == "") {
+                            gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
+                            wlAddDiv(gWatchlists[idxWLMain].spanName, sThisDiv);
                         } else {
-                            if (document.getElementById(gWatchlists[idxWL].spanName).innerHTML == "") {
-                                document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
+                            if (document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML == "") {
+                                document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
                             } else {
                                 document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
                             }
                         }
-                    }
-                }
-
-            } else {
-                //no symbols found for the selected watchlists 
-                //                                                    sThisDiv = "";
-                for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                    if (gWatchlists[idxWL].bSelected) {
-
+                    } else {
+                        //no symbols found for the selected watchlist 
                         sThisDiv = "";
-                        sLastWLName = gWatchlists[idxWL].name;
-                        sLastWLAccountName = gWatchlists[idxWL].accountName;
+                        sLastWLName = gWatchlists[idxWLMain].name;
+                        sLastWLAccountName = gWatchlists[idxWLMain].accountName;
                         sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                         sThisDiv = sThisDiv + "<table style=\"width:100%; border-width:1px; border-style:solid;border-spacing:1px;border-color:White;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                         sThisDiv = sThisDiv + "<tr>";
                         sThisDiv = sThisDiv + "<th style=\"width:780px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-                        sThisDiv = sThisDiv + "<th style=\"width:18px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"width:18px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">X&nbsp;&nbsp;</th>";
                         //                                                            sThisDiv = sThisDiv + "<th style=\"width:100%; vertical-align:top; border-width:1px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
                         sThisDiv = sThisDiv + "</tr>";
                         sThisDiv = sThisDiv + "<tr>";
@@ -7660,305 +7518,58 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "</tr>";
 
                         sThisDiv = sThisDiv + "</table></div></td></tr></table></div>";
-                        if (gWatchlists[idxWL].spanName == "") {
-                            gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-                            wlAddDiv(gWatchlists[idxWL].spanName, sThisDiv);
+                        if (gWatchlists[idxWLMain].spanName == "") {
+                            gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
+                            wlAddDiv(gWatchlists[idxWLMain].spanName, sThisDiv);
                         } else {
-                            document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
+                            document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
                         }
                     }
-                }
-            }
-        } else { //no symbols found for any selected watchlist
-            //now show the results
-            let sThisDiv = "";
-            let sThisTable = "";
-            let sLastWLName = "";
-            let sLastWLAccountName = "";
-            let sLastWLAccountId = "";
-            let sThisId = "";
-            let sHeadingTextAlign = "right";
-            let sBodyTextAlign = "right";
-            let sTableRowVerticalAlignment = "middle";
-            let sTmp = "";
-            let bEverythingIsChecked = true;
-
-            for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                if (gWatchlists[idxWL].bSelected) {
-                    bEverythingIsChecked = true;
-                    let iTotalSymbolsUp = 0;
-                    let iTotalSymbolsDown = 0;
-                    let iTotalSymbolsUpDay = 0;
-                    let iTotalSymbolsDownDay = 0;
-
+                } else {
+                    //no symbols found for the selected watchlist 
                     sThisDiv = "";
-                    sLastWLName = gWatchlists[idxWL].name;
-                    sLastWLAccountName = gWatchlists[idxWL].accountName;
-                    sLastWLAccountId = gWatchlists[idxWL].accountId;
-                    sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+                    sLastWLName = gWatchlists[idxWLMain].name;
+                    sLastWLAccountName = gWatchlists[idxWLMain].accountName;
+                    sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisDiv = sThisDiv + "<table style=\"width:100%; border-width:1px; border-style:solid;border-spacing:1px;border-color:White;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisDiv = sThisDiv + "<tr>";
+                    sThisDiv = sThisDiv + "<th style=\"width:780px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
+                    sThisDiv = sThisDiv + "<th style=\"width:18px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">X&nbsp;&nbsp;</th>";
+                    //                                                            sThisDiv = sThisDiv + "<th style=\"width:100%; vertical-align:top; border-width:1px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
+                    sThisDiv = sThisDiv + "</tr>";
+                    sThisDiv = sThisDiv + "<tr>";
+                    sThisDiv = sThisDiv + "<td style=\"width:100%; vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+                    sThisDiv = sThisDiv + "<div style=\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
 
-                    if (gbUsingCell) {
-                        if (gWatchlists[idxWL].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
-                            sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            sThisDiv = sThisDiv + "<tr>";
+                    sThisDiv = sThisDiv + "<table style=\"width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
 
-                            sThisDiv = sThisDiv + "<th colspan=\"3\" style=\"height:30px;vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                    sThisDiv = sThisDiv + "<tr>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:left;vertical-align:top;border-width:0px;\"><I>Symbol&nbsp;&nbsp;</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:left;vertical-align:top;border-width:0px;\"><I>Acct&nbsp;&nbsp;</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Qty</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Price</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Chg(%)</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Chg($)</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;&nbsp;Bid</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;&nbsp;Ask</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;Day gain($)</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Gain($)</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Gain(%)</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Cost</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Old&nbsp;G/L</I></td>";
+                    sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Mkt&nbsp;Value</I></td>";
 
-                            sThisDiv = sThisDiv + "</tr>";
+                    sThisDiv = sThisDiv + "</tr>";
 
-                            sThisDiv = sThisDiv + "<tr>";
-
-                        } else {
-                            sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            sThisDiv = sThisDiv + "<tr>";
-
-                            sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWL.toString() + ")\" value=\"Add\" >" +
-                                "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWL.toString() + ")\" value=\"Close\" >" +
-                                "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-
-                            sThisDiv = sThisDiv + "</tr>";
-
-                            sThisDiv = sThisDiv + "<tr>";
-                        }
-
-                        sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWL.toString() + ")\" value=\"Sell\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:50px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
-
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
-                        sThisDiv = sThisDiv + "</th>";
-
-
-                        sThisDiv = sThisDiv + "<th style=\"text-align:center; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWL.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%";
-                        sThisDiv = sThisDiv + "</th>";
-
-
-                        sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWL.toString() + ")\" value=\"Buy\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                            "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkbuyLimit" + sThisId + "\" name=\"chkbuyLimit" + sThisId + "\" value=\"\" > Limit";
-                        sThisDiv = sThisDiv + "</th > ";
-
-                        sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;";
-
-                        sThisDiv = sThisDiv + "</th > ";
-
-                        sThisDiv = sThisDiv + "</tr>";
-
-
-                        sThisDiv = sThisDiv + "<tr>";
-
-                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+                    sThisDiv = sThisDiv + "</table></div></td></tr></table></div>";
+                    if (gWatchlists[idxWLMain].spanName == "") {
+                        gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
+                        wlAddDiv(gWatchlists[idxWLMain].spanName, sThisDiv);
                     } else {
-
-                        if (gWatchlists[idxWL].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
-                            sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            sThisDiv = sThisDiv + "<tr>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol1Width.toString() + "; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                            sThisDiv = sThisDiv + "</tr>";
-
-                            sThisDiv = sThisDiv + "<tr>";
-                            sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
-
-                        } else {
-                            sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            sThisDiv = sThisDiv + "<tr>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWL.toString() + ")\" value=\"Add\" >" +
-                                "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWL.toString() + ")\" value=\"Close\" >" +
-                                "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                            sThisDiv = sThisDiv + "</tr>";
-
-                            sThisDiv = sThisDiv + "<tr>";
-                            sThisDiv = sThisDiv + "<th colspan=\"4\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
-                        }
-
-                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWL.toString() + ")\" value=\"Sell\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
-
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
-
-
-                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWL.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
-
-
-                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWL.toString() + ")\" value=\"Buy\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                            "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:45px\" value=\"\">";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkbuyLimit" + sThisId + "\" name=\"chkbuyLimit" + sThisId + "\" value=\"\" > Limit";
-
-                        sThisDiv = sThisDiv + "</th > ";
-
-                        sThisDiv = sThisDiv + "</tr>";
-
-
-                        sThisDiv = sThisDiv + "<tr>";
-
-                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-
-                    }
-
-
-                    sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-
-                    sThisTable = "";
-                    sThisTable = sThisTable + "<table style=\"width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-
-                    sThisTable = sThisTable + "<tr>";
-                    let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
-                    sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
-                        "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + "-1" + ")\">" +
-                        "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-                        "<I>Symbol&nbsp;&nbsp;</I ></span></td > ";
-
-                    sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Acct&nbsp;&nbsp;</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Qty</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Price</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Chg(%)</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Chg($)</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Bid</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Ask</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Day&nbsp;gain($)</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Gain($)</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Gain(%)</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Cost/share</I></td>";
-                    sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Mkt&nbsp;Value</I></td>";
-
-                    sThisTable = sThisTable + "</tr>";
-
-                    let dTotalCost = 0.0;
-                    let dTotalHoldingsGain = 0.0;
-                    let dTotalGain = 0.0;
-                    if (sThisTable != "") {
-                        let sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-                        sThisTable = sThisTable + "<tr><td colspan=\"13\" style=\"text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
-                        sThisTable = sThisTable + "<I>Day</I>";
-                        sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUpDay.toString() + "</span>";
-                        sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownDay.toString() + "</span>";
-                        sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Cost:&nbsp;";
-                        sTmp = FormatDecimalNumber(dTotalCost, 5, 2, "");
-                        sThisTable = sThisTable + sTmp;
-                        sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G/L:&nbsp;";
-                        sTmp = FormatDecimalNumber(dTotalHoldingsGain, 5, 2, "");
-                        if (dTotalHoldingsGain < 0.0) {
-                            sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
-                        } else {
-                            sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
-                        }
-                        sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;";
-                        if (dTotalCost == 0) {
-                            sTmp = "0.00";
-                        } else {
-                            sTmp = FormatDecimalNumber((dTotalHoldingsGain / dTotalCost) * 100, 5, 2, "");
-                        }
-                        if (dTotalHoldingsGain < 0.0) {
-                            sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "%</span>";
-                        } else {
-                            sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
-                        }
-                        if (sLastWLName == "Account") {
-                            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                                if (gWatchlists[idxWL].accountId == gAccounts[idxAccount].accountId) {
-                                    //this.IBliquidationValue = 0.0;
-                                    //this.CBliquidationValue = 0.0;
-                                    //this.CBcashBalance = 0.0;
-                                    if (gAccounts[idxAccount].CBliquidationValue != 0) {
-                                        sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;Cash:&nbsp;";
-                                        let dCashPercentage = gAccounts[idxAccount].CBcashBalance / gAccounts[idxAccount].CBliquidationValue;
-                                        sTmp = FormatDecimalNumber(dCashPercentage * 100, 5, 2, "");
-                                        if (dCashPercentage < 0.0) {
-                                            sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "%</span>";
-                                        } else {
-                                            sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
-                                        }
-
-                                        sThisTable = sThisTable + sPrecedingSpaces + "<I>Portfolio</I>";
-                                        sThisTable = sThisTable + "&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
-                                        sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
-                                    }
-                                }
-                            }
-                        } else {
-                            sThisTable = sThisTable + sPrecedingSpaces + "<I>Portfolio</I>";
-                            sThisTable = sThisTable + "&nbsp;&nbsp;G/L:&nbsp;";
-                            sTmp = FormatDecimalNumber(dTotalGain, 5, 2, "");
-                            if (dTotalGain < 0.0) {
-                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
-                            } else {
-                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
-                            }
-                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;";
-                            if (dTotalCost == 0) {
-                                sTmp = "0.00";
-                            } else {
-                                sTmp = FormatDecimalNumber((dTotalGain / dTotalCost) * 100, 5, 2, "");
-                            }
-                            if (dTotalGain < 0.0) {
-                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "%</span>";
-                            } else {
-                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
-                            }
-                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
-                            sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
-                        }
-
-                        sThisTable = sThisTable + "<b></td></tr>";
-
-                        sThisTable = sThisTable + "</table>";
-                        if (bEverythingIsChecked) {
-                            sThisTable = sThisTable.replace("xxthisWillBeReplacedxx", "checked");
-                        }
-
-                        sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
-                    }
-                    if (gWatchlists[idxWL].spanName == "") {
-                        gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-                        wlAddDiv(gWatchlists[idxWL].spanName, sThisDiv);
-                    } else {
-                        if (document.getElementById(gWatchlists[idxWL].spanName).innerHTML == "") {
-                            document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
-                        } else {
-                            document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
-                        }
+                        document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
                     }
                 }
             }
-
         }
     }
 }
@@ -9044,509 +8655,356 @@ function GetWatchlistSummary() {
     let sDate = FormatDateWithTime(dt, true, false);
 
     if (gWatchlists.length > 0) {
-        let sSymbols = "";
-        let sSep = "";
-        let sWLAccountIdsMaster = "";
-        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-            if (gWatchlists[idxWL].bSelectedWLSummary) {
-                if (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") == -1) {
-                    sWLAccountIdsMaster = sWLAccountIdsMaster + "," + gWatchlists[idxWL].accountId + ",";
-                }
-            }
-        }
-        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-            if ((gWatchlists[idxWL].name != gsAccountSavedOrders) && 
-                (gWatchlists[idxWL].name != gsAccountWLSummary) &&
-                (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&  
-                (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
-                (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") != -1)  ) {
-                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
-                        sSymbols = sSymbols + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                        sSep = ",";
-                    }
-                }
-                sSymbols = GetUniqueListOfSymbols(sSymbols);
-            }
-        }
-        if (sSymbols.length > 0) {
-            let aSymbolsToUse = sSymbols.split(",");
-            gWLDisplayed.length = 0;
-            for (let idxSymbol = 0; idxSymbol < aSymbolsToUse.length; idxSymbol++) {
-                let sSymbol = aSymbolsToUse[idxSymbol];
-                if (!isUndefined(oMDQ[sSymbol])) {
-                    let oWLDisplayed = new WLDisplayed();
-                    oWLDisplayed.symbol = sSymbol;
-                    oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
-
-                    //get account position info if it exists
-                    let oPositions = new Array();
-                    for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                        if (gAccounts[idxAccount].positions.length > 0) {
-                            for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
-                                if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
-                                    let oPosition = new Position();
-                                    oPosition = gAccounts[idxAccount].positions[idxPositions];
-                                    oPosition.accountId = gAccounts[idxAccount].accountId;
-                                    oPosition.accountName = gAccounts[idxAccount].accountName;
-                                    oPositions[oPositions.length] = oPosition;
-                                }
-                            }
-                        }
-                    }
-
-                    oWLItemDetail = new WLItemDetail();
-                    if (oWLDisplayed.assetType == "OPTION") {
-                        if (!isUndefined(oMDQ[sSymbol].mark)) {
-                            oWLItemDetail.lastPrice = oMDQ[sSymbol].mark;
-                        }
-                    } else if (oWLDisplayed.assetType == "INDEX") {
-                        if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
-                            oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].highPrice)) {
-                            oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
-                            oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netChange)) {
-                            oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
-                            oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
-                        }
-                    } else {
-                        if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
-                            oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].askPrice)) {
-                            oWLItemDetail.askPrice = oMDQ[sSymbol].askPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].bidPrice)) {
-                            oWLItemDetail.bidPrice = oMDQ[sSymbol].bidPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].highPrice)) {
-                            oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
-                            oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netChange)) {
-                            oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
-                            oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
-                        }
-
-                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
-                            oWLItemDetail.regularMarketLastPrice = oMDQ[sSymbol].regularMarketLastPrice;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].regularMarketNetChange)) {
-                            oWLItemDetail.regularMarketNetChange = oMDQ[sSymbol].regularMarketNetChange;
-                        }
-                        if (!isUndefined(oMDQ[sSymbol].regularMarketPercentChangeInDouble)) {
-                            oWLItemDetail.regularMarketPercentChangeInDouble = oMDQ[sSymbol].regularMarketPercentChangeInDouble;
-                        }
-                    }
-                    if (oPositions.length > 0) {
-                        let sWLAccountIds = "";
-                        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                            if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
-                                (gWatchlists[idxWL].name != gsAccountWLSummary) &&
-                                (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&  
-                                (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
-                                (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") != -1)) {
-                                if (sWLAccountIds.indexOf("," + gWatchlists[idxWL].accountId + ",") == -1) {
-                                    sWLAccountIds = sWLAccountIds + "," + gWatchlists[idxWL].accountId + ",";
-                                }
-                            }
-                        }
-                        let oWLItemDetailOrig = new WLItemDetail();
-                        oWLItemDetailOrig.accountId = oWLItemDetail.accountId;
-                        oWLItemDetailOrig.accountName = oWLItemDetail.accountName;
-                        oWLItemDetailOrig.askPrice = oWLItemDetail.askPrice;
-                        oWLItemDetailOrig.bidPrice = oWLItemDetail.bidPrice;
-                        oWLItemDetailOrig.costPerShare = oWLItemDetail.costPerShare;
-                        oWLItemDetailOrig.marketValue = oWLItemDetail.marketValue;
-                        oWLItemDetailOrig.dayGain = oWLItemDetail.dayGain;
-                        oWLItemDetailOrig.gain = oWLItemDetail.gain;
-                        oWLItemDetailOrig.gainPercent = oWLItemDetail.gainPercent;
-                        oWLItemDetailOrig.highPrice = oWLItemDetail.highPrice;
-                        oWLItemDetailOrig.lastPrice = oWLItemDetail.lastPrice;
-                        oWLItemDetailOrig.lowPrice = oWLItemDetail.lowPrice;
-                        oWLItemDetailOrig.netChange = oWLItemDetail.netChange;
-                        oWLItemDetailOrig.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
-                        oWLItemDetailOrig.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-                        oWLItemDetailOrig.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-                        oWLItemDetailOrig.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-                        oWLItemDetailOrig.shares = oWLItemDetail.shares;
-
-                        for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
-                            let oPosition = new Position();
-                            oPosition = oPositions[idxPositions];
-                            sWLAccountIds = sWLAccountIds.replace("," + oPosition.accountId + ",", "");
-
-                            oWLItemDetail.shares = 0;
-                            oWLItemDetail.dayGain = 0.0;
-                            oWLItemDetail.costPerShare = 0.0;
-                            oWLItemDetail.gain = 0.0;
-                            oWLItemDetail.gainPercent = 0.0;
-                            oWLItemDetail.accountId = "";
-                            oWLItemDetail.marketValue = oPosition.marketValue;
-
-                            oWLItemDetail.accountId = oPosition.accountId;
-                            oWLItemDetail.accountName = oPosition.accountName;
-                            oWLItemDetail.shares = oPosition.longQuantity;
-                            oWLItemDetail.dayGain = oPosition.currentDayProfitLoss;
-                            oWLItemDetail.costPerShare = oPosition.averagePrice;
-                            if (oWLItemDetail.shares > 0) {
-                                oWLItemDetail.gain = oWLItemDetail.shares * (oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare);
-                                if (oWLItemDetail.costPerShare != 0.0) {
-                                    oWLItemDetail.gainPercent = ((oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare) / oWLItemDetail.costPerShare) * 100.0;
-                                }
-                            }
-                            let oWLItemDetailTmp = new WLItemDetail();
-                            oWLItemDetailTmp.accountId = oWLItemDetail.accountId;
-                            oWLItemDetailTmp.accountName = oWLItemDetail.accountName;
-                            oWLItemDetailTmp.askPrice = oWLItemDetail.askPrice;
-                            oWLItemDetailTmp.bidPrice = oWLItemDetail.bidPrice;
-                            oWLItemDetailTmp.costPerShare = oWLItemDetail.costPerShare;
-                            oWLItemDetailTmp.marketValue = oWLItemDetail.marketValue;
-                            oWLItemDetailTmp.dayGain = oWLItemDetail.dayGain;
-                            oWLItemDetailTmp.gain = oWLItemDetail.gain;
-                            oWLItemDetailTmp.gainPercent = oWLItemDetail.gainPercent;
-                            oWLItemDetailTmp.highPrice = oWLItemDetail.highPrice;
-                            oWLItemDetailTmp.lastPrice = oWLItemDetail.lastPrice;
-                            oWLItemDetailTmp.lowPrice = oWLItemDetail.lowPrice;
-                            oWLItemDetailTmp.netChange = oWLItemDetail.netChange;
-                            oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
-                            oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-                            oWLItemDetailTmp.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-                            oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-                            oWLItemDetailTmp.shares = oWLItemDetail.shares;
-
-                            oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
-                        }
-                        if (sWLAccountIds.length > 0) {
-                            let re = /,,/g;
-                            sWLAccountIds = sWLAccountIds.replace(re, ",");
-                            sWLAccountIds = sWLAccountIds.substr(1, sWLAccountIds.length - 2);
-                            let aWLAccountIds = sWLAccountIds.split(",");
-                            for (let idxWLAccountIds = 0; idxWLAccountIds < aWLAccountIds.length; idxWLAccountIds++) {
-                                let oWLItemDetailTmp = new WLItemDetail();
-                                oWLItemDetailTmp.accountId = aWLAccountIds[idxWLAccountIds];
-                                oWLItemDetailTmp.accountName = "";
-                                oWLItemDetailTmp.askPrice = oWLItemDetailOrig.askPrice;
-                                oWLItemDetailTmp.bidPrice = oWLItemDetailOrig.bidPrice;
-                                oWLItemDetailTmp.costPerShare = oWLItemDetailOrig.costPerShare;
-                                oWLItemDetailTmp.marketValue = oWLItemDetailOrig.marketValue;
-                                oWLItemDetailTmp.dayGain = oWLItemDetailOrig.dayGain;
-                                oWLItemDetailTmp.gain = oWLItemDetailOrig.gain;
-                                oWLItemDetailTmp.gainPercent = oWLItemDetailOrig.gainPercent;
-                                oWLItemDetailTmp.highPrice = oWLItemDetailOrig.highPrice;
-                                oWLItemDetailTmp.lastPrice = oWLItemDetailOrig.lastPrice;
-                                oWLItemDetailTmp.lowPrice = oWLItemDetailOrig.lowPrice;
-                                oWLItemDetailTmp.netChange = oWLItemDetailOrig.netChange;
-                                oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetailOrig.netPercentChangeInDouble;
-                                oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetailOrig.regularMarketLastPrice;
-                                oWLItemDetailTmp.regularMarketNetChange = oWLItemDetailOrig.regularMarketNetChange;
-                                oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetailOrig.regularMarketPercentChangeInDouble;
-                                oWLItemDetailTmp.shares = oWLItemDetailOrig.shares;
-                                oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
-                            }
-                        }
-
-                    } else {
-                        let oWLItemDetailTmp = new WLItemDetail();
-                        oWLItemDetailTmp.accountId = oWLItemDetail.accountId;
-                        oWLItemDetailTmp.accountName = oWLItemDetail.accountName;
-                        oWLItemDetailTmp.askPrice = oWLItemDetail.askPrice;
-                        oWLItemDetailTmp.bidPrice = oWLItemDetail.bidPrice;
-                        oWLItemDetailTmp.costPerShare = oWLItemDetail.costPerShare;
-                        oWLItemDetailTmp.marketValue = oWLItemDetail.marketValue;
-                        oWLItemDetailTmp.dayGain = oWLItemDetail.dayGain;
-                        oWLItemDetailTmp.gain = oWLItemDetail.gain;
-                        oWLItemDetailTmp.gainPercent = oWLItemDetail.gainPercent;
-                        oWLItemDetailTmp.highPrice = oWLItemDetail.highPrice;
-                        oWLItemDetailTmp.lastPrice = oWLItemDetail.lastPrice;
-                        oWLItemDetailTmp.lowPrice = oWLItemDetail.lowPrice;
-                        oWLItemDetailTmp.netChange = oWLItemDetail.netChange;
-                        oWLItemDetailTmp.netPercentChangeInDouble = oWLItemDetail.netPercentChangeInDouble;
-                        oWLItemDetailTmp.regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-                        oWLItemDetailTmp.regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-                        oWLItemDetailTmp.regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-                        oWLItemDetailTmp.shares = oWLItemDetail.shares;
-                        oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetailTmp;
-                    }
-                    gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
-
-                }
-            }
-
-            //now show the results
-            let sLastWLName = "";
-            let sLastWLId = "";
-            let sLastWLAccountName = "";
-            let sLastWLAccountId = "";
-            let sThisId = "";
-            let sTmp = "";
-
-            if (gWLDisplayed.length > 0) {
-
-                gWLDisplayed.sort(sortBySymbol);
-
-                gWLSummaryDisplayed.length = 0;
-
+        for (let idxWLSummaryMain = 0; idxWLSummaryMain < gWatchlists.length; idxWLSummaryMain++) {
+            if (gWatchlists[idxWLSummaryMain].bSelectedWLSummary) {
+                let sSymbols = "";
+                let sSep = "";
                 for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                     if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
                         (gWatchlists[idxWL].name != gsAccountWLSummary) &&
-                        (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&  
+                        (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&
                         (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
-                        (sWLAccountIdsMaster.indexOf("," + gWatchlists[idxWL].accountId + ",") != -1)) {
-
-                        let iTotalSymbolsUp = 0;
-                        let iTotalSymbolsDown = 0;
-                        let iTotalSymbolsUpDay = 0;
-                        let iTotalSymbolsDownDay = 0;
-                        let sSymbolsThisWL = "";
-                        let sSep = "";
-
+                        (gWatchlists[idxWL].accountId == gWatchlists[idxWLSummaryMain].accountId)) {
                         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                             if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
-                                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                                sSymbols = sSymbols + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
                                 sSep = ",";
                             }
                         }
+                        sSymbols = GetUniqueListOfSymbols(sSymbols);
+                    }
+                }
 
-                        sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
-
-                        sLastWLName = gWatchlists[idxWL].name;
-                        sLastWLAccountName = gWatchlists[idxWL].accountName;
-                        sLastWLAccountId = gWatchlists[idxWL].accountId;
-                        sLastWLId = gWatchlists[idxWL].watchlistId;
-                        sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
-
-                        let dTotalCost = 0.0;
-                        let iLineCnt = 0;
-                        let dTotalHoldingsGain = 0.0;
-                        let dTotalGain = 0.0;
-                        let dTotalDayGain = 0.0;
-                        for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                if (sSymbols.length > 0) {
+                    let aSymbolsToUse = sSymbols.split(",");
+                    gWLDisplayed.length = 0;
+                    for (let idxSymbol = 0; idxSymbol < aSymbolsToUse.length; idxSymbol++) {
+                        let sSymbol = aSymbolsToUse[idxSymbol];
+                        if (!isUndefined(oMDQ[sSymbol])) {
                             let oWLDisplayed = new WLDisplayed();
-                            oWLDisplayed = gWLDisplayed[idxDisplayed];
-                            let sSymbol = oWLDisplayed.symbol;
-                            let oWLItemDetail = new WLItemDetail();
-                            let dCost = 0.0;
-                            let dQty = 0.0;
-                            if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
-                                for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                                    oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-                                    if ((gWatchlists[idxWL].accountId == oWLItemDetail.accountId) ||
-                                        (oWLItemDetail.accountId == "")) {
-                                        iLineCnt++;
+                            oWLDisplayed.symbol = sSymbol;
+                            oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
 
-                                        //Qty
-                                        sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
-                                        dQty = parseFloat(sTmp);
-
-                                        sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
-                                        dTotalDayGain = dTotalDayGain + parseFloat(sTmp);
-                                        if (parseFloat(sTmp) < 0.0) {
-                                            if (oWLItemDetail.shares > 0.0) {
-                                                iTotalSymbolsDownDay++;
-                                            }
-                                        } else if (parseFloat(sTmp) > 0.0) {
-                                            if (oWLItemDetail.shares > 0.0) {
-                                                iTotalSymbolsUpDay++;
-                                            }
-                                        }
-
-                                        sTmp = FormatDecimalNumber(oWLItemDetail.gain, 5, 2, "");
-                                        if (parseFloat(sTmp) < 0.0) {
-                                            if (oWLItemDetail.shares > 0.0) {
-                                                iTotalSymbolsDown++;
-                                            }
-                                        } else if (parseFloat(sTmp) > 0.0) {
-                                            if (oWLItemDetail.shares > 0.0) {
-                                                iTotalSymbolsUp++;
-                                            }
-                                        }
-                                        dTotalGain = dTotalGain + parseFloat(sTmp);
-                                        dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
-
-                                        //Cost
-                                        sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
-                                        dCost = parseFloat(sTmp);
-                                        dTotalCost = dTotalCost + (dCost * dQty);
-
-                                        //Old G/L
-                                        let dTmpOrig = 0.0;
-                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                            if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                                dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                            //get account position info if it exists
+                            let oPositions = new Array();
+                            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                                if (gAccounts[idxAccount].positions.length > 0) {
+                                    if (gAccounts[idxAccount].accountId == gWatchlists[idxWLSummaryMain].accountId) {
+                                        for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                            if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
+                                                let oPosition = new Position();
+                                                oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                                oPosition.accountId = gAccounts[idxAccount].accountId;
+                                                oPosition.accountName = gAccounts[idxAccount].accountName;
+                                                oPositions[oPositions.length] = oPosition;
                                                 break;
                                             }
                                         }
-                                        sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-                                        let dTmp = parseFloat(sTmp);
-                                        dTotalGain = dTotalGain + dTmp;
-
-                                    }
-                                //    iLineCnt++;
-
-                                //    //Qty
-                                //    sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
-                                //    dQty = parseFloat(sTmp);
-
-                                //    sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
-                                //    dTotalDayGain = dTotalDayGain + parseFloat(sTmp);
-                                //    if (parseFloat(sTmp) < 0.0) {
-                                //        if (oWLItemDetail.shares > 0.0) {
-                                //            iTotalSymbolsDownDay++;
-                                //        }
-                                //    } else if (parseFloat(sTmp) > 0.0) {
-                                //        if (oWLItemDetail.shares > 0.0) {
-                                //            iTotalSymbolsUpDay++;
-                                //        }
-                                //    }
-
-                                //    sTmp = FormatDecimalNumber(oWLItemDetail.gain, 5, 2, "");
-                                //    if (parseFloat(sTmp) < 0.0) {
-                                //        if (oWLItemDetail.shares > 0.0) {
-                                //            iTotalSymbolsDown++;
-                                //        }
-                                //    } else if (parseFloat(sTmp) > 0.0) {
-                                //        if (oWLItemDetail.shares > 0.0) {
-                                //            iTotalSymbolsUp++;
-                                //        }
-                                //    }
-                                //    dTotalGain = dTotalGain + parseFloat(sTmp);
-                                //    dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
-
-                                //    //Cost
-                                //    sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
-                                //    dCost = parseFloat(sTmp);
-                                //    dTotalCost = dTotalCost + (dCost * dQty);
-
-                                //    //Old G/L
-                                //    let dTmpOrig = 0.0;
-                                //    for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
-                                //        if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
-                                //            dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
-                                //            break;
-                                //        }
-                                //    }
-                                //    sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-                                //    let dTmp = parseFloat(sTmp);
-                                //    dTotalGain = dTotalGain + dTmp;
-                                }
-                            }
-
-                        }
-                        if (iLineCnt != 0) {
-
-                            if ((isUndefined(goWLSummaryDisplayed)) || (isUndefined(goWLSummaryDisplayed[sThisId]))) {
-                                let oT = {
-                                    "watchlistName": sLastWLName,
-                                    "dayUp": iTotalSymbolsUpDay,
-                                    "dayDown": iTotalSymbolsDownDay,
-                                    "dayCost": dTotalCost,
-                                    "dayGain": dTotalDayGain,
-                                    "dayGainPercent": (dTotalCost == 0 ? 0 : (dTotalDayGain / dTotalCost) * 100),
-                                    "holdingsGain": dTotalHoldingsGain,
-                                    "holdingsGainPercent": (dTotalCost == 0 ? 0 : (dTotalHoldingsGain / dTotalCost) * 100),
-                                    "holdingsUp": iTotalSymbolsUp,
-                                    "holdingsDown": iTotalSymbolsDown,
-                                    "portfolioGain": dTotalGain
-                                }
-                                goWLSummaryDisplayed[sThisId] = oT;
-                            }
-                            let oSummaryDisplay = new WLSummaryDisplayed();
-                            oSummaryDisplay.accountId = sLastWLAccountId;
-                            oSummaryDisplay.accountName = sLastWLAccountName;
-                            let idxSummaryDisplayed = -1;
-                            if (gWLSummaryDisplayed.length == 0) {
-                                gWLSummaryDisplayed[gWLSummaryDisplayed.length] = oSummaryDisplay;
-                                idxSummaryDisplayed = 0;
-                            } else {
-                                for (let idx = 0; idx < gWLSummaryDisplayed.length; idx++) {
-                                    if (gWLSummaryDisplayed[idx].accountId == oSummaryDisplay.accountId) {
-                                        idxSummaryDisplayed = idx;
                                         break;
                                     }
                                 }
                             }
-                            if (idxSummaryDisplayed > -1) {
-                                let oItemDay = new WLSummaryDayItemDetail();
-                                let oItemHolding = new WLSummaryHoldingItemDetail();
-                                let oItemPortfolio = new WLSummaryPortfolioItemDetail();
-                                oItemDay.cost = dTotalCost;
-                                oItemDay.down = iTotalSymbolsDownDay;
-                                oItemDay.gain = dTotalDayGain;
-                                if (dTotalCost == 0) {
-                                    oItemDay.gainPercent = 0;
-                                } else {
-                                    oItemDay.gainPercent = (dTotalDayGain / dTotalCost) * 100;
+
+                            oWLItemDetail = new WLItemDetail();
+                            if (oWLDisplayed.assetType == "OPTION") {
+                                if (!isUndefined(oMDQ[sSymbol].mark)) {
+                                    oWLItemDetail.lastPrice = oMDQ[sSymbol].mark;
                                 }
-                                oItemDay.up = iTotalSymbolsUpDay;
-                                oItemDay.watchlistName = sLastWLName;
-                                oItemDay.watchlistId = sLastWLId;
-
-                                oItemHolding.gain = dTotalHoldingsGain;
-                                if (dTotalCost == 0) {
-                                    oItemHolding.gainPercent = 0;
-                                } else {
-                                    oItemHolding.gainPercent = (dTotalHoldingsGain / dTotalCost) * 100;
+                            } else if (oWLDisplayed.assetType == "INDEX") {
+                                if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
+                                    oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
                                 }
-                                oItemHolding.up = iTotalSymbolsUp;
-                                oItemHolding.down = iTotalSymbolsDown;
-                                oItemHolding.watchlistName = sLastWLName;
-                                oItemHolding.watchlistId = sLastWLId;
-
-                                oItemPortfolio.gain = dTotalGain;
-                                oItemPortfolio.watchlistName = sLastWLName;
-                                oItemPortfolio.watchlistId = sLastWLId;
-
-                                gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryDayItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryDayItemDetails.length] = oItemDay;
-                                gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryHoldingItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryHoldingItemDetails.length] = oItemHolding;
-                                gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryPortfolioItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryPortfolioItemDetails.length] = oItemPortfolio;
+                                if (!isUndefined(oMDQ[sSymbol].highPrice)) {
+                                    oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
+                                    oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netChange)) {
+                                    oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
+                                    oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
+                                }
                             } else {
-                                //should never get here
-                            }
-                        }
+                                if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
+                                    oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].askPrice)) {
+                                    oWLItemDetail.askPrice = oMDQ[sSymbol].askPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].bidPrice)) {
+                                    oWLItemDetail.bidPrice = oMDQ[sSymbol].bidPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].highPrice)) {
+                                    oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
+                                    oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netChange)) {
+                                    oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
+                                    oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
+                                }
 
+                                if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                    oWLItemDetail.regularMarketLastPrice = oMDQ[sSymbol].regularMarketLastPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].regularMarketNetChange)) {
+                                    oWLItemDetail.regularMarketNetChange = oMDQ[sSymbol].regularMarketNetChange;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol].regularMarketPercentChangeInDouble)) {
+                                    oWLItemDetail.regularMarketPercentChangeInDouble = oMDQ[sSymbol].regularMarketPercentChangeInDouble;
+                                }
+                            }
+                            if (oPositions.length > 0) {
+                                for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
+                                    let oPosition = new Position();
+                                    oPosition = oPositions[idxPositions];
+
+                                    oWLItemDetail.shares = 0;
+                                    oWLItemDetail.dayGain = 0.0;
+                                    oWLItemDetail.costPerShare = 0.0;
+                                    oWLItemDetail.gain = 0.0;
+                                    oWLItemDetail.gainPercent = 0.0;
+                                    oWLItemDetail.accountId = "";
+                                    oWLItemDetail.marketValue = oPosition.marketValue;
+
+                                    oWLItemDetail.accountId = oPosition.accountId;
+                                    oWLItemDetail.accountName = oPosition.accountName;
+                                    oWLItemDetail.shares = oPosition.longQuantity;
+                                    oWLItemDetail.dayGain = oPosition.currentDayProfitLoss;
+                                    oWLItemDetail.costPerShare = oPosition.averagePrice;
+                                    if (oWLItemDetail.shares > 0) {
+                                        oWLItemDetail.gain = oWLItemDetail.shares * (oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare);
+                                        if (oWLItemDetail.costPerShare != 0.0) {
+                                            oWLItemDetail.gainPercent = ((oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare) / oWLItemDetail.costPerShare) * 100.0;
+                                        }
+                                    }
+                                    oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
+                                }
+                            } else {
+                                oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
+                            }
+                            gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
+                        }
                     }
-                }
-                //-------------------------------------------------------------------------------
-                //have all data so show results
-                let sHeadingTextAlign = "center";
-                let sBodyTextAlign = "center";
-                let sTableRowVerticalAlignment = "middle";
-                let iLineCnt = 0;
-                let sThisDiv = "";
-                let sThisTable = "";
-                if (gWLSummaryDisplayed.length > 0) {
-                    for (let idxWLSummary = 0; idxWLSummary < gWLSummaryDisplayed.length; idxWLSummary++) {
-                        gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.sort(sortByDayGainPercent);
-                        gWLSummaryDisplayed[idxWLSummary].WLSummaryHoldingItemDetails.sort(sortByHoldingGainPercent);
-                        gWLSummaryDisplayed[idxWLSummary].WLSummaryPortfolioItemDetails.sort(sortByPortfolioGain);
+
+                    //now show the results
+                    let sLastWLName = "";
+                    let sLastWLId = "";
+                    let sLastWLAccountName = "";
+                    let sLastWLAccountId = "";
+                    let sThisId = "";
+                    let sTmp = "";
+
+                    if (gWLDisplayed.length > 0) {
+
+                        gWLDisplayed.sort(sortBySymbol);
+
+                        gWLSummaryDisplayed.length = 0;
 
                         for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                            if ((gWatchlists[idxWL].bSelectedWLSummary) && (gWatchlists[idxWL].accountId == gWLSummaryDisplayed[idxWLSummary].accountId)) {
+                            if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                                (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                                (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&
+                                (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
+                                (gWatchlists[idxWL].accountId == gWatchlists[idxWLSummaryMain].accountId)) {
 
-                                sThisDiv = "";
+                                let iTotalSymbolsUp = 0;
+                                let iTotalSymbolsDown = 0;
+                                let iTotalSymbolsUpDay = 0;
+                                let iTotalSymbolsDownDay = 0;
+                                let sSymbolsThisWL = "";
+                                let sSep = "";
+
+                                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelected) {
+                                        sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                                        sSep = ",";
+                                    }
+                                }
+
+                                sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
+
                                 sLastWLName = gWatchlists[idxWL].name;
                                 sLastWLAccountName = gWatchlists[idxWL].accountName;
                                 sLastWLAccountId = gWatchlists[idxWL].accountId;
+                                sLastWLId = gWatchlists[idxWL].watchlistId;
                                 sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+
+                                let dTotalCost = 0.0;
+                                let iLineCnt = 0;
+                                let dTotalHoldingsGain = 0.0;
+                                let dTotalGain = 0.0;
+                                let dTotalDayGain = 0.0;
+                                for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                                    let oWLDisplayed = new WLDisplayed();
+                                    oWLDisplayed = gWLDisplayed[idxDisplayed];
+                                    let sSymbol = oWLDisplayed.symbol;
+                                    let oWLItemDetail = new WLItemDetail();
+                                    let dCost = 0.0;
+                                    let dQty = 0.0;
+                                    if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
+                                        for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+                                            oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+                                            if ((gWatchlists[idxWL].accountId == oWLItemDetail.accountId) ||
+                                                (oWLItemDetail.accountId == "")) {
+                                                iLineCnt++;
+
+                                                //Qty
+                                                sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
+                                                dQty = parseFloat(sTmp);
+
+                                                sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
+                                                dTotalDayGain = dTotalDayGain + parseFloat(sTmp);
+                                                if (parseFloat(sTmp) < 0.0) {
+                                                    if (oWLItemDetail.shares > 0.0) {
+                                                        iTotalSymbolsDownDay++;
+                                                    }
+                                                } else if (parseFloat(sTmp) > 0.0) {
+                                                    if (oWLItemDetail.shares > 0.0) {
+                                                        iTotalSymbolsUpDay++;
+                                                    }
+                                                }
+
+                                                sTmp = FormatDecimalNumber(oWLItemDetail.gain, 5, 2, "");
+                                                if (parseFloat(sTmp) < 0.0) {
+                                                    if (oWLItemDetail.shares > 0.0) {
+                                                        iTotalSymbolsDown++;
+                                                    }
+                                                } else if (parseFloat(sTmp) > 0.0) {
+                                                    if (oWLItemDetail.shares > 0.0) {
+                                                        iTotalSymbolsUp++;
+                                                    }
+                                                }
+                                                dTotalGain = dTotalGain + parseFloat(sTmp);
+                                                dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
+
+                                                //Cost
+                                                sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
+                                                dCost = parseFloat(sTmp);
+                                                dTotalCost = dTotalCost + (dCost * dQty);
+
+                                                //Old G/L
+                                                let dTmpOrig = 0.0;
+                                                for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
+                                                    if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
+                                                        dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                                        break;
+                                                    }
+                                                }
+                                                sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                                let dTmp = parseFloat(sTmp);
+                                                dTotalGain = dTotalGain + dTmp;
+
+                                            }
+                                        }
+                                    }
+
+                                }
+                                if (iLineCnt != 0) {
+
+                                    if ((isUndefined(goWLSummaryDisplayed)) || (isUndefined(goWLSummaryDisplayed[sThisId]))) {
+                                        let oT = {
+                                            "watchlistName": sLastWLName,
+                                            "dayUp": iTotalSymbolsUpDay,
+                                            "dayDown": iTotalSymbolsDownDay,
+                                            "dayCost": dTotalCost,
+                                            "dayGain": dTotalDayGain,
+                                            "dayGainPercent": (dTotalCost == 0 ? 0 : (dTotalDayGain / dTotalCost) * 100),
+                                            "holdingsGain": dTotalHoldingsGain,
+                                            "holdingsGainPercent": (dTotalCost == 0 ? 0 : (dTotalHoldingsGain / dTotalCost) * 100),
+                                            "holdingsUp": iTotalSymbolsUp,
+                                            "holdingsDown": iTotalSymbolsDown,
+                                            "portfolioGain": dTotalGain
+                                        }
+                                        goWLSummaryDisplayed[sThisId] = oT;
+                                    }
+                                    let oSummaryDisplay = new WLSummaryDisplayed();
+                                    oSummaryDisplay.accountId = sLastWLAccountId;
+                                    oSummaryDisplay.accountName = sLastWLAccountName;
+                                    let idxSummaryDisplayed = -1;
+                                    if (gWLSummaryDisplayed.length == 0) {
+                                        gWLSummaryDisplayed[gWLSummaryDisplayed.length] = oSummaryDisplay;
+                                        idxSummaryDisplayed = 0;
+                                    } else {
+                                        for (let idx = 0; idx < gWLSummaryDisplayed.length; idx++) {
+                                            if (gWLSummaryDisplayed[idx].accountId == oSummaryDisplay.accountId) {
+                                                idxSummaryDisplayed = idx;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (idxSummaryDisplayed > -1) {
+                                        let oItemDay = new WLSummaryDayItemDetail();
+                                        let oItemHolding = new WLSummaryHoldingItemDetail();
+                                        let oItemPortfolio = new WLSummaryPortfolioItemDetail();
+                                        oItemDay.cost = dTotalCost;
+                                        oItemDay.down = iTotalSymbolsDownDay;
+                                        oItemDay.gain = dTotalDayGain;
+                                        if (dTotalCost == 0) {
+                                            oItemDay.gainPercent = 0;
+                                        } else {
+                                            oItemDay.gainPercent = (dTotalDayGain / dTotalCost) * 100;
+                                        }
+                                        oItemDay.up = iTotalSymbolsUpDay;
+                                        oItemDay.watchlistName = sLastWLName;
+                                        oItemDay.watchlistId = sLastWLId;
+
+                                        oItemHolding.gain = dTotalHoldingsGain;
+                                        if (dTotalCost == 0) {
+                                            oItemHolding.gainPercent = 0;
+                                        } else {
+                                            oItemHolding.gainPercent = (dTotalHoldingsGain / dTotalCost) * 100;
+                                        }
+                                        oItemHolding.up = iTotalSymbolsUp;
+                                        oItemHolding.down = iTotalSymbolsDown;
+                                        oItemHolding.watchlistName = sLastWLName;
+                                        oItemHolding.watchlistId = sLastWLId;
+
+                                        oItemPortfolio.gain = dTotalGain;
+                                        oItemPortfolio.watchlistName = sLastWLName;
+                                        oItemPortfolio.watchlistId = sLastWLId;
+
+                                        gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryDayItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryDayItemDetails.length] = oItemDay;
+                                        gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryHoldingItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryHoldingItemDetails.length] = oItemHolding;
+                                        gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryPortfolioItemDetails[gWLSummaryDisplayed[idxSummaryDisplayed].WLSummaryPortfolioItemDetails.length] = oItemPortfolio;
+                                    } else {
+                                        //should never get here
+                                    }
+                                }
+
+                            }
+                        }
+                        //-------------------------------------------------------------------------------
+                        //have all data so show results
+                        let sHeadingTextAlign = "center";
+                        let sBodyTextAlign = "center";
+                        let sTableRowVerticalAlignment = "middle";
+                        let iLineCnt = 0;
+                        let sThisDiv = "";
+                        let sThisTable = "";
+                        if (gWLSummaryDisplayed.length > 0) {
+                            for (let idxWLSummary = 0; idxWLSummary < gWLSummaryDisplayed.length; idxWLSummary++) {
+                                gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.sort(sortByDayGainPercent);
+                                gWLSummaryDisplayed[idxWLSummary].WLSummaryHoldingItemDetails.sort(sortByHoldingGainPercent);
+                                gWLSummaryDisplayed[idxWLSummary].WLSummaryPortfolioItemDetails.sort(sortByPortfolioGain);
+
+                                sThisDiv = "";
+                                sLastWLName = gWatchlists[idxWLSummaryMain].name;
+                                sLastWLAccountName = gWatchlists[idxWLSummaryMain].accountName;
+                                sLastWLAccountId = gWatchlists[idxWLSummaryMain].accountId;
+                                sThisId = gWatchlists[idxWLSummaryMain].watchlistId + sLastWLAccountId;
 
                                 sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                                 sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                                 sThisDiv = sThisDiv + "<tr>";
 
-                                sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol1Width.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + sLastWLAccountName + "--" + sLastWLName + "<span id=\"spanSummaryDate" + sThisId + "\" name=\"spanSummaryDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;"  + sDate + "</b></span></th>";
-                                sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                                sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol1Width.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + sLastWLAccountName + "--" + sLastWLName + "<span id=\"spanSummaryDate" + sThisId + "\" name=\"spanSummaryDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th>";
+                                sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLSummaryMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                                 sThisDiv = sThisDiv + "</tr>";
 
@@ -9612,11 +9070,11 @@ function GetWatchlistSummary() {
                                             sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                         } else {
                                             if (parseFloat(sTmp) < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "%</td>";
                                             } else if (parseFloat(sTmp) > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "%</td>";
                                             } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "%</td>";
                                             }
                                         }
                                     } else {
@@ -9624,11 +9082,11 @@ function GetWatchlistSummary() {
                                             sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">nbsp;</td>";
                                         } else {
                                             if (parseFloat(sTmp) < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "%</b></td>";
                                             } else if (parseFloat(sTmp) > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "%</b></td>";
                                             } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "%</b></td>";
                                             }
                                         }
                                         goWLSummaryDisplayed[sSummaryOldId].dayGainPercent = oWLSummaryDayItem.gainPercent;
@@ -9696,11 +9154,11 @@ function GetWatchlistSummary() {
                                             sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                         } else {
                                             if (parseFloat(sTmp) < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "%</td>";
                                             } else if (parseFloat(sTmp) > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "%</td>";
                                             } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "%</td>";
                                             }
                                         }
                                     } else {
@@ -9708,11 +9166,11 @@ function GetWatchlistSummary() {
                                             sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">nbsp;</td>";
                                         } else {
                                             if (parseFloat(sTmp) < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "%</b></td>";
                                             } else if (parseFloat(sTmp) > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "%</b></td>";
                                             } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "%</b></td>";
                                             }
                                         }
                                         goWLSummaryDisplayed[sSummaryOldId].holdingGainPercent = oWLSummaryHoldingItem.gainPercent;
@@ -9786,12 +9244,12 @@ function GetWatchlistSummary() {
                                 sThisTable = sThisTable + "</table >";
                                 sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
 
-                                if (gWatchlists[idxWL].spanName == "") {
-                                    gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-                                    wlAddDiv(gWatchlists[idxWL].spanName, sThisDiv);
+                                if (gWatchlists[idxWLSummaryMain].spanName == "") {
+                                    gWatchlists[idxWLSummaryMain].spanName = gWatchlists[idxWLSummaryMain].watchlistId + gWatchlists[idxWLSummaryMain].accountId;
+                                    wlAddDiv(gWatchlists[idxWLSummaryMain].spanName, sThisDiv);
                                 } else {
-                                    if (document.getElementById(gWatchlists[idxWL].spanName).innerHTML == "") {
-                                        document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
+                                    if (document.getElementById(gWatchlists[idxWLSummaryMain].spanName).innerHTML == "") {
+                                        document.getElementById(gWatchlists[idxWLSummaryMain].spanName).innerHTML = sThisDiv;
                                     } else {
                                         if (!isUndefined(document.getElementById("spanSummaryDate" + sThisId))) {
                                             document.getElementById("spanSummaryDate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
@@ -9801,11 +9259,9 @@ function GetWatchlistSummary() {
                                 }
                             }
                         }
-
                     }
-                } 
-                //-------------------------------------------------------------------------------
-            } 
+                }
+            }
         }
     }
 }
@@ -10829,7 +10285,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    //debugger
+    debugger
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
     try {
