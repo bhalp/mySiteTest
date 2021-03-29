@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.5 2021-03-29 02:07"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.5 2021-03-29 11:01"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -211,6 +211,12 @@ function WLDisplayed() {
 var gWLDisplayed = new Array(); //array of WLDisplayed objects
 var goWLDisplayed = []; //will contain the last WL item values to be used to determine if the display should be highlighted
 
+function WLSummaryRank() {
+    this.watchlistName = "";
+    this.watchlistId = "";
+    this.rank = 0;
+}
+
 function WLSummaryDayItemDetail() {
     this.watchlistName = "";
     this.watchlistId = "";
@@ -219,6 +225,7 @@ function WLSummaryDayItemDetail() {
     this.cost = 0.0;
     this.gain = 0.0;
     this.gainPercent = 0.0;
+    this.rank = 0;
 }
 
 function WLSummaryHoldingItemDetail() {
@@ -6677,7 +6684,7 @@ function GetWatchlistPrices() {
                                     "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
 
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "<span style=\"vertical-align: middle;\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                                    "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                     "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
                                     "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
 
@@ -6760,7 +6767,7 @@ function GetWatchlistPrices() {
                                     "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" + 
-                                                      "<span style=\"vertical-align: middle;\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                                                      "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                                       "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
                                                       "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
 
@@ -8585,6 +8592,45 @@ function GetWatchlistSummary() {
                                     gWLSummaryDisplayed[idxWLSummary].WLSummaryHoldingItemDetails.sort(sortByHoldingGainPercent);
                                     gWLSummaryDisplayed[idxWLSummary].WLSummaryPortfolioItemDetails.sort(sortByPortfolioGain);
 
+                                    //get WL ranking
+                                    //debugger
+                                    let aRank = new Array();
+                                    for (let idxDisplayed = 0; idxDisplayed < gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.length; idxDisplayed++) {
+                                        let oWLSummaryDayItem = new WLSummaryDayItemDetail();
+                                        oWLSummaryDayItem = gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed];
+                                        if (oWLSummaryDayItem.cost > 0) {
+                                            let iRank = idxDisplayed + 1;
+                                            for (let idxRank = 0; idxRank < gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.length; idxRank++) {
+                                                if (oWLSummaryDayItem.watchlistId == gWLSummaryDisplayed[idxWLSummary].WLSummaryHoldingItemDetails[idxRank].watchlistId) {
+                                                    iRank = iRank + idxRank + 1;
+                                                }
+                                                if (oWLSummaryDayItem.watchlistId == gWLSummaryDisplayed[idxWLSummary].WLSummaryPortfolioItemDetails[idxRank].watchlistId) {
+                                                    iRank = iRank + idxRank + 1;
+                                                }
+                                            }
+                                            let oRank = new WLSummaryRank();
+                                            oRank.rank = iRank;
+                                            oRank.watchlistId = oWLSummaryDayItem.watchlistId;
+                                            oRank.watchlistName = oWLSummaryDayItem.watchlistName;
+                                            aRank[aRank.length] = oRank;
+                                        }
+                                    }
+                                    aRank.sort(sortByRank);
+                                    let iLastRank = 0;
+                                    let iCurrentRank = 0;
+                                    for (let idxRank = 0; idxRank < aRank.length; idxRank++) {
+                                        if (aRank[idxRank].rank > iLastRank) {
+                                            iCurrentRank++;
+                                            iLastRank = aRank[idxRank].rank;
+                                        }
+                                        for (let idxDisplayed = 0; idxDisplayed < gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.length; idxDisplayed++) {
+                                            if (gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed].watchlistId == aRank[idxRank].watchlistId) {
+                                                gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed].rank = iCurrentRank;
+                                                break;
+                                            }
+                                        }
+                                    }
+
                                     sThisDiv = "";
                                     sLastWLName = gWatchlists[idxWLSummaryMain].name;
                                     sLastWLAccountName = gWatchlists[idxWLSummaryMain].accountName;
@@ -8596,7 +8642,7 @@ function GetWatchlistSummary() {
                                     sThisDiv = sThisDiv + "<tr>";
 
                                     sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol1Width.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
-                                        "<span style=\"vertical-align: middle;\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                                        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                         "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
                                         "<span style=\"vertical-align: middle;\" id=\"spanSummaryDate" + sThisId + "\" name=\"spanSummaryDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th > ";
                                     sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLSummaryMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
@@ -8655,7 +8701,11 @@ function GetWatchlistSummary() {
                                         sTmp = sTmp + "<span style=\"color:green;vertical-align:" + sTableRowVerticalAlignment + ";\">" + oWLSummaryDayItem.up.toString() + "</span>"
                                         sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">,</span>";
                                         sTmp = sTmp + "<span style=\"color:" + gsNegativeColor + ";vertical-align:" + sTableRowVerticalAlignment + ";\">" + oWLSummaryDayItem.down.toString() + "</span>";
-                                        sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)</span>";
+                                        if (oWLSummaryDayItem.rank > 0) {
+                                            sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)&nbsp;" + oWLSummaryDayItem.rank.toString() + "</span>";
+                                        } else {
+                                            sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)</span>";
+                                        }
                                         sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
 
                                         //Day gain percent
@@ -11751,6 +11801,16 @@ function sortByPortfolioGain(a, b) {
     }
     if (a.gain > b.gain) {
         return -1;
+    }
+    return 0;
+}
+
+function sortByRank(a, b) {
+    if (a.rank < b.rank) {
+        return -1;
+    }
+    if (a.rank > b.rank) {
+        return 1;
     }
     return 0;
 }
