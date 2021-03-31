@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.5 2021-03-29 11:01"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.5 2021-03-30 18:42"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -11114,14 +11114,18 @@ function PostWLTrailingStopOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProg
 }
 
 function printdiv(printdivname) {
-    let headstr = "<html><head><title>Booking Details</title></head><body>";
-    let footstr1 = "</"; let footstr2 = "body>"; let footstr = footstr1 + footstr2; 
+    window.setTimeout("printdiv_do('" + printdivname + "')", 300);
+}
+
+function printdiv_do(printdivname) {
+    let headstr = "<html><head><title>Watchlist Details</title></head><body>";
+    let footstr1 = "</"; let footstr2 = "body>"; let footstr = footstr1 + footstr2;
     let newstr = document.getElementById(printdivname).innerHTML;
     let oldstr = document.body.innerHTML;
     document.body.innerHTML = headstr + newstr + footstr;
     window.print();
     document.body.innerHTML = oldstr;
-    return false;
+    window.setTimeout("wlResetDragAllWatchlists()", 1000);
 }
 
 function ReportTimeOut() {
@@ -12009,12 +12013,9 @@ function wlAddDiv(sSpanId, sDiv) {
     x.innerHTML = sDiv;
 
     document.body.appendChild(x);
-    if (gbUsingCell) {
-        drag_div(sSpanId);
-    } else {
-        drag_divWL(sSpanId);
-    }
+    wlSetupDragDiv(sSpanId);
 }
+
 
 function wlAskShowAllAccountsForEachSymbol() {
     gbWLShowAllAccountsForSymbol = false;
@@ -12266,6 +12267,28 @@ function wlRemoveDiv(sDivId) {
         item.parentNode.removeChild(item);
     } catch (e) {
 
+    }
+}
+
+function wlResetDragAllWatchlists() {
+    if (gWatchlists.length > 0) {
+        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+            if (gWatchlists[idxWL].spanName != "") {
+                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary)) {
+                    if (!isUndefined(document.getElementById(gWatchlists[idxWL].spanName))) {
+                        wlSetupDragDiv(gWatchlists[idxWL].spanName);
+                    }
+                }
+            }
+        }
+    }
+}
+
+function wlSetupDragDiv(sSpanId) {
+    if (gbUsingCell) {
+        drag_div(sSpanId);
+    } else {
+        drag_divWL(sSpanId);
     }
 }
 
