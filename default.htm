@@ -9982,6 +9982,40 @@
 
         function PageLoad() {
             debugger
+            //determine if production or test or localhost
+            let sBefore = gsRedirectURL;
+            gsRedirectURL = location.protocol + "//" + location.host + location.pathname;
+            switch (location.protocol + "//" + location.host + location.pathname) {
+                case "https://bhalp.github.io/mySite/default.htm":
+                    {
+                        break;
+                    }
+                case "https://bhalp.github.io/mySiteTest/default.htm":
+                    {
+                        break;
+                    }
+                case "https://bhalp.github.io/mySite/defaultCell.htm":
+                    {
+                        break;
+                    }
+                case "https://bhalp.github.io/mySiteTest/defaultCell.htm":
+                    {
+                        break;
+                    }
+                case "https://localhost:8080/":
+                    {
+                        gsRedirectURL = "https://localhost:8080";
+                        break;
+                    }
+            }
+            alert("gsRedirectURL before = " + sBefore + "\n" + "gsRedirectURL after = " + gsRedirectURL);
+
+
+            //   var gsTDAPIKey = "5V5GTTHEURLAUGI2JAFC06QKAIVPAVYF"; //MyGainLoss2
+            //var gsTDAPIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"; //MyGainLoss
+
+
+
             let sBearerCode = location.search;
             //    alert("sBearerCode = " + sBearerCode);
             try {
