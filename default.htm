@@ -31,14 +31,16 @@
     <script type="text/javascript" src="JSON.js"></script>
     <script type="text/javascript">
     <!--
-        var gsRefreshToken = "";
-        var gsAccessTokenExpirationTime = "";
-        var gsBearerCode = "";
-        var gsTDAPIKey = "";
-        var gsRedirectURL = "";
 
-        var gbUsingCell = false;
         var gbShowSavedOrders = false;
+
+        //var gsRefreshToken = "";
+        //var gsAccessTokenExpirationTime = "";
+        //var gsBearerCode = "";
+        //var gsTDAPIKey = "";
+        //var gsRedirectURL = "";
+
+        //var gbUsingCell = false;
         //var gsRedirectURL = "https://bhalp.github.io/mySite/default.htm";
         //var gsRedirectURL = "https://bhalp.github.io/mySiteTest/default.htm";
         //var gsRedirectURL = "https://localhost:8080";
@@ -47,8 +49,16 @@
 
         //------   main.js code starts here   ---------------------------------------------------------------------------------
 
-        var gsCurrentVersion = "6.5 2021-03-31 20:58"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+        var gsCurrentVersion = "6.5 2021-03-31 21:17"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
         var gsInitialStartDate = "2020-05-01";
+
+        var gsRefreshToken = "";
+        var gsAccessTokenExpirationTime = "";
+        var gsBearerCode = "";
+        var gsTDAPIKey = "";
+        var gsRedirectURL = "";
+        var gbUsingCell = false;
+
 
         String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
             return (opt_lowerCaseTheRest ? this.toLowerCase() : this)
@@ -9983,7 +9993,7 @@
         }
 
         function PageLoad() {
-            debugger
+            //debugger
             //determine if production or test or localhost
             let sBearerCode = location.search;
             //    alert("sBearerCode = " + sBearerCode);
@@ -10004,16 +10014,22 @@
                             }
                         case "https://bhalp.github.io/mySite/defaultCell.htm":
                             {
+                                gbUsingCell = true;
                                 break;
                             }
                         case "https://bhalp.github.io/mySiteTest/defaultCell.htm":
                             {
+                                gbUsingCell = true;
                                 break;
                             }
                         case "https://localhost:8080/":
                             {
                                 gsRedirectURL = "https://localhost:8080";
                                 gsTDAPIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"; //MyGainLoss
+                                break;
+                            }
+                        default:
+                            {
                                 break;
                             }
                     }
@@ -10033,15 +10049,21 @@
                             }
                         case "https://bhalp.github.io/mySite/defaultCell.htm":
                             {
+                                gbUsingCell = true;
                                 break;
                             }
                         case "https://bhalp.github.io/mySiteTest/defaultCell.htm":
                             {
+                                gbUsingCell = true;
                                 break;
                             }
                         case "https://localhost:8080/":
                             {
                                 gsRedirectURL = "https://localhost:8080";
+                                break;
+                            }
+                        default:
+                            {
                                 break;
                             }
                     }
@@ -10059,6 +10081,11 @@
                             case "2": // APIKey = "5V5GTTHEURLAUGI2JAFC06QKAIVPAVYF"
                                 {
                                     gsTDAPIKey = "5V5GTTHEURLAUGI2JAFC06QKAIVPAVYF"; //MyGainLoss2
+                                    break;
+                                }
+                            default:
+                                {
+                                    gsTDAPIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"; //MyGainLoss
                                     break;
                                 }
                         }
