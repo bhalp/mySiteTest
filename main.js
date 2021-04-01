@@ -1,5 +1,13 @@
-var gsCurrentVersion = "6.5 2021-03-30 18:42"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.5 2021-03-31 21:17"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
+
+var gsRefreshToken = "";
+var gsAccessTokenExpirationTime = "";
+var gsBearerCode = "";
+var gsTDAPIKey = "";
+var gsRedirectURL = "";
+var gbUsingCell = false;
+
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
     return (opt_lowerCaseTheRest ? this.toLowerCase() : this)
@@ -9935,22 +9943,112 @@ function OpenSocket() {
 
 function PageLoad() {
     //debugger
+    //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
     try {
         let sTmp = sBearerCode.substr(0, "?code=".length);
         if (sTmp == "?code=") {
+            let sBefore = gsRedirectURL;
+            gsRedirectURL = location.protocol + "//" + location.host + location.pathname;
+            gsTDAPIKey = "5V5GTTHEURLAUGI2JAFC06QKAIVPAVYF"; //MyGainLoss2
+            switch (location.protocol + "//" + location.host + location.pathname) {
+                case "https://bhalp.github.io/mySite/default.htm":
+                    {
+                        break;
+                    }
+                case "https://bhalp.github.io/mySiteTest/default.htm":
+                    {
+                        break;
+                    }
+                case "https://bhalp.github.io/mySite/defaultCell.htm":
+                    {
+                        gbUsingCell = true;
+                        break;
+                    }
+                case "https://bhalp.github.io/mySiteTest/defaultCell.htm":
+                    {
+                        gbUsingCell = true;
+                        break;
+                    }
+                case "https://localhost:8080/":
+                    {
+                        gsRedirectURL = "https://localhost:8080";
+                        gsTDAPIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"; //MyGainLoss
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+            //alert("gsRedirectURL before = " + sBefore + "\n" + "gsRedirectURL after = " + gsRedirectURL);
             gsBearerCode = sBearerCode.split('=')[1];
         } else {
-            gsAccess_token_expiration_time = sBearerCode.split('&')[0].split('=')[1];
-            gsRefreshToken = sBearerCode.split('&')[1].split('=')[1];
+            let sBefore = gsRedirectURL;
+            gsRedirectURL = location.protocol + "//" + location.host + location.pathname;
+            switch (location.protocol + "//" + location.host + location.pathname) {
+                case "https://bhalp.github.io/mySite/default.htm":
+                    {
+                        break;
+                    }
+                case "https://bhalp.github.io/mySiteTest/default.htm":
+                    {
+                        break;
+                    }
+                case "https://bhalp.github.io/mySite/defaultCell.htm":
+                    {
+                        gbUsingCell = true;
+                        break;
+                    }
+                case "https://bhalp.github.io/mySiteTest/defaultCell.htm":
+                    {
+                        gbUsingCell = true;
+                        break;
+                    }
+                case "https://localhost:8080/":
+                    {
+                        gsRedirectURL = "https://localhost:8080";
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+            //alert("gsRedirectURL before = " + sBefore + "\n" + "gsRedirectURL after = " + gsRedirectURL);
+            let sParams = sBearerCode.split('&');
+            gsAccess_token_expiration_time = sParams[0].split('=')[1];
+            gsRefreshToken = sParams[1].split('=')[1];
+            if (sParams.length == 3) {
+                switch (sParams[2].split('=')[1]) {
+                    case "1": // APIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"
+                        {
+                            gsTDAPIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"; //MyGainLoss
+                            break;
+                        }
+                    case "2": // APIKey = "5V5GTTHEURLAUGI2JAFC06QKAIVPAVYF"
+                        {
+                            gsTDAPIKey = "5V5GTTHEURLAUGI2JAFC06QKAIVPAVYF"; //MyGainLoss2
+                            break;
+                        }
+                    default:
+                        {
+                            gsTDAPIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"; //MyGainLoss
+                            break;
+                        }
+                }
+            } else {
+                gsTDAPIKey = "VTBLS2XWYV8HCIHN8JSTSHEZTFZXNI93"; //MyGainLoss
+            }
         }
     } catch (e1) {
         gsBearerCode = "";
         gsAccess_token_expiration_time = "";
         gsRefreshToken = "";
+        gsTDAPIKey = "";
     }
-    //        gsBearerCode = location.search.split('=')[1];
+
     document.getElementById("TheBody").style.backgroundColor = gsBodyBackgroundColor;
     if (gbUsingCell) {
         document.getElementById("spanInfo").style.display = "inline";
