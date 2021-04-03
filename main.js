@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.6 2021-04-03 01:46"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.6 2021-04-03 16:36"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -319,10 +319,10 @@ function WLWatchList() {
 }
 var gWatchlists = new Array(); //array of WLWatchList objects
 var gsWLWidth = "900px";
-var giWLColOpenLabelWidth = 60;
+var giWLColOpenLabelWidth = 80;
 var giWLColOpenEntryWidth = 80;
 var giWLColAcquiredDateEntryWidth = 80;
-var giWLColTitleWidth = 480;
+var giWLColTitleWidth = 460;
 var giWLColCloseLabelWidth = 110;
 var giWLColCloseEntryWidth = 60;
 var giWLDragXoffsetLeft = 220;
@@ -2346,6 +2346,44 @@ function DoWLCloseSymbol(idxWL) {
     }
 }
 
+function DoWLDeleteSymbols(idxWL) {
+    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+
+        let sAccountId = gWatchlists[idxWL].accountId;
+        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
+        let sSymbolsToLookup = "";
+        let sSequenceIds = "";
+        let sSymbolsToLookupSep = "";
+
+        let iNumSelected = 0;
+        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                iNumSelected++;
+                sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                sSequenceIds = sSequenceIds + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId.toString();
+                sSymbolsToLookupSep = ", ";
+            }
+        }
+        if (iNumSelected == 0) {
+            alert("Please select at least one symbol to delete.")
+            return;
+        }
+
+        if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+            alert("Cannot select all symbols to delete. Leave at least one symbol unselected.")
+            return;
+        }
+
+        let sConfirmMsg = "";
+        sConfirmMsg = "Deleting symbols " + sSymbolsToLookup.toUpperCase() + ". ";
+        if (AreYouSure(sConfirmMsg)) {
+            window.setTimeout("GenerateWLDeleteSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSequenceIds + "')", 10);
+        }
+        return;
+    }
+}
+
 function DoWLOpenSymbols(idxWL) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
 
@@ -3220,6 +3258,38 @@ function GenerateWLCloseSymbolOrders(sAccountId, dSelectNum, idxWL, sSymbol) {
         window.setTimeout("PostWLCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ")", 10);
     } else {
         alert("No symbols were closed.");
+    }
+}
+
+function GenerateWLDeleteSymbolOrders(sAccountId, idxWL, sSequenceIds) {
+    gTDWLOrders.length = 0;
+
+    let vSequenceIds = sSequenceIds.split(", ");
+    for (let idxSequenceId = 0; idxSequenceId < vSequenceIds.length; idxSequenceId++) {
+        let oTDWLOrder = new TDWLOrder();
+        oTDWLOrder.bDoingPurchasedDateClear = true;
+        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + vSequenceIds[idxSequenceId] + " ";
+        oTDWLOrder.aWL05quantity = "";
+        oTDWLOrder.aWL06averagePrice = "";
+        oTDWLOrder.aWL07commission = "";
+        oTDWLOrder.aWL07purchasedDate = "";
+        oTDWLOrder.aWL08instrumentStart = "";
+        oTDWLOrder.aWL09symbol = "";
+        oTDWLOrder.aWL10assetType = "";
+        oTDWLOrder.aWL11instrumentEnd = "";
+        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+    }
+
+    if (gTDWLOrders.length > 0) {
+        //gTDWLOrders.sort(sortBySymbol);
+        gbDoingCreateOrders = true;
+        SetWait();
+        window.setTimeout("PostWLDeleteSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ")", 10);
+    } else {
+        alert("No symbols were deleted.");
     }
 }
 
@@ -6783,11 +6853,14 @@ function GetWatchlistPrices() {
                                     sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                                 }
                                 sThisDiv = sThisDiv + "<tr>";
-
+                                //style=\"vertical-align:bottom\">
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
+                                    "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols(" + idxWLMain.toString() + ")\" />" +
+                                    "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" />" +
                                     "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                                     "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+
+                                //"&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
 
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                                     "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
@@ -6868,9 +6941,13 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
+                                    "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols(" + idxWLMain.toString() + ")\" />" +
+                                    "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" />" +
                                     "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                                     "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+
+                                //"&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
+
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" + 
                                                       "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
@@ -7031,19 +7108,18 @@ function GetWatchlistPrices() {
                                         }
 
                                         sTmp = "";
-                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                                            if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                                                sTmp = gWatchlists[idxWLMain].WLItems[idxTmp].sequenceId;
-                                                break;
-                                            }
-                                        }
-
+                                        //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                        //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                        //        sTmp = "&nbsp;(" + gWatchlists[idxWLMain].WLItems[idxTmp].sequenceId + ")";
+                                        //        break;
+                                        //    }
+                                        //}
 
                                         let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
                                         sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
                                             "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
                                             "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-                                            sSymbol + "&nbsp;(" + sTmp + ")" +  "</span></td>";
+                                            sSymbol + sTmp +  "</span></td>";
 
                                         if ((isUndefined(goWLDisplayed)) || (isUndefined(goWLDisplayed[sThisId + sSymbol]))) {
                                             let oT = {
@@ -10049,7 +10125,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    debugger
+    //debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
@@ -10911,6 +10987,84 @@ function PostWLCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgr
     ShowProgress(false, true);
     gbDoingCreateOrders = false;
     SetDefault();
+}
+
+function PostWLDeleteSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, sWatchlistId, iTryCountIn, idxWL) {
+    let iNumSuccess = iNumSuccessIn;
+    let iNumErrors = iNumErrorsIn;
+    let iProgressIncrement = iProgressIncrementIn;
+    if (bFirstTime) {
+        giProgress = 0;
+        iProgressIncrement = 100;
+        //iProgressIncrement = 100 / gTDWLOrders.length;
+        gsLastErrors.length = 0;
+        giTDPostOrderRetryCnt = 0;
+        ShowProgress(true, false);
+    }
+    if (giProgress < 100) {
+        giProgress = giProgress + iProgressIncrement;
+    }
+    let sOrder = "";
+    let sSep = "";
+    for (let idxOrder = 0; idxOrder < gTDWLOrders.length; idxOrder++) {
+        let oTDWLOrder = new TDWLOrder();
+        oTDWLOrder = gTDWLOrders[idxOrder];
+        if (sOrder == "") {
+            sOrder = oTDWLOrder.aWL00Start +
+                oTDWLOrder.aWL01name +
+                oTDWLOrder.aWL02watchlistId +
+                oTDWLOrder.aWL03watchlistItemsStart;
+        }
+        sOrder = sOrder + sSep +
+            oTDWLOrder.aWL03watchlistItemStart +
+            oTDWLOrder.aWL04sequenceId +
+            oTDWLOrder.aWL05quantity +
+            oTDWLOrder.aWL06averagePrice +
+            oTDWLOrder.aWL07commission +
+            oTDWLOrder.aWL07purchasedDate +
+            oTDWLOrder.aWL08instrumentStart +
+            oTDWLOrder.aWL09symbol +
+            oTDWLOrder.aWL10assetType +
+            oTDWLOrder.aWL11instrumentEnd +
+            oTDWLOrder.aWL12watchlistItemEnd;
+        sSep = ",";
+    }
+    let oTDWLOrder = new TDWLOrder();
+    sOrder = sOrder + oTDWLOrder.aWL12watchlistItemsEnd +
+        oTDWLOrder.aWL13end;
+
+    if (PostTDWLOrder(sAccountId, sWatchlistId, sOrder) == 0) {
+        //success
+        iNumSuccess = gTDWLOrders.length;
+        let sMsg = iNumSuccess.toString() + " watchlist ";
+        if (iNumSuccess > 1) {
+            sMsg = sMsg + "symbols deleted";
+        } else {
+            sMsg = sMsg + "symbol deleted";
+        }
+        alert(sMsg);
+        gbDoResetWatchlists = true;
+        if (giGetTDDataTimeoutId != 0) {
+            window.clearTimeout(giGetTDDataTimeoutId);
+            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+        }
+        ShowProgress(false, true);
+        gbDoingCreateOrders = false;
+        SetDefault();
+    } else {
+        let sMsg = ""
+        sMsg = sMsg + "Error deleting symbols -- ";
+        sMsg = sMsg + gsLastError;
+        alert(sMsg);
+        gbDoResetWatchlists = true;
+        if (giGetTDDataTimeoutId != 0) {
+            window.clearTimeout(giGetTDDataTimeoutId);
+            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+        }
+        ShowProgress(false, true);
+        gbDoingCreateOrders = false;
+        SetDefault();
+    }
 }
 
 function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, sWatchlistId, iTryCountIn, idxWL) {
