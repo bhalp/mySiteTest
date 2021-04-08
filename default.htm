@@ -36,7 +36,7 @@
 
         //------   main.js code starts here   ---------------------------------------------------------------------------------
 
-        var gsCurrentVersion = "6.6 2021-04-03 16:36"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+        var gsCurrentVersion = "6.7 2021-04-07 18:33"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
         var gsInitialStartDate = "2020-05-01";
 
         var gsRefreshToken = "";
@@ -212,10 +212,16 @@
         var gsMarketsLargeBioDesc = "Large Bio";
         var gsMarketsSmallBio = "XBI";
         var gsMarketsSmallBioDesc = "Small Bio";
+        var gsMarketsRussell2000 = "$RUT.X";
+        var gsMarketsRussell2000Desc = "Russell 2K";
+        var gsMarketsNasdaq100 = "$NDX.X";
+        var gsMarketsNasdaq100Desc = "Nasdaq 100";
+        var gsMarkets10yrTreasury = "$TNX.X";
+        var gsMarkets10yrTreasuryDesc = "10yr Treas";
+        var gsMarketsOilGas = "$$CL";
+        var gsMarketsOilGasActual = "/CL";
+        var gsMarketsOilGasDesc = "Oil & Gas";
 
-
-        var gsMarketsToTrackDesc = new Array("Dow 30", "Nasdaq", "S&P 500");
-        var gsMarketsToTrackTDName = new Array("tdDJI", "tdNasdaq", "tdSP");
         var gbMarketShowChangePercentage = false;
         var gsMarketsCurrentIndexes = "";
         var gsMarketsLastIndexes = "";
@@ -4426,12 +4432,17 @@
             if (gMarketIndexes.length > 0) {
                 for (let idxIndex = 0; idxIndex < gMarketIndexes.length; idxIndex++) {
                     if (oMDQ[gMarketIndexes[idxIndex].symbol] != null) {
-                        gMarketIndexes[idxIndex].lastPrice = oMDQ[gMarketIndexes[idxIndex].symbol].lastPrice;
-                        //gMarketIndexes[idxIndex].netChange = 1000.00;
-                        //gMarketIndexes[idxIndex].netPercentChangeInDouble = 100.00;
-                        gMarketIndexes[idxIndex].netChange = oMDQ[gMarketIndexes[idxIndex].symbol].netChange;
-                        gMarketIndexes[idxIndex].netPercentChangeInDouble = oMDQ[gMarketIndexes[idxIndex].symbol].netPercentChangeInDouble;
-
+                        if (gMarketIndexes[idxIndex].symbol == gsMarketsOilGasActual) {
+                            gMarketIndexes[idxIndex].lastPrice = oMDQ[gMarketIndexes[idxIndex].symbol].lastPriceInDouble;
+                            gMarketIndexes[idxIndex].netChange = oMDQ[gMarketIndexes[idxIndex].symbol].changeInDouble;
+                            gMarketIndexes[idxIndex].netPercentChangeInDouble = (oMDQ[gMarketIndexes[idxIndex].symbol].changeInDouble / oMDQ[gMarketIndexes[idxIndex].symbol].closePriceInDouble) * 100;
+                        } else {
+                            gMarketIndexes[idxIndex].lastPrice = oMDQ[gMarketIndexes[idxIndex].symbol].lastPrice;
+                            //gMarketIndexes[idxIndex].netChange = 1000.00;
+                            //gMarketIndexes[idxIndex].netPercentChangeInDouble = 100.00;
+                            gMarketIndexes[idxIndex].netChange = oMDQ[gMarketIndexes[idxIndex].symbol].netChange;
+                            gMarketIndexes[idxIndex].netPercentChangeInDouble = oMDQ[gMarketIndexes[idxIndex].symbol].netPercentChangeInDouble;
+                        }
                         document.getElementById(gMarketIndexes[idxIndex].tdName).innerText = gMarketIndexes[idxIndex].description;
                         document.getElementById(gMarketIndexes[idxIndex].tdName + "Value").innerText = FormatMoney(gMarketIndexes[idxIndex].lastPrice);
                         if (gbMarketShowChangePercentage) {
@@ -4455,6 +4466,7 @@
                                 document.getElementById(gMarketIndexes[idxIndex].tdName + "Change").style.color = "white";
                             }
                         }
+
                     }
                 }
             }
@@ -5061,18 +5073,24 @@
                 if (bOkToContinue) {
                     //determine which symbols need quotes for indexes
                     SetupIndexes(); //gsMarketsLastIndexes contains index symbols as symbol/desc,symbol/desc...
-                    let sMarketsToTrack = gsMarketsLastIndexes.split(",");
                     let sSymbolsThatNeedQuotes = "";
                     let sSep = "";
-                    if (sMarketsToTrack.length > 0) {
-                        for (let idx = 0; idx < sMarketsToTrack.length; idx++) {
-                            let sMarket = sMarketsToTrack[idx].split("/");
-                            if (sMarket.length > 0) {
-                                sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes + sSep + sMarket[0].toUpperCase();
-                                sSep = ",";
-                            }
+                    if (gMarketIndexes.length > 0) {
+                        for (let idx = 0; idx < gMarketIndexes.length; idx++) {
+                            sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes + sSep + gMarketIndexes[idx].symbol.toUpperCase();
+                            sSep = ",";
                         }
                     }
+                    //let sMarketsToTrack = gsMarketsLastIndexes.split(",");
+                    //if (sMarketsToTrack.length > 0) {
+                    //    for (let idx = 0; idx < sMarketsToTrack.length; idx++) {
+                    //        let sMarket = sMarketsToTrack[idx].split("/");
+                    //        if (sMarket.length > 0) {
+                    //            sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes + sSep + sMarket[0].toUpperCase();
+                    //            sSep = ",";
+                    //        }
+                    //    }
+                    //}
                     //determine which symbols need quotes for watchlists
                     if (gWatchlists.length > 0) {
                         //get account position data
@@ -5150,21 +5168,73 @@
                                             }
                                         }
                                         if (bOkToContinue) {
-                                            giRequestId++;
-                                            gQuoteRequest = {
-                                                "requests": [
-                                                    {
-                                                        "service": "QUOTE",
-                                                        "requestid": giRequestId.toString(),
-                                                        "command": "SUBS",
-                                                        "account": oACCP.accounts[0].accountId,
-                                                        "source": oACCP.streamerInfo.appId,
-                                                        "parameters": {
-                                                            "keys": sSymbolsThatNeedQuotes,
-                                                            "fields": "0,1,2,3,4,5,6,7,8,9,12,13,15,16,17,18,24,26,27,28,29,30,31,32,33,34,39,40,43,44,47,48,49,50,51,52"
-                                                        }
+                                            let gQuoteRequest = "";
+                                            if (("," + sSymbolsThatNeedQuotes + ",").indexOf(gsMarketsOilGasActual) != -1) {
+                                                if (sSymbolsThatNeedQuotes != gsMarketsOilGasActual) {
+                                                    sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes.replace(gsMarketsOilGasActual + ",", "");
+                                                    giRequestId++;
+                                                    gQuoteRequest = {
+                                                        "requests": [
+                                                            {
+                                                                "service": "QUOTE",
+                                                                "requestid": giRequestId.toString(),
+                                                                "command": "SUBS",
+                                                                "account": oACCP.accounts[0].accountId,
+                                                                "source": oACCP.streamerInfo.appId,
+                                                                "parameters": {
+                                                                    "keys": sSymbolsThatNeedQuotes,
+                                                                    "fields": "0,1,2,3,4,5,6,7,8,9,12,13,15,16,17,18,24,26,27,28,29,30,31,32,33,34,39,40,43,44,47,48,49,50,51,52"
+                                                                }
+                                                            },
+                                                            {
+                                                                "service": "LEVELONE_FUTURES",
+                                                                "requestid": (giRequestId + 1).toString(),
+                                                                "command": "SUBS",
+                                                                "account": oACCP.accounts[0].accountId,
+                                                                "source": oACCP.streamerInfo.appId,
+                                                                "parameters": {
+                                                                    "keys": gsMarketsOilGasActual,
+                                                                    "fields": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35"
+                                                                }
+                                                            }
+                                                        ]
                                                     }
-                                                ]
+                                                    giRequestId++;
+                                                } else {
+                                                    giRequestId++;
+                                                    gQuoteRequest = {
+                                                        "requests": [
+                                                            {
+                                                                "service": "LEVELONE_FUTURES",
+                                                                "requestid": giRequestId.toString(),
+                                                                "command": "SUBS",
+                                                                "account": oACCP.accounts[0].accountId,
+                                                                "source": oACCP.streamerInfo.appId,
+                                                                "parameters": {
+                                                                    "keys": gsMarketsOilGasActual,
+                                                                    "fields": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35"
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            } else {
+                                                giRequestId++;
+                                                gQuoteRequest = {
+                                                    "requests": [
+                                                        {
+                                                            "service": "QUOTE",
+                                                            "requestid": giRequestId.toString(),
+                                                            "command": "SUBS",
+                                                            "account": oACCP.accounts[0].accountId,
+                                                            "source": oACCP.streamerInfo.appId,
+                                                            "parameters": {
+                                                                "keys": sSymbolsThatNeedQuotes,
+                                                                "fields": "0,1,2,3,4,5,6,7,8,9,12,13,15,16,17,18,24,26,27,28,29,30,31,32,33,34,39,40,43,44,47,48,49,50,51,52"
+                                                            }
+                                                        }
+                                                    ]
+                                                }
                                             }
 
                                             mySock.send(myJSON.stringify(gQuoteRequest));
@@ -10143,6 +10213,85 @@
 
                                         }
                                     }
+                                } else if (oData.data[idxData].service == "LEVELONE_FUTURES") {
+                                    for (let idxContent = 0; idxContent < oData.data[idxData].content.length; idxContent++) {
+                                        if (!isUndefined(oMDQ[oData.data[idxData].content[idxContent].key])) {
+                                            let oT = oMDQ[oData.data[idxData].content[idxContent].key];
+                                            //update oMDQ
+                                            for (let ky in oData.data[idxData].content[idxContent]) {
+                                                if (oData.data[idxData].content[idxContent].hasOwnProperty(ky)) {
+                                                    switch (ky) {
+                                                        case "delayed":
+                                                            {
+                                                                oT.delayed = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                        case "3": //lastPrice
+                                                            {
+                                                                oT.lastPriceInDouble = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                        case "14": //closePrice
+                                                            {
+                                                                oT.closePriceInDouble = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                        case "19": //netChange
+                                                            {
+                                                                oT.changeInDouble = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                    }
+                                                }
+                                            }
+                                            //oMDQ[oData.data[idxData].content[idxContent].key] = oT;
+
+                                        } else {
+                                            //add to oMDQ
+                                            let oT = {
+                                                "symbol": "",
+                                                "description": "",
+                                                "assetType": "",
+                                                "assetMainType": "",
+                                                "lastPriceInDouble": 0,
+                                                "closePriceInDouble": 0,
+                                                "changeInDouble": "",
+                                            }
+
+                                            for (let ky in oData.data[idxData].content[idxContent]) {
+                                                if (oData.data[idxData].content[idxContent].hasOwnProperty(ky)) {
+                                                    switch (ky) {
+                                                        case "key":
+                                                            {
+                                                                oT.symbol = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                        case "delayed":
+                                                            {
+                                                                oT.delayed = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                        case "3": //lastPrice
+                                                            {
+                                                                oT.lastPriceInDouble = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                        case "14": //closePrice
+                                                            {
+                                                                oT.closePriceInDouble = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                        case "19": //netChange
+                                                            {
+                                                                oT.changeInDouble = oData.data[idxData].content[idxContent][ky];
+                                                                break;
+                                                            }
+                                                    }
+                                                }
+                                            }
+                                            oMDQ[oData.data[idxData].content[idxContent].key] = oT;
+                                        }
+                                    }
                                 }
                             }
                             //if (sDebugMsg != "") {
@@ -10163,7 +10312,6 @@
         }
 
         function PageLoad() {
-            //debugger
             //determine if production or test or localhost
             let sBearerCode = location.search;
             //    alert("sBearerCode = " + sBearerCode);
@@ -10271,33 +10419,97 @@
             }
 
             document.getElementById("TheBody").style.backgroundColor = gsBodyBackgroundColor;
+            let sTmp = ""
             if (gbUsingCell) {
                 document.getElementById("spanInfo").style.display = "inline";
-                let sTmp = ""
-                sTmp = "<input type=\"checkbox\" id=\"chkIndexDJI\" name=\"chkIndexDJI\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                sTmp = "<table style=\"border-collapse:collapse; border: 0px solid black; width:400px;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+
+                sTmp = sTmp + "<tr height=\"20\">";
+                sTmp = sTmp + "<td><input type=\"checkbox\" id=\"chkIndexDJI\" name=\"chkIndexDJI\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
                     "<label for=\"chkIndexDJI\"> Dow</label>" +
-                    "<input type=\"checkbox\" id=\"chkIndexNasdaq\" name=\"chkIndexNasdaq\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
-                    "<label for=\"chkIndexNasdaq\"> Nasdaq</label>" +
-                    "<input type=\"checkbox\" id=\"chkIndexSP\" name=\"chkIndexSP\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
-                    "<label for=\"chkIndexSP\"> S&P 500</label>" +
-                    "<br />" +
-                    "<input type=\"checkbox\" id=\"chkIndexLargeBio\" name=\"chkIndexLargeBio\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
-                    "<label for=\"chkIndexLargeBio\"> Large Bio</label>" +
-                    "<input type=\"checkbox\" id=\"chkIndexSmallBio\" name=\"chkIndexSmallBio\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
-                    "<label for=\"chkIndexSmallBio\"> Small Bio</label>" +
-                    "<input type=\"checkbox\" id=\"chkIndexOther\" name=\"chkIndexOther\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
-                    "<label for=\"chkIndexOther\"> Other</label>" +
-                    "<br />" +
-                    "<input type=\"button\" style=\"border-radius:15px; visibility:visible;\" id=\"btnWLSelect\" name=\"btnWLSelect\" value=\"Select Watchlists\" onclick=\"SelectWatchlist()\">" +
-                    "<input type=\"button\" style=\"border-radius:15px;\" id=\"btnWLReset\" name=\"btnWLReset\" value=\"Reset Watchlists\" onclick=\"ResetWatchlist()\">" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexNasdaq\" name=\"chkIndexNasdaq\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexNasdaq\"> Nasdaq</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexSP\" name=\"chkIndexSP\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexSP\"> S&P 500</label>" + "</td>" +
+                    "<td>" + "&nbsp;" + "</td>" +
+                    "</tr>" +
+                    "<tr height =\"20\">" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexLargeBio\" name=\"chkIndexLargeBio\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexLargeBio\"> Large Bio</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexSmallBio\" name=\"chkIndexSmallBio\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexSmallBio\"> Small Bio</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexRussell2000\" name=\"chkIndexRussell2000\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexRussell2000\"> Russell 2K</label>" + "</td>" +
+                    "<td>" + "&nbsp;" + "</td>" +
+                    "</tr>" +
+                    "<tr height =\"20\">" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexNasdaq100\" name=\"chkIndexNasdaq100\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexNasdaq100\"> Nasdaq 100</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndex10yrTreasury\" name=\"chkIndex10yrTreasury\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndex10yrTreasury\"> 10yr Treas</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexOilGas\" name=\"chkIndexOilGas\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexOilGas\"> Oil & Gas</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexOther\" name=\"chkIndexOther\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexOther\"> Other</label>" + "</td>" +
+                    "</tr>" +
+                    "<tr height =\"40\">" +
+                    "<td colspan=4>" +
+                    "<input type=\"button\" style=\"vertical-align:middle; border-radius:15px; visibility:visible;\" id=\"btnWLSelect\" name=\"btnWLSelect\" value=\"Select Watchlists\" onclick=\"SelectWatchlist()\">" +
+                    "&nbsp;" +
+                    "<input type=\"button\" style=\"vertical-align:middle; border-radius:15px;\" id=\"btnWLReset\" name=\"btnWLReset\" value=\"Reset Watchlists\" onclick=\"ResetWatchlist()\">" +
+                    "</td>" +
+                    "</tr>" +
+                    "</table>" +
                     "<div id=\"spanIndexes\" style=\"display:none; font-size:10pt;\">" +
                     "Index or stock symbols separated by commas:" +
                     "<br />" +
                     "<input id=\"txtIndexes\" name=\"txtIndexes\" type=\"search\" style=\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;width:300px\" value=\"\">" +
                     "</div>";
+            } else {
+                sTmp = "<table style=\"border-collapse:collapse; border: 0px solid black; width:600px;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
 
-                document.getElementById("tdIndexes").innerHTML = sTmp;
+                sTmp = sTmp + "<tr height=\"20\">";
+                sTmp = sTmp + "<td><input type=\"checkbox\" id=\"chkIndexDJI\" name=\"chkIndexDJI\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexDJI\"> Dow</label>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexNasdaq\" name=\"chkIndexNasdaq\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexNasdaq\"> Nasdaq</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexSP\" name=\"chkIndexSP\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexSP\"> S&P 500</label>" + "</td>" +
+                    "<td>" +
+                    "<input type=\"button\" style=\"border-radius:15px; visibility:visible;\" id=\"btnWLSelect\" name=\"btnWLSelect\" value=\"Select Watchlists\" onclick=\"SelectWatchlist()\">" +
+                    "</td>" +
+                    "<td>" +
+                    "<input type=\"button\" style=\"border-radius:15px;\" id=\"btnWLReset\" name=\"btnWLReset\" value=\"Reset Watchlists\" onclick=\"ResetWatchlist()\">" +
+                    "</td>" +
+                    "</tr>" +
+                    "<tr height =\"20\">" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexLargeBio\" name=\"chkIndexLargeBio\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexLargeBio\"> Large Bio</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexSmallBio\" name=\"chkIndexSmallBio\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexSmallBio\"> Small Bio</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexRussell2000\" name=\"chkIndexRussell2000\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexRussell2000\"> Russell 2K</label>" + "</td>" +
+                    "<td>" + "&nbsp;" + "</td>" +
+                    "<td>" + "&nbsp;" + "</td>" +
+                    "</tr>" +
+                    "<tr height =\"20\">" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexNasdaq100\" name=\"chkIndexNasdaq100\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexNasdaq100\"> Nasdaq 100</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndex10yrTreasury\" name=\"chkIndex10yrTreasury\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndex10yrTreasury\"> 10yr Treas</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexOilGas\" name=\"chkIndexOilGas\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexOilGas\"> Oil & Gas</label>" + "</td>" +
+                    "<td><input type=\"checkbox\" id=\"chkIndexOther\" name=\"chkIndexOther\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
+                    "<label for=\"chkIndexOther\"> Other</label>" + "</td>" +
+                    "<td>" + "&nbsp;" + "</td>" +
+                    "</tr>" +
+                    "</table><div id=\"spanIndexes\" style=\"display:none; font-size:10pt;\">" +
+                    "Index or stock symbols separated by commas:" +
+                    "<br />" +
+                    "<input id=\"txtIndexes\" name=\"txtIndexes\" type=\"search\" style=\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;width:300px\" value=\"\">" +
+                    "</div>";
             }
+            document.getElementById("tdIndexes").innerHTML = sTmp;
 
             //setup fixed price array
             let oFixedPrice = new FixedPrice();
@@ -10314,17 +10526,93 @@
             // set markets to track
             let sCookie = getCookie(gsMarketCookieName);
             if (sCookie != null) {
-                //cookie should contain (required) dji active (true or false)
+                //before V6.7 cookie should contain (required) dji active (true or false)
                 //                      (required) nasdaq active(true or false)
                 //                      (required) s & p active(true or false)
                 //                      (required) Large Bio active(true or false)
                 //                      (required) Small Bio active(true or false)
                 //                      (required) Start Date like 2020-01-01
                 //                      (optional)symbol / desc, symbol / desc
+                //after V6.6 cookie should contain (required) dji active (true or false)
+                //                      (required) nasdaq active(true or false)
+                //                      (required) s & p active(true or false)
+                //                      (required) Large Bio active(true or false)
+                //                      (required) Small Bio active(true or false)
+                //                      (required) Russell 2000 active(true or false)
+                //                      (required) Nasdaq 100 active(true or false)
+                //                      (required) 10yr Treasury active(true or false)
+                //                      (required) Oil & Gas active(true or false)
+                //                      (required) Start Date like 2020-01-01
+                //                      (optional)symbol / desc, symbol / desc
                 // e.g. true,true,true,true,true,2020-01-01 or false,true,false,true,true,2020-01-01,aapl/Apple etc.
                 let sTmp = sCookie.split(",");
                 if (sTmp.length > 0) {
-                    if (sTmp.length > 5) {
+                    if (sTmp.length > 9) {
+                        if (sTmp[0] == "true") {
+                            document.getElementById("chkIndexDJI").checked = true;
+                        } else {
+                            document.getElementById("chkIndexDJI").checked = false;
+                        }
+                        if (sTmp[1] == "true") {
+                            document.getElementById("chkIndexNasdaq").checked = true;
+                        } else {
+                            document.getElementById("chkIndexNasdaq").checked = false;
+                        }
+                        if (sTmp[2] == "true") {
+                            document.getElementById("chkIndexSP").checked = true;
+                        } else {
+                            document.getElementById("chkIndexSP").checked = false;
+                        }
+                        if (sTmp[3] == "true") {
+                            document.getElementById("chkIndexLargeBio").checked = true;
+                        } else {
+                            document.getElementById("chkIndexLargeBio").checked = false;
+                        }
+                        if (sTmp[4] == "true") {
+                            document.getElementById("chkIndexSmallBio").checked = true;
+                        } else {
+                            document.getElementById("chkIndexSmallBio").checked = false;
+                        }
+                        if (sTmp[5] == "true") {
+                            document.getElementById("chkIndexRussell2000").checked = true;
+                        } else {
+                            document.getElementById("chkIndexRussell2000").checked = false;
+                        }
+                        if (sTmp[6] == "true") {
+                            document.getElementById("chkIndexNasdaq100").checked = true;
+                        } else {
+                            document.getElementById("chkIndexNasdaq100").checked = false;
+                        }
+                        if (sTmp[7] == "true") {
+                            document.getElementById("chkIndex10yrTreasury").checked = true;
+                        } else {
+                            document.getElementById("chkIndex10yrTreasury").checked = false;
+                        }
+                        if (sTmp[8] == "true") {
+                            document.getElementById("chkIndexOilGas").checked = true;
+                        } else {
+                            document.getElementById("chkIndexOilGas").checked = false;
+                        }
+                        if (sTmp[9] != "") {
+                            document.pwdForm.txtStartDate.value = sTmp[9];
+                        } else {
+                            document.pwdForm.txtStartDate.value = gsInitialStartDate;
+                        }
+                        if (sTmp.length > 10) {
+                            document.getElementById("chkIndexOther").checked = true;
+                            document.getElementById("spanIndexes").style.display = "block";
+                            let sOtherIndexesSep = "";
+                            let sIndexes = "";
+                            for (let idx = 10; idx < sTmp.length; idx++) {
+                                sIndexes = sIndexes + sOtherIndexesSep + sTmp[idx];
+                                sOtherIndexesSep = ",";
+                            }
+                            document.getElementById("txtIndexes").value = sIndexes;
+                        } else {
+                            document.getElementById("chkIndexOther").checked = false;
+                            document.getElementById("txtIndexes").value = "";
+                        }
+                    } else if (sTmp.length > 5) {
                         if (sTmp[0] == "true") {
                             document.getElementById("chkIndexDJI").checked = true;
                         } else {
@@ -11768,11 +12056,22 @@
         }
 
         function SetCurrentCookie() {
-            //cookie should contain (required) dji active (true or false)
+            //before V6.7 cookie should contain (required) dji active (true or false)
             //                      (required) nasdaq active(true or false)
             //                      (required) s & p active(true or false)
             //                      (required) Large Bio active(true or false)
             //                      (required) Small Bio active(true or false)
+            //                      (required) Start Date like 2020-01-01
+            //                      (optional)symbol / desc, symbol / desc
+            //after V6.6 cookie should contain (required) dji active (true or false)
+            //                      (required) nasdaq active(true or false)
+            //                      (required) s & p active(true or false)
+            //                      (required) Large Bio active(true or false)
+            //                      (required) Small Bio active(true or false)
+            //                      (required) Russell 2000 active(true or false)
+            //                      (required) Nasdaq 100 active(true or false)
+            //                      (required) 10yr Treasury active(true or false)
+            //                      (required) Oil & Gas active(true or false)
             //                      (required) Start Date like 2020-01-01
             //                      (optional)symbol / desc, symbol / desc
             // e.g. true,true,true,true,true,2020-01-01 or false,true,false,true,true,2020-01-01,aapl/Apple etc.
@@ -11814,6 +12113,36 @@
                 sCookie = sCookie + sSep + "false";
                 sSep = ","
             }
+
+            if (document.getElementById("chkIndexRussell2000").checked) {
+                sCookie = sCookie + sSep + "true";
+                sSep = ","
+            } else {
+                sCookie = sCookie + sSep + "false";
+                sSep = ","
+            }
+            if (document.getElementById("chkIndexNasdaq100").checked) {
+                sCookie = sCookie + sSep + "true";
+                sSep = ","
+            } else {
+                sCookie = sCookie + sSep + "false";
+                sSep = ","
+            }
+            if (document.getElementById("chkIndex10yrTreasury").checked) {
+                sCookie = sCookie + sSep + "true";
+                sSep = ","
+            } else {
+                sCookie = sCookie + sSep + "false";
+                sSep = ","
+            }
+            if (document.getElementById("chkIndexOilGas").checked) {
+                sCookie = sCookie + sSep + "true";
+                sSep = ","
+            } else {
+                sCookie = sCookie + sSep + "false";
+                sSep = ","
+            }
+
             if (TrimLikeVB(document.pwdForm.txtStartDate.value) != "") {
                 sCookie = sCookie + sSep + TrimLikeVB(document.pwdForm.txtStartDate.value);
                 sSep = ","
@@ -11850,6 +12179,23 @@
                 gsMarketsCurrentIndexes = gsMarketsCurrentIndexes + sSep + gsMarketsSmallBio + "/" + gsMarketsSmallBioDesc;
                 sSep = ",";
             }
+            if (document.getElementById("chkIndexRussell2000").checked) {
+                gsMarketsCurrentIndexes = gsMarketsCurrentIndexes + sSep + gsMarketsRussell2000 + "/" + gsMarketsRussell2000Desc;
+                sSep = ",";
+            }
+            if (document.getElementById("chkIndexNasdaq100").checked) {
+                gsMarketsCurrentIndexes = gsMarketsCurrentIndexes + sSep + gsMarketsNasdaq100 + "/" + gsMarketsNasdaq100Desc;
+                sSep = ",";
+            }
+            if (document.getElementById("chkIndex10yrTreasury").checked) {
+                gsMarketsCurrentIndexes = gsMarketsCurrentIndexes + sSep + gsMarkets10yrTreasury + "/" + gsMarkets10yrTreasuryDesc;
+                sSep = ",";
+            }
+            if (document.getElementById("chkIndexOilGas").checked) {
+                gsMarketsCurrentIndexes = gsMarketsCurrentIndexes + sSep + gsMarketsOilGas + "/" + gsMarketsOilGasDesc;
+                sSep = ",";
+            }
+
             let sTmp = document.getElementById("txtIndexes").value;
             sTmp = GetUniqueListOfSymbols(sTmp);
             if (document.getElementById("chkIndexOther").checked && (sTmp != "")) {
@@ -12044,7 +12390,11 @@
                         let sMarket = sMarketsToTrack[idx].split("/");
                         if (sMarket.length > 0) {
                             let marketIndex = new MarketIndex();
-                            marketIndex.symbol = sMarket[0].toUpperCase();
+                            if (sMarket[0] == gsMarketsOilGas) {
+                                marketIndex.symbol = gsMarketsOilGasActual;
+                            } else {
+                                marketIndex.symbol = sMarket[0].toUpperCase();
+                            }
                             if (sMarket.length == 2) {
                                 marketIndex.description = sMarket[1];
                             } else {
@@ -12052,9 +12402,9 @@
                             }
                             marketIndex.tdName = "tdMarket" + idx.toString();
                             gMarketIndexes[gMarketIndexes.length] = marketIndex;
-                            sRow1 = sRow1 + "<td id=\"" + marketIndex.tdName + "\" style=\"color:black; vertical-align:top; text-align:left; width:" + gsMarketWidth + "px\"></td>";
-                            sRow2 = sRow2 + "<td id=\"" + marketIndex.tdName + "Value\" style=\"color:black; vertical-align:top; text-align:left; width:" + gsMarketWidth + "px\"></td>";
-                            sRow3 = sRow3 + "<td style=\"vertical-align:middle; text-align:left; width:" + gsMarketWidth + "px\" >" +
+                            sRow1 = sRow1 + "<td id=\"" + marketIndex.tdName + "\" style=\"color:black; vertical-align:top; text-align:center; width:" + gsMarketWidth + "px\"></td>";
+                            sRow2 = sRow2 + "<td id=\"" + marketIndex.tdName + "Value\" style=\"color:black; vertical-align:top; text-align:center; width:" + gsMarketWidth + "px\"></td>";
+                            sRow3 = sRow3 + "<td style=\"vertical-align:middle; text-align:center; width:" + gsMarketWidth + "px\" >" +
                                 "<input style=\"padding-left:2px; padding-right:0px; padding-top:0px; padding-bottom:0px; border-width:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt; text-align:center; width:" + gsMarketWidthChange + "px; height:20px; visibility:visible\" type=\"button\" id=\"" + marketIndex.tdName + "Change\" name=\"" + marketIndex.tdName + "Change\" value=\"0\" onclick=\"DoChangeIndexChange()\">" +
                                 "</td>";
                             //sRow3 = sRow3 + "<td style=\"vertical-align:middle; text-align:left; width:" + gsMarketWidth + "px\" >" +
@@ -12932,25 +13282,6 @@
             </tr>
             <tr>
                 <td id="tdIndexes">
-                    <input type="checkbox" id="chkIndexDJI" name="chkIndexDJI" value="" checked onclick="chkIndexChanged(event)">
-                    <label for="chkIndexDJI"> Dow</label>
-                    <input type="checkbox" id="chkIndexNasdaq" name="chkIndexNasdaq" value="" checked onclick="chkIndexChanged(event)">
-                    <label for="chkIndexNasdaq"> Nasdaq</label>
-                    <input type="checkbox" id="chkIndexSP" name="chkIndexSP" value="" checked onclick="chkIndexChanged(event)">
-                    <label for="chkIndexSP"> S&P 500</label>
-                    <input type="checkbox" id="chkIndexLargeBio" name="chkIndexLargeBio" value="" checked onclick="chkIndexChanged(event)">
-                    <label for="chkIndexLargeBio"> Large Bio</label>
-                    <input type="checkbox" id="chkIndexSmallBio" name="chkIndexSmallBio" value="" checked onclick="chkIndexChanged(event)">
-                    <label for="chkIndexSmallBio"> Small Bio</label>
-                    <input type="checkbox" id="chkIndexOther" name="chkIndexOther" value="" onclick="chkIndexChanged(event)">
-                    <label for="chkIndexOther"> Other</label>
-                    <input type="button" style="border-radius:15px; visibility:visible;" id="btnWLSelect" name="btnWLSelect" value="Select Watchlists" onclick="SelectWatchlist()">
-                    <input type="button" style="border-radius:15px;" id="btnWLReset" name="btnWLReset" value="Reset Watchlists" onclick="ResetWatchlist()">
-                    <div id="spanIndexes" style="display:none; font-size:10pt;">
-                        Index or stock symbols separated by commas:
-                        <br />
-                        <input id="txtIndexes" name="txtIndexes" type="search" style="font-family:Arial, Helvetica, sans-serif; font-size:10pt;width:300px" value="">
-                    </div>
                 </td>
             </tr>
         </table>
