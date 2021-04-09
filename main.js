@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.7 2021-04-07 18:33"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.7 2021-04-08 20:35"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -240,6 +240,7 @@ function WLSummaryDayItemDetail() {
     this.gain = 0.0;
     this.gainPercent = 0.0;
     this.rank = 0;
+    this.rankTotal = 0;
 }
 
 function WLSummaryHoldingItemDetail() {
@@ -8860,7 +8861,8 @@ function GetWatchlistSummary() {
                                         let oWLSummaryDayItem = new WLSummaryDayItemDetail();
                                         oWLSummaryDayItem = gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed];
                                         if ((oWLSummaryDayItem.cost > 0) && (oWLSummaryDayItem.watchlistName.toUpperCase().indexOf("MY COLLECTION") == -1)) {
-                                            let iRank = idxDisplayed + 1;
+                                            //let iRank = idxDisplayed + 1;
+                                            let iRank = 0;
                                             for (let idxRank = 0; idxRank < gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.length; idxRank++) {
                                                 if (oWLSummaryDayItem.watchlistId == gWLSummaryDisplayed[idxWLSummary].WLSummaryHoldingItemDetails[idxRank].watchlistId) {
                                                     iRank = iRank + idxRank + 1;
@@ -8887,6 +8889,7 @@ function GetWatchlistSummary() {
                                         for (let idxDisplayed = 0; idxDisplayed < gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails.length; idxDisplayed++) {
                                             if (gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed].watchlistId == aRank[idxRank].watchlistId) {
                                                 gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed].rank = iCurrentRank;
+                                                gWLSummaryDisplayed[idxWLSummary].WLSummaryDayItemDetails[idxDisplayed].rankTotal = iLastRank;
                                                 break;
                                             }
                                         }
@@ -8964,6 +8967,7 @@ function GetWatchlistSummary() {
                                         sTmp = sTmp + "<span style=\"color:" + gsNegativeColor + ";vertical-align:" + sTableRowVerticalAlignment + ";\">" + oWLSummaryDayItem.down.toString() + "</span>";
                                         if (oWLSummaryDayItem.rank > 0) {
                                             sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)&nbsp;" + oWLSummaryDayItem.rank.toString() + "</span>";
+//                                            sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)&nbsp;" + oWLSummaryDayItem.rank.toString() + "&nbsp;" + oWLSummaryDayItem.rankTotal.toString() + "</span>";
                                         } else {
                                             sTmp = sTmp + "<span style=\"vertical-align:" + sTableRowVerticalAlignment + ";\">)</span>";
                                         }
@@ -10274,6 +10278,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
+    //debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
