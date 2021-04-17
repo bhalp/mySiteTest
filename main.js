@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.8 2021-04-16 23:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.8 2021-04-16 23:39"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -1750,22 +1750,6 @@ function CollectDetailChanged(ev) {
     } else {
         gbCollectDetail = false;
     }
-}
-
-function ConvertTDDAteToDate(sTDDate) {
-    // sTDDate should be like yyyy-mm-dd
-    let sReturnDate = "";
-    if (sTDDate != "") {
-        let sDateParts = sTDDate.split("-");
-        if (sDateParts.length == 3) {
-            if ((sDateParts[0].length == 4) &&
-                (sDateParts[1].length == 2) &&
-                (sDateParts[2].length == 2)) {
-
-            }
-        }
-    }
-    return sReturnDate;
 }
 
 function DeleteSavedOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
@@ -8453,8 +8437,10 @@ function GetWatchlistSO() {
 
                             //Bid
                             let dBidPrice = 0.0;
-                            if (!isUndefined(oMDQ[oWLSOItem.symbol].bidPrice)) {
-                                dBidPrice = oMDQ[oWLSOItem.symbol].bidPrice;
+                            if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
+                                if (!isUndefined(oMDQ[oWLSOItem.symbol].bidPrice)) {
+                                    dBidPrice = oMDQ[oWLSOItem.symbol].bidPrice;
+                                }
                             }
                             sTmp = FormatDecimalNumber(dBidPrice, 5, 2, "");
                             if (dBidPrice == 0.0) {
@@ -8465,8 +8451,10 @@ function GetWatchlistSO() {
 
                             //Ask
                             let dAskPrice = 0.0;
-                            if (!isUndefined(oMDQ[oWLSOItem.symbol].askPrice)) {
-                                dAskPrice = oMDQ[oWLSOItem.symbol].askPrice;
+                            if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
+                                if (!isUndefined(oMDQ[oWLSOItem.symbol].askPrice)) {
+                                    dAskPrice = oMDQ[oWLSOItem.symbol].askPrice;
+                                }
                             }
                             sTmp = FormatDecimalNumber(dAskPrice, 5, 2, "");
                             if (dAskPrice == 0.0) {
