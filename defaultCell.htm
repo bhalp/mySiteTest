@@ -36,7 +36,7 @@
 
         //------   main.js code starts here   ---------------------------------------------------------------------------------
 
-        var gsCurrentVersion = "6.7 2021-04-08 20:35"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+        var gsCurrentVersion = "6.8 2021-04-16 23:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
         var gsInitialStartDate = "2020-05-01";
 
         var gsRefreshToken = "";
@@ -1790,6 +1790,21 @@
             }
         }
 
+        function ConvertTDDAteToDate(sTDDate) {
+            // sTDDate should be like yyyy-mm-dd
+            let sReturnDate = "";
+            if (sTDDate != "") {
+                let sDateParts = sTDDate.split("-");
+                if (sDateParts.length == 3) {
+                    if ((sDateParts[0].length == 4) &&
+                        (sDateParts[1].length == 2) &&
+                        (sDateParts[2].length == 2)) {
+
+                    }
+                }
+            }
+            return sReturnDate;
+        }
 
         function DeleteSavedOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
             let iNumSuccess = iNumSuccessIn;
@@ -7283,13 +7298,23 @@
 
                                                     //Div Date
                                                     sTmp = oWLItemDetail.divDate;
+                                                    let sTodayTD = FormatCurrentDateForTD()
+                                                    let sDivDate = sTmp.split(' ')[0];
+                                                    let dtToday = new Date(sTodayTD);
+                                                    let dtDiv = new Date(sDivDate);
+                                                    let iDiffDays = DateDiff.inDays(dtToday, dtDiv);
+                                                    let sDivDateColor = "";
+                                                    if ((iDiffDays > 0) && (iDiffDays < 30)) {
+                                                        sDivDateColor = "color:" + gsNegativeColor + ";";
+                                                    }
+
                                                     if (sTmp != "") {
                                                         sTmp = "&nbsp;&nbsp;&nbsp;&nbsp;" + sTmp.split(" ")[0];
                                                     }
                                                     if (goWLDisplayed[sThisId + sSymbol].divDate == oWLItemDetail.divDate) {
-                                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                        sThisTable = sThisTable + "<td style=\"" + sDivDateColor + "text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
                                                     } else {
-                                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                        sThisTable = sThisTable + "<td style=\"" + sDivDateColor + "text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                                         goWLDisplayed[sThisId + sSymbol].divDate = oWLItemDetail.divDate;
                                                     }
 
