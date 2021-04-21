@@ -1,4 +1,4 @@
-var gsCurrentVersion = "6.8 2021-04-19 17:33"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "6.8 2021-04-20 17:08"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -7248,8 +7248,11 @@ function GetWatchlistPrices() {
                                             let sDivDate = sTmp.split(' ')[0];
                                             let dtToday = new Date(sTodayTD);
                                             let dtDiv = new Date(sDivDate);
-                                            let iDiffDays = DateDiff.inDays(dtToday, dtDiv);
                                             let sDivDateColor = "";
+                                            if (dtDiv < dtToday) {
+                                                dtDiv.setDate(dtDiv.getDate() + 90);
+                                            }
+                                            let iDiffDays = DateDiff.inDays(dtToday, dtDiv);
                                             if ((iDiffDays > 0) && (iDiffDays < 30)) {
                                                 sDivDateColor = "color:" + gsNegativeColor + ";";
                                             }
