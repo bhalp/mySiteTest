@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.0 2021-05-19 23:30"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.0 2021-05-19 23:44"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -6925,8 +6925,8 @@ function GetWatchlistPrices() {
 
                             } else {
                                 if (bDoingDividendWL) {
-                                    sThisDiv = sThisDiv + "<div style=\"width:1020px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                    sThisDiv = sThisDiv + "<table style=\"width:1020px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                    sThisDiv = sThisDiv + "<div style=\"width:1040px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                    sThisDiv = sThisDiv + "<table style=\"width:1040px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                                 } else {
                                     sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                                     sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
@@ -7011,8 +7011,8 @@ function GetWatchlistPrices() {
 
                             } else {
                                 if (bDoingDividendWL) {
-                                    sThisDiv = sThisDiv + "<div style=\"width:1020px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                    sThisDiv = sThisDiv + "<table style=\"width:1020px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                    sThisDiv = sThisDiv + "<div style=\"width:1040px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                    sThisDiv = sThisDiv + "<table style=\"width:1040px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                                 } else {
                                     sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                                     sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
