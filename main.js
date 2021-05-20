@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.0 2021-05-19 23:44"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.0 2021-05-20 01:17"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -6913,6 +6913,7 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th colspan=\"3\" style=\"height:30px;vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
+                                    "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                                     "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                     "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
                                     "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
@@ -6942,6 +6943,7 @@ function GetWatchlistPrices() {
                                 //"&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
 
                                 sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                                    "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                                     "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                     "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
                                     "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
@@ -6999,6 +7001,7 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<tr>";
 
                                 sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
+                                                       "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                                                        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                                        "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
                                                        "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
@@ -7029,6 +7032,7 @@ function GetWatchlistPrices() {
 
 
                                 sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" + 
+                                                      "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                                                       "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                                       "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
                                                       "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
@@ -12989,9 +12993,19 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     bChecked = true;
                 }
 
+                let iNumSelected = 0;
                 for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
                     gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = bChecked;
+                    if (bChecked) {
+                        iNumSelected++;
+                    }
                 }
+                if (iNumSelected == 0) {
+                    document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                } else {
+                    document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "(" + FormatIntegerNumber(iNumSelected, 3, "") + ")&nbsp;&nbsp;";
+                }
+
                 giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
 
             }
@@ -13017,14 +13031,21 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
 
                     // check to see if everything has been selected
                     let bAllChecked = true;
+                    let iNumSelected = 0;
                     for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                        if (gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
+                        if (!gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
                             bAllChecked = false;
-                            break;
+                        } else {
+                            iNumSelected++;
                         }
                     }
                     if (bAllChecked) {
                         document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = true;
+                    }
+                    if (iNumSelected == 0) {
+                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                    } else {
+                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "(" + FormatIntegerNumber(iNumSelected, 3, "") + ")&nbsp;&nbsp;";
                     }
 
                 } else {
@@ -13038,6 +13059,17 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     }
                     //set the top checkbox to unchecked
                     document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = false;
+                    let iNumSelected = 0;
+                    for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
+                        if (gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
+                            iNumSelected++;
+                        }
+                    }
+                    if (iNumSelected == 0) {
+                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                    } else {
+                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "(" + FormatIntegerNumber(iNumSelected, 3, "") + ")&nbsp;&nbsp;";
+                    }
                 }
 
                 giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
