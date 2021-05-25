@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.0 2021-05-25 00:40"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.0 2021-05-25 04:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -5160,7 +5160,7 @@ function GetTDData(bFirstTime) {
                                             aServerUrls[aServerUrls.length] = sThisSet;
                                         }
                                     } else {
-                                        aServerUrls[aServerUrls.length] = sSymbolsToUse;
+                                        aServerUrls[aServerUrls.length] = sSymbolsThatNeedQuotes;
                                     }
 
                                     for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
@@ -5284,7 +5284,7 @@ function GetTDData(bFirstTime) {
                                     aServerUrls[aServerUrls.length] = sThisSet;
                                 }
                             } else {
-                                aServerUrls[aServerUrls.length] = sSymbolsToUse;
+                                aServerUrls[aServerUrls.length] = sSymbolsThatNeedQuotes;
                             }
 
                             for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
