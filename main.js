@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.0 2021-05-20 01:17"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.0 2021-05-24 19:24"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -7287,12 +7287,14 @@ function GetWatchlistPrices() {
                                                 dtDiv.setDate(dtDiv.getDate() + 90);
                                             }
                                             let iDiffDays = DateDiff.inDays(dtToday, dtDiv);
-                                            if ((iDiffDays > 0) && (iDiffDays < 30)) {
-                                                sDivDateColor = "font-weight: bold;color:" + gsNegativeColor + ";";
-                                            } else if (iDiffDays == 0) {
-                                                sDivDateColor = "font-weight: bold;color:blue;";
-                                            } else if (iDiffDays == 89) {
-                                                sDivDateColor = "font-weight: bold;color:green;";
+                                            if (iDiffDays == 0) {
+                                                sDivDateColor = "font-weight: bold;color:white; background-color:" + gsNegativeColor + ";";
+                                            } else if (iDiffDays == 1) {
+                                                sDivDateColor = "font-weight: bold;color:white; background-color:" + gsNegativeColor + ";";
+                                            } else if ((iDiffDays >= 2) && (iDiffDays <= 5)) {
+                                                sDivDateColor = "font-weight: bold;color:white; background-color:blue;";
+                                            } else if ((iDiffDays > 0) && (iDiffDays < 30)) {
+                                                sDivDateColor = "font-weight: bold;color:white; background-color:green;";
                                             }
 
                                             if (sTmp != "") {
