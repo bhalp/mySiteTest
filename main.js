@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.0 2021-05-24 19:24"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.0 2021-05-25 00:40"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -1038,6 +1038,7 @@ end oACCP-----------------------------------------------------------------------
 
 
 var oMDQ;
+var oMDQ2;
 /*-------------------------------------------------------------------------------
 [
  
@@ -2819,6 +2820,11 @@ function drag_divWL(div_id) {
         }
     }, true);
 
+}
+
+function extendMDQ(obj, src) {
+    Object.keys(src).forEach(function (key) { obj[key] = src[key]; });
+    return obj;
 }
 
 function FindSymbolsInWatchlists() {
@@ -5102,6 +5108,7 @@ function GetTDData(bFirstTime) {
                 }
             }
             if (bOkToContinue) {
+                let iSymbolLimit = 490;
                 sSymbolsThatNeedQuotes = GetUniqueListOfSymbols(sSymbolsThatNeedQuotes);
                 if (!isUndefined(mySock.readyState)) {
                     if (mySock.readyState == 1) { //is the socket open - it could be closed if someone else logged on to the account or just not opened yet
@@ -5133,10 +5140,46 @@ function GetTDData(bFirstTime) {
                             }
                             if (sSymbolsThatNeedQuotes.length > 0) {
                                 if (bDoGetQuotes) {
-                                    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
-                                    if (iReturn != 0) {
-                                        bOkToContinue = false;
+
+                                    let aServerUrls = new Array();
+                                    let aSymbols = sSymbolsThatNeedQuotes.split(",");
+                                    if (aSymbols.length > iSymbolLimit) {
+                                        for (let idxXXX = 0; idxXXX < aSymbols.length; idxXXX = idxXXX + iSymbolLimit) {
+                                            let iEnd = 0;
+                                            let sThisSet = "";
+                                            let sSep = "";
+                                            if (idxXXX + iSymbolLimit < aSymbols.length) {
+                                                iEnd = idxXXX + iSymbolLimit;
+                                            } else {
+                                                iEnd = aSymbols.length;
+                                            }
+                                            for (let idxSym = idxXXX; idxSym < iEnd; idxSym++) {
+                                                sThisSet = sThisSet + sSep + aSymbols[idxSym];
+                                                sSep = ",";
+                                            }
+                                            aServerUrls[aServerUrls.length] = sThisSet;
+                                        }
+                                    } else {
+                                        aServerUrls[aServerUrls.length] = sSymbolsToUse;
                                     }
+
+                                    for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
+                                        if (idxServerURL == 0) {
+                                            iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 4);
+                                            if (iReturn != 0) {
+                                                bOkToContinue = false;
+                                            }
+                                        } else {
+                                            iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 6);
+                                            if (iReturn != 0) {
+                                                bOkToContinue = false;
+                                            }
+                                        }
+                                    }
+                                //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
+                                //    if (iReturn != 0) {
+                                //        bOkToContinue = false;
+                                //    }
                                 }
                                 if (bOkToContinue) {
                                     let gQuoteRequest = "";
@@ -5222,15 +5265,56 @@ function GetTDData(bFirstTime) {
                         //get the new symbols - don't care about the ones that have been removed
                         gsSysmbolsThatNeedQuotes = sSymbolsThatNeedQuotes;
                         if (sSymbolsThatNeedQuotes.length > 0) {
-                            iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
-                            if (iReturn == 0) {
+                            let aServerUrls = new Array();
+                            let aSymbols = sSymbolsThatNeedQuotes.split(",");
+                            if (aSymbols.length > iSymbolLimit) {
+                                for (let idxXXX = 0; idxXXX < aSymbols.length; idxXXX = idxXXX + iSymbolLimit) {
+                                    let iEnd = 0;
+                                    let sThisSet = "";
+                                    let sSep = "";
+                                    if (idxXXX + iSymbolLimit < aSymbols.length) {
+                                        iEnd = idxXXX + iSymbolLimit;
+                                    } else {
+                                        iEnd = aSymbols.length;
+                                    }
+                                    for (let idxSym = idxXXX; idxSym < iEnd; idxSym++) {
+                                        sThisSet = sThisSet + sSep + aSymbols[idxSym];
+                                        sSep = ",";
+                                    }
+                                    aServerUrls[aServerUrls.length] = sThisSet;
+                                }
+                            } else {
+                                aServerUrls[aServerUrls.length] = sSymbolsToUse;
+                            }
+
+                            for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
+                                if (idxServerURL == 0) {
+                                    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 4);
+                                    if (iReturn != 0) {
+                                        bOkToContinue = false;
+                                    }
+                                } else {
+                                    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 6);
+                                    if (iReturn != 0) {
+                                        bOkToContinue = false;
+                                    }
+                                }
+                            }
+                            if (bOkToContinue) {
                                 GetWatchlistPrices();
                                 GetIndexValues();
                                 GetWatchlistSO();
                                 GetWatchlistSummary();
-                            } else {
-                                bOkToContinue = false;
                             }
+                        //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
+                        //    if (iReturn == 0) {
+                        //        GetWatchlistPrices();
+                        //        GetIndexValues();
+                        //        GetWatchlistSO();
+                        //        GetWatchlistSummary();
+                        //    } else {
+                        //        bOkToContinue = false;
+                        //    }
                         }
                     }
                 }
@@ -5335,6 +5419,19 @@ function GetTDDataHTTP(sServerURL, oCMindex) {
                                         if (!(isUndefined(oCMSavedOrders.error))) {
                                             sAPIError = oCMSavedOrders.error;
                                         }
+                                    }
+                                    break;
+                                }
+                            case 6: //additional market data quotes
+                                {
+                                    oMDQ2 = myJSON.parse(xhttp.responseText);
+                                    iCheckTDAPIReturn = checkTDAPIError(oMDQ2);
+                                    if (iCheckTDAPIReturn != 0) {
+                                        if (!(isUndefined(oMDQ2.error))) {
+                                            sAPIError = oMDQ2.error;
+                                        }
+                                    } else {
+                                        oMDQ = extendMDQ(oMDQ, oMDQ2);
                                     }
                                     break;
                                 }
