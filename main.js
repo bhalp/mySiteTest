@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.1 2021-05-27 17:54"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.1 2021-05-28 11:26"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -8579,7 +8579,9 @@ function GetWatchlistSO() {
                         sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">No saved orders for this account.</td>";
                         sThisTable = sThisTable + "</tr>";
                         if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
-                            document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                            if (document.getElementById("spanWLNumChecked" + sThisId) != null) {
+                                document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                            }
                         }
 
                     } else {
