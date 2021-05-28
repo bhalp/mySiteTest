@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.0 2021-05-25 04:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.1 2021-05-27 17:54"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -15,6 +15,30 @@ String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
 };
 
 var giZIndex = 0;
+
+var gsSortOrderFields = {
+    "Symbol": "Symbol",
+    "Qty": "Qty",
+    "Price": "Price",
+    "ChgDollar": "ChgDollar",
+    "ChgPercent": "ChgPercent",
+    "Bid": "Bid",
+    "Ask": "Ask",
+    "High": "High",
+    "Low": "Low",
+    "DayGain": "DayGain",
+    "GainDollar": "GainDollar",
+    "GainPercent": "GainPercent",
+    "CostPerShare": "CostPerShare",
+    "DivPercent": "DivPercent",
+    "DivDollar": "DivDollar",
+    "Amt": "Amt",
+    "DivDate": "DivDate",
+    "PE": "PE",
+    "PurchaseDate": "PurchaseDate",
+    "OldGL": "OldGL",
+    "MktValue": "MktValue"
+}
 
 function FixedPrice() {
     this.symbol = "";
@@ -221,6 +245,8 @@ function WLItemDetail() {
 function WLDisplayed() {
     this.symbol = "";
     this.assetType = "";
+    this.sSortOrderFields = gsSortOrderFields.Symbol; //look at gsSortOrderFields
+    this.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending
     this.WLItemDetails = new Array(); //array of WLItemDetail objects
 }
 var gWLDisplayed = new Array(); //array of WLDisplayed objects
@@ -314,9 +340,7 @@ function WLWatchList() {
     this.bSelectedWLSummary = false;
     this.bSelectedWLSummaryTemp = false;
     this.bShowAllAccountsForEachSymbol = false;
-    this.iSortOrderFields = 0; //0 - symbol, 1 - qty, 2 - last, 3 - net chng, 
-    //4 - net chng %, 5 - bid, 6 - ask, 7 - high, 
-    //8 - low, 9 - day gain, 10 - gain, 11 - gain %, 12 - cost/share
+    this.sSortOrderFields = gsSortOrderFields.Symbol; //look at gsSortOrderFields
     this.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending
     this.spanName = "";
     this.name = ""; //"Account" and "Account Saved Orders" are special names
@@ -6949,6 +6973,8 @@ function GetWatchlistPrices() {
                             } else {
                                 oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
                             }
+                            oWLDisplayed.sSortOrderFields = gWatchlists[idxWLMain].sSortOrderFields;
+                            oWLDisplayed.iSortOrderAscDesc = gWatchlists[idxWLMain].iSortOrderAscDesc;
                             gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
 
                         }
@@ -6967,9 +6993,73 @@ function GetWatchlistPrices() {
                     let sTmp = "";
                     let bEverythingIsChecked = true;
 
+                    let sTitleDividend = {
+                        "Symbol": "<b><I><U>Symbol</U>&nbsp;&nbsp;</I></b>",
+                        "DivPercent": "<b><I><U>Div%</U></I></b>",
+                        "DivDollar": "<b><I><U>Div$</U></I></b>",
+                        "Amt": "<b><I>&nbsp;&nbsp;<U>Amt</U>&nbsp;&nbsp;</I></b>",
+                        "DivDate": "<b><I><U>Div&nbsp;Date</U></I></b>",
+                        "PE": "<b><I><U>P/E</U></I></b>",
+                        "Price": "<b><I><U>Price</U></I></b>",
+                        "ChgPercent": "<b><I><U>Chg(%)</U></I></b>",
+                        "ChgDollar": "<b><I><U>Chg($)</U></I></b>",
+                        "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I></b>",
+                        "GainDollar": "<b><I><U>Gain($)</U></I></b>",
+                        "GainPercent": "<b><I><U>Gain(%)</U></I></b>",
+                        "Qty": "<b><I><U>Qty</I></U></b>",
+                        "CostPerShare": "<b><I><U>Cost</I></U></b>",
+                        "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I></b>",
+                        "OldGL": "<b><I>Old&nbsp;G/L</I></b>",
+                        "PurchaseDate": "<b><I>Acquired</I></b>"
+                    };
+
+                    let sTitleDividendWithArrow = {
+                        "Symbol": "<b><I><U>Symbol</U>&nbsp;</I>xxx</b>",
+                        "DivPercent": "<b><I><U>Div%</U></I>xxx</b>",
+                        "DivDollar": "<b><I><U>Div$</U></I>xxx</b>",
+                        "Amt": "<b><I>&nbsp;&nbsp;<U>Amt</U>&nbsp;</I>xxx</b>",
+                        "DivDate": "<b><I><U>Div&nbsp;Date</U></I>xxx</b>",
+                        "PE": "<b><I><U>P/E</U></I>xxx</b>",
+                        "Price": "<b><I><U>Price</U></I>xxx</b>",
+                        "ChgPercent": "<b><I><U>Chg(%)</U></I>xxx</b>",
+                        "ChgDollar": "<b><I><U>Chg($)</U></I>xxx</b>",
+                        "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I>xxx</b>",
+                        "GainDollar": "<b><I><U>Gain($)</U></I>xxx</b>",
+                        "GainPercent": "<b><I><U>Gain(%)</U></I>xxx</b>",
+                        "Qty": "<b><I><U>Qty</I></U>xxx</b>",
+                        "CostPerShare": "<b><I><U>Cost</I></U>xxx</b>",
+                        "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I>xxx</b>",
+                        "OldGL": "<b><I>Old&nbsp;G/L</I>xxx</b>",
+                        "PurchaseDate": "<b><I>Acquired</I>xxx</b>"
+                    };
+
                     if (gWLDisplayed.length > 0) {
 
-                        gWLDisplayed.sort(sortBySymbol);
+                        let bDoingDividendWL = false;
+                        if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
+                            bDoingDividendWL = true;
+                        }
+
+                        if (bDoingDividendWL) {
+
+                            let sDownArrow = "&darr;";
+                            let sUpArrow = "&uarr;";
+                            let sArrow = "";
+                            if (gWatchlists[idxWLMain].iSortOrderAscDesc == 0) {
+                                sArrow = sDownArrow;
+                            } else {
+                                sArrow = sUpArrow;;
+                            }
+                            gWLDisplayed.sort(sortWL);
+                            sTitleDividend[gWatchlists[idxWLMain].sSortOrderFields] = sTitleDividendWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
+                        //    for (var key in sTitleDividend) {
+                        //        sTitleDividend[key] = sTitleDividend[key].replace("xxx", "");
+                        //    }
+                        } else {
+                            gWLDisplayed.sort(sortWL);
+//                            gWLDisplayed.sort(sortBySymbol);
+                        }
+
 
                         bEverythingIsChecked = true;
                         let iTotalSymbolsUp = 0;
@@ -6981,10 +7071,6 @@ function GetWatchlistPrices() {
                         let sSep = "";
                         let sSepForOrder = "|";
 
-                        let bDoingDividendWL = false;
-                        if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
-                            bDoingDividendWL = true;
-                        }
 
                         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
                             if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
@@ -7182,10 +7268,6 @@ function GetWatchlistPrices() {
 
                         sThisTable = sThisTable + "<tr>";
                         let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + "000";
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
-                            "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
-                            "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-                            "<b><I>Symbol&nbsp;&nbsp;</I ></b></span></td > ";
 
                         let sAcquiredSpaces = "";
                         if (bDoingDividendWL) {
@@ -7194,27 +7276,55 @@ function GetWatchlistPrices() {
 
                         if (bDoingDividendWL) {
                             //doing dividend WL
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Div%</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Div$</I></b></td>";
+                            let sonClickChangeOrderBase = "onclick =\"wlChangeOrder(" + idxWLMain.toString() + ", 'xxx')\"";
+                            let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Symbol);
+                            sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
+                                "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
+                                "<span " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                                sTitleDividend.Symbol + "</span></td > ";
 
-                            sThisTable = sThisTable + "<td style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>&nbsp;&nbsp;&nbsp;&nbsp;Amt</I></b></td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivPercent);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivPercent + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivDollar);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDollar + "</td>";
 
-                            sThisTable = sThisTable + "<td style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Div&nbsp;Date</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>P/E</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Price</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg(%)</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg($)</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;gain($)</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain($)</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain(%)</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Qty</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Cost</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Mkt&nbsp;Value</I></b></td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Amt);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Amt + "</td>";
 
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Old&nbsp;G/L</I></b></td>";
-                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sAcquiredSpaces + "Acquired</I></b></td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivDate);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDate + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PE);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.PE + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Price + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgPercent);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.ChgPercent + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgDollar);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.ChgDollar + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DayGain);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DayGain + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainDollar);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainDollar + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainPercent);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainPercent + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Qty + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.CostPerShare);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.CostPerShare + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.MktValue);
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.MktValue + "</td>";
+
+                            sonClickChangeOrder = "";
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b>" + sTitleDividend.OldGL + "</td>";
+                            sonClickChangeOrder = "";
+                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.PurchaseDate + "</td>";
 
                         } else {
+                            sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
+                                "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
+                                "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                                "<b><I>Symbol&nbsp;&nbsp;</I ></b></span></td > ";
+
                             //not doing dividend WL
                             sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Acquired</I></b></td>";
                             sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Qty</I></b></td>";
@@ -8419,6 +8529,7 @@ function GetWatchlistSO() {
                             "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLPlaceSavedOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                             "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                             "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
                             "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th > ";
@@ -8442,6 +8553,7 @@ function GetWatchlistSO() {
                             "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLPlaceSavedOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                             "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                             "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
                             "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
@@ -8466,6 +8578,10 @@ function GetWatchlistSO() {
                         //no saved orders
                         sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">No saved orders for this account.</td>";
                         sThisTable = sThisTable + "</tr>";
+                        if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
+                            document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                        }
+
                     } else {
                         sThisTable = sThisTable + "<td colspan=\"10\" style=\"text-align=left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px; \">";
                         sThisTable = sThisTable + "Total saved orders " + gWatchlists[idxWL].WLItems.length.toString() + " (max 200)";
@@ -12806,8 +12922,6 @@ function sortByRank(a, b) {
     return 0;
 }
 
-
-
 function sortBySymbol(a, b) {
     let aSymbol = a.symbol;
     let bSymbol = b.symbol;
@@ -12880,6 +12994,304 @@ function sortByWLAccountandWLName(a, b) {
     }
     if ((aAccountName + aName) > (bAccountName + bName)) {
         return 1;
+    }
+    return 0;
+}
+
+function sortWL(a, b) {
+    let iReturn = 0;
+    let aAmt = 0;
+    let bAmt = 0;
+    let aStr = "";
+    let bStr = "";
+    let bString = false;
+
+    let oWLDisplay = new WLDisplayed();
+    let oWLItemDetail = new WLItemDetail();
+    switch (a.sSortOrderFields) {
+        case gsSortOrderFields.Amt:
+            {
+                aAmt = a.WLItemDetails[0].divAmount * a.WLItemDetails[0].shares;
+                bAmt = b.WLItemDetails[0].divAmount * b.WLItemDetails[0].shares;
+                break;
+            }
+        case gsSortOrderFields.Ask:
+            {
+                aAmt = a.WLItemDetails[0].askPrice;
+                bAmt = b.WLItemDetails[0].askPrice;
+                break;
+            }
+        case gsSortOrderFields.Bid:
+            {
+                aAmt = a.WLItemDetails[0].bidPrice;
+                bAmt = b.WLItemDetails[0].bidPrice;
+                break;
+            }
+        case gsSortOrderFields.ChgDollar:
+            {
+                aAmt = a.WLItemDetails[0].regularMarketNetChange;
+                bAmt = b.WLItemDetails[0].regularMarketNetChange;
+                break;
+            }
+        case gsSortOrderFields.ChgPercent:
+            {
+                aAmt = a.WLItemDetails[0].regularMarketPercentChangeInDouble;
+                bAmt = b.WLItemDetails[0].regularMarketPercentChangeInDouble;
+                break;
+            }
+        case gsSortOrderFields.CostPerShare:
+            {
+                aAmt = a.WLItemDetails[0].costPerShare;
+                bAmt = b.WLItemDetails[0].costPerShare;
+                break;
+            }
+        case gsSortOrderFields.DayGain:
+            {
+                aAmt = a.WLItemDetails[0].dayGain;
+                bAmt = b.WLItemDetails[0].dayGain;
+                break;
+            }
+        case gsSortOrderFields.DivDate:
+            {
+                aStr = a.WLItemDetails[0].divDate;
+                bStr = b.WLItemDetails[0].divDate;
+                bString = true;
+                break;
+            }
+        case gsSortOrderFields.DivDollar:
+            {
+                aAmt = a.WLItemDetails[0].divAmount;
+                bAmt = b.WLItemDetails[0].divAmount;
+                break;
+            }
+        case gsSortOrderFields.DivPercent:
+            {
+                aAmt = a.WLItemDetails[0].divYield;
+                bAmt = b.WLItemDetails[0].divYield;
+                break;
+            }
+        case gsSortOrderFields.GainDollar:
+            {
+                aAmt = a.WLItemDetails[0].gain;
+                bAmt = b.WLItemDetails[0].gain;
+                break;
+            }
+        case gsSortOrderFields.GainPercent:
+            {
+                aAmt = a.WLItemDetails[0].gainPercent;
+                bAmt = b.WLItemDetails[0].gainPercent;
+                break;
+            }
+        case gsSortOrderFields.High:
+            {
+                aAmt = a.WLItemDetails[0].highPrice;
+                bAmt = b.WLItemDetails[0].highPrice;
+                break;
+            }
+        case gsSortOrderFields.Low:
+            {
+                aAmt = a.WLItemDetails[0].lowPrice;
+                bAmt = b.WLItemDetails[0].lowPrice;
+                break;
+            }
+        case gsSortOrderFields.MktValue:
+            {
+                aAmt = a.WLItemDetails[0].marketValue;
+                bAmt = b.WLItemDetails[0].marketValue;
+                break;
+            }
+        case gsSortOrderFields.PE:
+            {
+                aAmt = a.WLItemDetails[0].peRatio;
+                bAmt = b.WLItemDetails[0].peRatio;
+                break;
+            }
+        case gsSortOrderFields.Price:
+            {
+                aAmt = a.WLItemDetails[0].regularMarketLastPrice;
+                bAmt = b.WLItemDetails[0].regularMarketLastPrice;
+                break;
+            }
+        case gsSortOrderFields.PurchaseDate:
+            {
+                break;
+            }
+        case gsSortOrderFields.Qty:
+            {
+                aAmt = a.WLItemDetails[0].shares;
+                bAmt = b.WLItemDetails[0].shares;
+                break;
+            }
+        case gsSortOrderFields.Symbol:
+            {
+                let sX = "                                                  ";
+                if (a.symbol.length < 20) {
+                    aStr = a.symbol + sX.substr(0, 20 - a.symbol.length);
+                }
+                if (b.symbol.length < 20) {
+                    bStr = b.symbol + sX.substr(0, 20 - b.symbol.length);
+                }
+                bString = true;
+                break;
+            }
+        default:
+            {
+                break;
+            }
+    }
+    if (bString) {
+        if (aStr < bStr) {
+            iReturn = -1;
+        }
+        if (aStr > bStr) {
+            iReturn = 1;
+        }
+    } else {
+        if (aAmt < bAmt) {
+            iReturn = -1;
+        }
+        if (aAmt > bAmt) {
+            iReturn = 1;
+        }
+    }
+    if (a.iSortOrderAscDesc != 0) {
+        iReturn = iReturn * -1;
+    }
+    return iReturn;
+}
+
+function sortWLByDivAmountAsc(a, b) {
+    let aAmt = a.WLItemDetails[0].divAmount * a.WLItemDetails[0].shares;
+    let bAmt = b.WLItemDetails[0].divAmount * b.WLItemDetails[0].shares;
+    if (aAmt < bAmt) {
+        return -1;
+    }
+    if (aAmt > bAmt) {
+        return 1;
+    }
+    return 0;
+}
+
+function sortWLByDivAmountDesc(a, b) {
+    let aAmt = a.WLItemDetails[0].divAmount * a.WLItemDetails[0].shares;
+    let bAmt = b.WLItemDetails[0].divAmount * b.WLItemDetails[0].shares;
+    if (aAmt < bAmt) {
+        return 1;
+    }
+    if (aAmt > bAmt) {
+        return -1;
+    }
+    return 0;
+}
+
+function sortWLByDivDateAsc(a, b) {
+    let aAmt = a.WLItemDetails[0].divDate;
+    let bAmt = b.WLItemDetails[0].divDate;
+    if (aAmt < bAmt) {
+        return -1;
+    }
+    if (aAmt > bAmt) {
+        return 1;
+    }
+    return 0;
+}
+
+function sortWLByDivDateDesc(a, b) {
+    let aAmt = a.WLItemDetails[0].divDate;
+    let bAmt = b.WLItemDetails[0].divDate;
+    if (aAmt < bAmt) {
+        return 1;
+    }
+    if (aAmt > bAmt) {
+        return -1;
+    }
+    return 0;
+}
+
+function sortWLByDivGainDollarAsc(a, b) {
+    let aAmt = a.WLItemDetails[0].divAmount;
+    let bAmt = b.WLItemDetails[0].divAmount;
+    if (aAmt < bAmt) {
+        return -1;
+    }
+    if (aAmt > bAmt) {
+        return 1;
+    }
+    return 0;
+}
+
+function sortWLByDivGainDollarDesc(a, b) {
+    let aAmt = a.WLItemDetails[0].divAmount;
+    let bAmt = b.WLItemDetails[0].divAmount;
+    if (aAmt < bAmt) {
+        return 1;
+    }
+    if (aAmt > bAmt) {
+        return -1;
+    }
+    return 0;
+}
+
+function sortWLByDivGainPercentAsc(a, b) {
+    let aAmt = a.WLItemDetails[0].divYield;
+    let bAmt = b.WLItemDetails[0].divYield;
+    if (aAmt < bAmt) {
+        return -1;
+    }
+    if (aAmt > bAmt) {
+        return 1;
+    }
+    return 0;
+}
+
+function sortWLByDivGainPercentDesc(a, b) {
+    let aAmt = a.WLItemDetails[0].divYield;
+    let bAmt = b.WLItemDetails[0].divYield;
+    if (aAmt < bAmt) {
+        return 1;
+    }
+    if (aAmt > bAmt) {
+        return -1;
+    }
+    return 0;
+}
+
+function sortWLBySymbolAsc(a, b) {
+    let aSymbol = a.symbol;
+    let bSymbol = b.symbol;
+    let sX = "                                                  ";
+
+    if (aSymbol.length < 20) {
+        aSymbol = aSymbol + sX.substr(0, 20 - aSymbol.length);
+    }
+    if (bSymbol.length < 20) {
+        bSymbol = bSymbol + sX.substr(0, 20 - bSymbol.length);
+    }
+    if (aSymbol < bSymbol) {
+        return -1;
+    }
+    if (aSymbol > bSymbol) {
+        return 1;
+    }
+    return 0;
+}
+
+function sortWLBySymbolDesc(a, b) {
+    let aSymbol = a.symbol;
+    let bSymbol = b.symbol;
+    let sX = "                                                  ";
+
+    if (aSymbol.length < 20) {
+        aSymbol = aSymbol + sX.substr(0, 20 - aSymbol.length);
+    }
+    if (bSymbol.length < 20) {
+        bSymbol = bSymbol + sX.substr(0, 20 - bSymbol.length);
+    }
+    if (aSymbol < bSymbol) {
+        return 1;
+    }
+    if (aSymbol > bSymbol) {
+        return -1;
     }
     return 0;
 }
@@ -13024,6 +13436,64 @@ function wlCancelClicked() {
     }
     gbDoingSymbolsSelect = false;
     SetupWatchlists(false);
+}
+
+function wlChangeOrder(idxWL, sSortOrder) {
+    if (!gbDoingGetTDData) {
+        if (giGetTDDataTimeoutId != 0) {
+            window.clearTimeout(giGetTDDataTimeoutId);
+            giGetTDDataTimeoutId = 0;
+
+            if (gWatchlists[idxWL].sSortOrderFields == sSortOrder) {
+                if (gWatchlists[idxWL].iSortOrderAscDesc == 0) {
+                    gWatchlists[idxWL].iSortOrderAscDesc = 1;
+                } else {
+                    gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                }
+            } else {
+                switch (sSortOrder) {
+                    case gsSortOrderFields.Amt:
+                    case gsSortOrderFields.Ask:
+                    case gsSortOrderFields.Bid:
+                    case gsSortOrderFields.ChgDollar:
+                    case gsSortOrderFields.ChgPercent:
+                    case gsSortOrderFields.CostPerShare:
+                    case gsSortOrderFields.DayGain:
+                    case gsSortOrderFields.DivDollar:
+                    case gsSortOrderFields.DivPercent:
+                    case gsSortOrderFields.GainDollar:
+                    case gsSortOrderFields.GainPercent:
+                    case gsSortOrderFields.High:
+                    case gsSortOrderFields.MktValue:
+                    case gsSortOrderFields.PE:
+                    case gsSortOrderFields.Price:
+                    case gsSortOrderFields.Qty:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 1;
+                            break;
+                        }
+                    case gsSortOrderFields.DivDate:
+                    case gsSortOrderFields.Low:
+                    case gsSortOrderFields.PurchaseDate:
+                    case gsSortOrderFields.Symbol:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                            break;
+                        }
+                    default:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                            break;
+                        }
+                }
+                gWatchlists[idxWL].sSortOrderFields = sSortOrder;
+            }
+
+            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
+        }
+    } else {
+        window.setTimeout("wlChangeOrder(" + idxWL.toString() + ",'" + sSortOrder + "')", 100);
+    }
 }
 
 function wlDoCancelPopup() {
