@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.1 2021-05-29 01:12"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.1 2021-06-03 23:21"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -330,6 +330,7 @@ function WLItemSavedOrder() {
 var gsAccountWLSummary = "Watchlist Performance";
 var gsAccountSavedOrders = "Account Saved Orders";
 var gOrdersToDelete = new Array();
+var gOrdersToPlace = new Array();
 
 function WLWatchList() {
     this.bSelected = false;
@@ -454,6 +455,8 @@ function TDSavedOrder() {
     this.sError = "";
     this.iRetryCnt = 0;
     this.symbol = "";
+    this.orderType = "";
+    this.instruction = "";
     this.a00complexOrderStrategyTypeStart = "{ ";
     this.a01complexOrderStrategyType = "\"complexOrderStrategyType\": \"NONE\", ";
     this.a02orderType = "\"orderType\": "; //"MARKET", "LIMIT", or "TRAILING_STOP" followed by a comma
@@ -2196,6 +2199,57 @@ function DoSODeleteOrders(idxWL) {
     }
 }
 
+function DoSOPlaceOrders(idxWL) {
+    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+
+        let sAccountId = gWatchlists[idxWL].accountId;
+        let iNumSelected = 0;
+
+        let dtCancelTime = new Date(); //get todays date
+        dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
+        let sCancelTime = FormatDateForTD(dtCancelTime);
+
+
+        gOrdersToPlace.length = 0;
+
+        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                iNumSelected++;
+                let oWLItem = new WLItemSavedOrder();
+                oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
+                let oTDSavedOrder = new TDSavedOrder();
+                oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                oTDSavedOrder.orderType = oWLItem.orderType;
+                oTDSavedOrder.a02orderType = oTDSavedOrder.a02orderType + "\"" + oWLItem.orderType + "\", ";
+                oTDSavedOrder.a02Aprice = oTDSavedOrder.a02Aprice + "\"" + oWLItem.price.toString() + "\", ";
+                oTDSavedOrder.a03DstopPriceOffset = oTDSavedOrder.a03DstopPriceOffset + oWLItem.stopPriceOffset.toString() + ", ";
+                oTDSavedOrder.a03FcancelTime = oTDSavedOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+                oTDSavedOrder.a04duration = oTDSavedOrder.a04duration + "\"" + oWLItem.duration + "\", ";
+                oTDSavedOrder.a07instructionStart = oTDSavedOrder.a07instructionStart + "\"" + oWLItem.instruction + "\", ";
+                oTDSavedOrder.instruction = oWLItem.instruction;
+                oTDSavedOrder.a08quantity = oTDSavedOrder.a08quantity + oWLItem.quantity.toString() + ", ";
+                oTDSavedOrder.a10symbol = oTDSavedOrder.a10symbol + "\"" + oWLItem.symbol + "\", "
+                oTDSavedOrder.symbol = oWLItem.symbol;
+
+                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+            }
+        }
+        if (iNumSelected == 0) {
+            alert("Please select at least one saved order to place.")
+            return;
+        }
+        let sConfirmMsg = "";
+        sConfirmMsg = "Placing  " + iNumSelected.toString() + " saved orders. ";
+        if (AreYouSure(sConfirmMsg)) {
+            gbDoingCreateOrders = true;
+            SetWait();
+            window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+        }
+
+        return;
+    }
+}
+
 function DoURLEncode(sData) {
     let sReturn = "";
     if (sData.length > 0) {
@@ -3151,6 +3205,8 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                                                         oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
                                                                         oTDOrder.symbol = sSymbol;
                                                                         gTDOrders[gTDOrders.length] = oTDOrder;
+                                                                    } else {
+                                                                        alert("No price for " + sSymbol);
                                                                     }
                                                                     break;
                                                                     //if ((oWatchList.accountId == oWLItemDetail.accountId) || (!bExisting)) {
@@ -9835,7 +9891,7 @@ function GetWatchlistSO() {
                         sThisDiv = sThisDiv + "<tr>";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLPlaceSavedOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
+                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
@@ -9859,7 +9915,7 @@ function GetWatchlistSO() {
                         sThisDiv = sThisDiv + "<tr>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLPlaceSavedOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
+                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
@@ -12486,6 +12542,110 @@ function PostTDOrder(sAccountId, sData) {
     return iReturn;
 }
 
+function PostTDPlaceOrder(sAccountId, sData) {
+    //sType = BUY, SELL, TRAILING STOP
+    let iTryCount = 0;
+    let iReturn = 0;
+
+    iTryCount = 0;
+    while (iTryCount < 2) {
+        //-------------------------------------------------------------------------------------------------
+
+        let xhttp = null;
+        let iInnerTryCount = 0;
+
+        let sServerURL = "https://api.tdameritrade.com/v1/accounts/" + sAccountId + "/orders";
+
+        xhttp = oHTTP();
+        while ((xhttp == null) && (iInnerTryCount < 5)) {
+            xhttp = oHTTP();
+            iInnerTryCount = iInnerTryCount + 1;
+        }
+        iInnerTryCount = 0;
+        if (CheckHTTPOpen(xhttp, sServerURL, "Error during xhttp.open to " + sServerURL, false, false, "", "")) {
+            // set the request header
+            xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+
+            // send the request
+            try {
+                //debugger
+                xhttp.send(sData);
+                if (xhttp.responseText != null) {
+                    if (xhttp.responseText != "") {
+                        let oCM = myJSON.parse(xhttp.responseText);
+                        switch (checkTDAPIErrorNoErrorDisplayed(oCM)) {
+                            case 0: //no error
+                                {
+                                    break;
+                                }
+                            case 1: //acces code expired
+                                {
+                                    xhttp = null;
+                                    if (GetAccessCodeUsingRefreshToken()) {
+                                        iTryCount++;
+                                    } else {
+                                        alert("An error occurred attempting to refresh the access code. Please reload the app.");
+                                        iReturn = 1;
+                                        iTryCount = 2;
+                                    }
+                                    break;
+                                }
+                            case 2: //other error
+                                {
+                                    iReturn = 2;
+                                    iTryCount = 2;
+                                    gsLastError = oCM.error;
+                                    break;
+                                }
+                            default:
+                                {
+                                    iReturn = 3;
+                                    iTryCount = 2;
+                                    break;
+                                }
+                        }
+                    }
+                    else {
+                        iReturn = 0; //success
+                        iTryCount = 2;
+                    }
+                }
+                else {
+                    iTryCount++;
+                    if (iTryCount < 2) {
+                        xhttp = null;
+                    }
+                    else {
+                        iReturn = 5;
+                        gsLastError = "HTTP response is null.";
+                    }
+                }
+            }
+            catch (e1) {
+                //debugger
+                iTryCount++;
+                if (iTryCount < 2) {
+                    xhttp = null;
+                }
+                else {
+                    //alert("PostTDOrder Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                    iReturn = 6;
+                    gsLastError = e1.message;
+                }
+            }
+        }
+        else {
+            iReturn = 7; //error during HTTP open request
+            gsLastError = "Error during HTTP open request";
+            iTryCount = 2;
+            break;
+        }
+    }
+
+    return iReturn;
+}
+
 function PostTDWLOrder(sAccountId, sWatchlistId, sData) {
     let iTryCount = 0;
     let iReturn = 0;
@@ -13185,6 +13345,143 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
 //    ShowProgress(false, true);
 //    gbDoingCreateOrders = false;
 //    SetDefault();
+}
+
+function PostWLPlaceOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
+    let iNumSuccess = iNumSuccessIn;
+    let iNumErrors = iNumErrorsIn;
+    let iProgressIncrement = iProgressIncrementIn;
+    let iTryCount = iTryCountIn;
+    if (bFirstTime) {
+        giProgress = 0;
+        iProgressIncrement = 100 / gOrdersToPlace.length;
+        gsLastErrors.length = 0;
+        giTDPostOrderRetryCnt = 0;
+        ShowProgress(true, false);
+    }
+    for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
+        if (giProgress < 100) {
+            giProgress = giProgress + iProgressIncrement;
+        }
+        let oTDOrder = new TDSavedOrder();
+        oTDOrder = gOrdersToPlace[idxOrder];
+        if (!oTDOrder.bProcessed) {
+            let sOrder = "";
+            switch (oTDOrder.orderType) { //"MARKET", "LIMIT", or "TRAILING_STOP"
+                case "MARKET":
+                    {
+                        if (!oTDOrder.bProcessed) {
+                            sOrder = oTDOrder.a00complexOrderStrategyTypeStart +
+                                oTDOrder.a02orderType +
+                                oTDOrder.a03Asession +
+                                oTDOrder.a04duration +
+                                oTDOrder.a05orderStrategyType +
+                                oTDOrder.a06orderLegCollectionStart +
+                                oTDOrder.a07instructionStart +
+                                oTDOrder.a08quantity +
+                                oTDOrder.a09instrumentStart +
+                                oTDOrder.a10symbol +
+                                oTDOrder.a11assetType +
+                                oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                        }
+                        break;
+                    }
+                case "LIMIT":
+                    {
+                        sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
+                            oTDOrder.a02orderType +
+                            oTDOrder.a03AsessionSeamless +
+                            oTDOrder.a04duration +
+                            oTDOrder.a03FcancelTime +
+                            oTDOrder.a02Aprice +
+                            oTDOrder.a05orderStrategyType +
+                            oTDOrder.a06orderLegCollectionStart +
+                            oTDOrder.a07instructionStart +
+                            oTDOrder.a08quantity +
+                            oTDOrder.a09instrumentStart +
+                            oTDOrder.a10symbol +
+                            oTDOrder.a11assetType +
+                            oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                        break;
+                    }
+                case "TRAILING_STOP":
+                    {
+                        sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
+                            oTDOrder.a02orderType + oTDOrder.a03FcancelTime +
+                            oTDOrder.a03Asession + oTDOrder.a03BstopPriceLinkBasis + oTDOrder.a03CstopPriceLinkType + oTDOrder.a03DstopPriceOffset + oTDOrder.a03EstopType +
+                            oTDOrder.a04duration +
+                            oTDOrder.a05orderStrategyType +
+                            oTDOrder.a06orderLegCollectionStart +
+                            oTDOrder.a07instructionStart +
+                            oTDOrder.a08quantity +
+                            oTDOrder.a09instrumentStart +
+                            oTDOrder.a10symbol +
+                            oTDOrder.a11assetType +
+                            oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                        break;
+                    }
+            }
+            if (PostTDPlaceOrder(sAccountId, sOrder) == 0) {
+                //success
+                iNumSuccess++;
+                gOrdersToPlace[idxOrder].bProcessed = true;
+                if (gOrdersToPlace[idxOrder].sError != "") {
+                    iNumErrors--;
+                }
+                gOrdersToPlace[idxOrder].sError = "";
+            } else {
+                if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                    if (iTryCount < 3) {
+                        iTryCount++;
+                        giProgress = giProgress - 1;
+                        window.setTimeout("PostWLPlaceOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                        return;
+                    } else {
+                        // an error occurred
+                        iNumErrors++;
+                        gOrdersToPlace[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                    }
+                } else {
+                    // an error occurred
+                    iNumErrors++;
+                    gOrdersToPlace[idxOrder].bProcessed = true;
+                    gOrdersToPlace[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                }
+            }
+        }
+        window.setTimeout("PostWLPlaceOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 500);
+        return;
+    }
+    let sMsg = iNumSuccess.toString() + " ";
+    if (iNumSuccess > 1) {
+        sMsg = sMsg + "orders placed";
+    } else {
+        sMsg = sMsg + "order placed";
+    }
+    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+        giTDPostOrderRetryCnt++;
+        giProgress = 0;
+        window.setTimeout("PostWLPlaceOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+        return;
+    } else {
+        if (iNumErrors > 0) {
+            sMsg = sMsg + " with the following errors:";
+            for (let idxOrder = 0; idxOrder < gOrdersToPlace.length; idxOrder++) {
+                if (gOrdersToPlace[idxOrder].sError != "") {
+                    sMsg = sMsg + gsCRLF + gOrdersToPlace[idxOrder].sError;
+                }
+            }
+            sMsg = sMsg + gsCRLF + "Log in your TD account. Click Trade/Orders to view the status of these orders.";
+            alert(sMsg);
+        } else {
+            sMsg = sMsg + ". Log in your TD account. Click Trade/Orders to view the status of these orders.";
+            alert(sMsg);
+        }
+    }
+
+    ShowProgress(false, true);
+    gbDoingCreateOrders = false;
+    SetDefault();
 }
 
 function PostWLSellOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
