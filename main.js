@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.2 2021-06-15 22:26"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.2 2021-06-16 01:18"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2372,40 +2372,28 @@ function DoWLCloseSymbol(idxWL) {
         let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
 
         if (sDollars != "") {
-            if (sDollars.indexOf("-") != -1) {
-                //if valid date entered then use it as the starting date to get all trades for the selected symbols to update the Old G/L automatically
-                if (!ValidateTDDate(sDollars)) {
-                    alert("Invalid start date entered.");
-                    return;
-                }
-
-                let sEndDate = FormatCurrentDateForTD();
-                if (sEndDate < sDollars) {
-                    alert("Invalid start date. Please enter a start date less than or equal to today.");
-                    return;
-                }
-
-
-                bDoingAutoUpdate = true;
-            } else {
-                //date not entered so treat as dollar amount
-                dSelectNum = parseFloat(sDollars);
+            if (sDollars.substr(0, 1) == "$") {
+                //treat as number
+                dSelectNum = parseFloat(sDollars.substr(1, sDollars.length - 1));
                 if (isNaN(dSelectNum)) {
                     dSelectNum = 0;
+                }
+            } else {
+                //treat as date
+                if (ValidateTDDate(sDollars)) {
+                    let sEndDate = FormatCurrentDateForTD();
+                    if (sEndDate < sDollars) {
+                        alert("Invalid start date. Please enter a start date less than or equal to today.");
+                        return;
+                    }
+                    bDoingAutoUpdate = true;
+                } else {
+                    return;
                 }
             }
         } else {
             dSelectNum = 0;
         }
-
-        //if (sDollars == "") {
-        //    dSelectNum = 0;
-        //} else {
-        //    dSelectNum = parseFloat(sDollars);
-        //    if (isNaN(dSelectNum)) {
-        //        dSelectNum = 0;
-        //    }
-        //}
 
         if (bDoingAutoUpdate) {
             let iNumSelected = 0;
@@ -8057,7 +8045,7 @@ function GetWatchlistPrices() {
 
                             sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
-                                "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+                                "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
                             sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
@@ -8146,7 +8134,7 @@ function GetWatchlistPrices() {
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
-                                "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+                                "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
