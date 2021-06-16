@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.1 2021-06-03 23:21"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.2 2021-06-15 22:26"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -167,6 +167,7 @@ function Symbol() {
     this.trades = new Array();
 }
 var gSymbols = new Array(); //collection of Symbol objects
+var gSymbolsAuto = new Array(); //collection of Symbol objects used to update the Old G/L in a watchlist
 
 function SymbolPrice() {
     this.description = "";
@@ -236,6 +237,8 @@ function WLItemDetail() {
     this.gain = 0.0; //total gain = shares * (regularMarketLastPrice - shareCost)
     this.gainPercent = 0.0; // (regularMarketLastPrice / shareCost) - 1 * 100
     this.averagePrice = 0.0; //from WL info - used for OldGL
+    this.GLUpdateDate = 0; //from WL info averagePrice field - the date the OldGL was automatically updated
+    this.GLUpdateStartDate = 0; //from WL info quantity field - the start date used to automatically update the OldGL
     this.peRatio = 0.0; //only used if WL name contains the word "dividend"
     this.purchasedDate = ""; //from WL info
     this.divAmount = 0.0; //only used if WL name contains the word "dividend"
@@ -356,9 +359,9 @@ var gsWLWidth = "900px";
 var giWLColOpenLabelWidth = 80;
 var giWLColOpenEntryWidth = 80;
 var giWLColAcquiredDateEntryWidth = 80;
-var giWLColTitleWidth = 460;
+var giWLColTitleWidth = 440;
 var giWLColCloseLabelWidth = 110;
-var giWLColCloseEntryWidth = 60;
+var giWLColCloseEntryWidth = 80;
 var giWLDragXoffsetLeft = 220;
 var giWLDragXoffsetRight = 700;
 var giWLCol1Width = giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth + giWLColTitleWidth + giWLColCloseLabelWidth + giWLColCloseEntryWidth + 40;
@@ -390,6 +393,7 @@ function Trade() {
     this.assetType = "";
 }
 var gTrades = new Array(); //collection of Trade objects
+var gTradesAuto = new Array(); //collection of Trade objects used to update the Old G/L in a wastchlist
 var gsLastStartDate = "";
 var gsLastEndDate = "";
 var gsStartDates = new Array();
@@ -418,6 +422,7 @@ function GetTradesContext() {
     this.iProgressIncrement = 0;
 }
 var gGetTradesContext = new GetTradesContext();
+var gGetTradesContextAuto = new GetTradesContext();
 
 function TDOrder() {
     this.bProcessed = false;
@@ -498,7 +503,9 @@ function TDWLOrder() {
     this.aWL03watchlistItemsStart = "\"watchlistItems\": [ ";
     this.aWL03watchlistItemStart = "{";
     this.aWL04sequenceId = "\"sequenceId\": "; //a number followed by a comma - only used when closing a symbol
+    this.aWL05Aquantity = "\"quantity\": "; //will contain the start date in milliseconds used to update the Old G/L - need to add 5 zeros to the end
     this.aWL05quantity = "\"quantity\": 0, ";
+    this.aWL06AaveragePrice = "\"averagePrice\": "; //will contain the date in milliseconds that the Old G/L was updated - need to add 5 zeros to the end
     this.aWL06averagePrice = "\"averagePrice\": 0, ";
     this.aWL07commission = "\"commission\": "; //a money amount like 123.54 followed by a comma - set to commission when closing, 0 when adding
     this.aWL07purchasedDate = "\"purchasedDate\": "; //like "2021-02-01" followed by a comma
@@ -511,6 +518,7 @@ function TDWLOrder() {
     this.aWL13end = " }";
 }
 var gTDWLOrders = new Array();
+var gsWLAutoGLUpdateNoAccountError = "No trades found.";
 
 function TDOrderSummary() {
     this.symbol = "";
@@ -2351,6 +2359,7 @@ function DoWLCloseSymbol(idxWL) {
         let sSelectNum = "";
         let dSelectNum = 0.0;
         let sSymbol = "";
+        let bDoingAutoUpdate = false;
 
         if (gWatchlists[idxWL].watchlistId == gWatchlists[idxWL].accountId) {
             alert("Cannot Update G/L or Add symbols in an Account watchlist.");
@@ -2361,72 +2370,85 @@ function DoWLCloseSymbol(idxWL) {
         let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
         let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
-        if (sDollars == "") {
-            dSelectNum = 0;
-        } else {
-            dSelectNum = parseFloat(sDollars);
-            if (isNaN(dSelectNum)) {
-                dSelectNum = 0;
-            }
-        }
 
-        sSelectNum = FormatDecimalNumber(dSelectNum, 5, 2, "");
-        dSelectNum = parseFloat(sSelectNum);
-
-        let iNumSelected = 0;
-        let bHasShares = false;
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                iNumSelected++;
-                if (iNumSelected > 1) {
-                    break;
+        if (sDollars != "") {
+            if (sDollars.indexOf("-") != -1) {
+                //if valid date entered then use it as the starting date to get all trades for the selected symbols to update the Old G/L automatically
+                if (!ValidateTDDate(sDollars)) {
+                    alert("Invalid start date entered.");
+                    return;
                 }
-                sSymbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+
+                let sEndDate = FormatCurrentDateForTD();
+                if (sEndDate < sDollars) {
+                    alert("Invalid start date. Please enter a start date less than or equal to today.");
+                    return;
+                }
+
+
+                bDoingAutoUpdate = true;
+            } else {
+                //date not entered so treat as dollar amount
+                dSelectNum = parseFloat(sDollars);
+                if (isNaN(dSelectNum)) {
+                    dSelectNum = 0;
+                }
             }
-        }
-        if (iNumSelected > 1) {
-            alert("Please select only 1 symbol.")
-        } else if (iNumSelected == 0) {
-            alert("Please select a symbol.")
         } else {
-            let sConfirmMsg = "";
-            sConfirmMsg = "Update " + sSymbol + " with Gain/Loss $" + sSelectNum + ". ";
-            if (AreYouSure(sConfirmMsg)) {
-                window.setTimeout("GenerateWLCloseSymbolOrders('" + sAccountId + "', " + dSelectNum + ", " + idxWL + ", '" + sSymbol + "')", 10);
+            dSelectNum = 0;
+        }
+
+        //if (sDollars == "") {
+        //    dSelectNum = 0;
+        //} else {
+        //    dSelectNum = parseFloat(sDollars);
+        //    if (isNaN(dSelectNum)) {
+        //        dSelectNum = 0;
+        //    }
+        //}
+
+        if (bDoingAutoUpdate) {
+            let iNumSelected = 0;
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                    iNumSelected++;
+                }
             }
-            ////now check to see if the selected symbol has any shares
-            //if (gAccounts.length > 0) {
-            //    for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
-            //        if (gAccounts[idxAccounts].accountId == sAccountId) {
-            //            let oAccount = new Account();
-            //            oAccount = gAccounts[idxAccounts];
-            //            if (oAccount.positions.length > 0) {
-            //                for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-            //                    let oPosition = new Position();
-            //                    oPosition = oAccount.positions[idxPosition];
-            //                    if (oPosition.assetType == "EQUITY") {
-            //                        if (oPosition.symbol == sSymbol) {
-            //                            if (oPosition.longQuantity > 0) {
-            //                                bHasShares = true;
-            //                            }
-            //                            break;
-            //                        }
-            //                    }
-            //                }
-            //            }
-            //            break;
-            //        }
-            //    }
-            //}
-            //if (bHasShares) {
-            //    alert("Selected symbol has shares. Cannot close.");
-            //} else {
-            //    let sConfirmMsg = "";
-            //    sConfirmMsg = "Close " + sSymbol + " with Gain/Loss $" + sSelectNum + ". ";
-            //    if (AreYouSure(sConfirmMsg)) {
-            //        window.setTimeout("GenerateWLCloseSymbolOrders('" + sAccountId + "', " + dSelectNum + ", " + idxWL + ", '" + sSymbol + "')", 10);
-            //    }
-            //}
+            if (iNumSelected == 0) {
+                alert("Please select at least 1 symbol.")
+            } else {
+                let sConfirmMsg = "";
+                sConfirmMsg = "Auto Update the Old  G/L for the selected symbols. ";
+                if (AreYouSure(sConfirmMsg)) {
+                    //get the trade info for the selected symbols
+                    window.setTimeout("GetTradesAuto(true, '" + sDollars + "', " + idxWL + ")", 10);
+                }
+            }
+        } else {
+            sSelectNum = FormatDecimalNumber(dSelectNum, 5, 2, "");
+            dSelectNum = parseFloat(sSelectNum);
+
+            let iNumSelected = 0;
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                    iNumSelected++;
+                    if (iNumSelected > 1) {
+                        break;
+                    }
+                    sSymbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                }
+            }
+            if (iNumSelected > 1) {
+                alert("Please select only 1 symbol.")
+            } else if (iNumSelected == 0) {
+                alert("Please select a symbol.")
+            } else {
+                let sConfirmMsg = "";
+                sConfirmMsg = "Update " + sSymbol + " with Gain/Loss $" + sSelectNum + ". ";
+                if (AreYouSure(sConfirmMsg)) {
+                    window.setTimeout("GenerateWLCloseSymbolOrders('" + sAccountId + "', " + dSelectNum + ", " + idxWL + ", '" + sSymbol + "')", 10);
+                }
+            }
         }
 
         return;
@@ -2979,6 +3001,82 @@ function FormatDateForTD(d) {
         s += "0" + iDay;                   //Get day
     }
     return s;
+}
+
+function GenerateWLAutoCloseSymbolOrders(sAccountId, sStartDate, idxWL) {
+    //debugger
+    gTDWLOrders.length = 0;
+    let sTodaysDate = FormatCurrentDateForTD();
+    let aTodaysDate = sTodaysDate.split("-");
+    let aStartDate = sStartDate.split("-");
+    let offset = new Date().getTimezoneOffset();
+    let iQuantity = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
+    //let iQuantity = GetTDMillisecondTime(sStartDate) + (offset * 60 * 1000);
+    let sQuantity = (iQuantity / 100000).toString();
+
+    let iAveragePrice = new Date(parseInt(aTodaysDate[0]), parseInt(aTodaysDate[1] - 1), parseInt(aTodaysDate[2])).getTime();
+    //let iAveragePrice = GetTDMillisecondTime(sTodaysDate) + (offset * 60 * 1000);
+    let sAveragePrice = (iAveragePrice / 100000).toString();
+
+    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+        if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+            let oTDWLOrder = new TDWLOrder();
+            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+            oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+            oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
+            oTDWLOrder.aWL05Aquantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
+            oTDWLOrder.aWL06AaveragePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
+
+            let sCommission = "";
+
+            for (let idxSym = 0; idxSym < gSymbolsAuto.length; idxSym++) {
+                if (gSymbolsAuto[idxSym].symbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                    let oSymbolPrice = new SymbolPrice();
+                    let sLastAssetType = gSymbolsAuto[idxSym].assetType;
+                    oSymbolPrice = gSymbolsAuto[idxSym].SymbolPrice;
+                    let dCurrentPrice = 0.0;
+                    if (sLastAssetType == "OPTION") {
+                        dCurrentPrice = oSymbolPrice.price; //get the current price here
+
+                        let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
+                        if (dSelectNum < 0.0) {
+                            dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                        }
+                        sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+                    } else {
+                        dCurrentPrice = oSymbolPrice.price; //get the current price here
+                        let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
+                        if (dSelectNum < 0.0) {
+                            dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                        }
+                        sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+                    }
+                    break;
+                }
+            }
+            if (sCommission == "") {
+                oTDWLOrder.sError = gsWLAutoGLUpdateNoAccountError;
+            } else {
+                oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
+                //update WLInfo
+                gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
+                gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate = iQuantity;
+            }
+
+            oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
+            oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+            gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+        }
+    }
+    //create orders here
+    if (gTDWLOrders.length > 0) {
+        gTDWLOrders.sort(sortBySymbol);
+        gbDoingCreateOrders = true;
+        SetWait();
+        window.setTimeout("PostWLAutoCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ")", 10);
+    } else {
+        alert("No symbols were updated.");
+    }
 }
 
 function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExisting) {
@@ -4475,6 +4573,189 @@ function GetCurrentPrices() {
                         }
                         else {
                             //alert("GetCurrentPrice Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                        }
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+function GetCurrentPricesAuto() {
+    //fills in the SymbolPrice object in gSymbolsAuto
+    let iTryCount = 0;
+    let oCM;
+    let sServerUrlBase = "https://api.tdameritrade.com/v1/marketdata/quotes?&symbol="; // + DoURLEncode(sSymbols);
+    let iSymbolLimit = 300;
+
+    if (gSymbolsAuto.length > 0) {
+        let sSymbols = "";
+        let sSep = "";
+        for (let idx = 0; idx < gSymbolsAuto.length; idx++) {
+            sSymbols = sSymbols + sSep + gSymbolsAuto[idx].symbol;
+            sSep = ",";
+        }
+
+        let sSymbolsToUse = GetUniqueListOfSymbols(sSymbols);
+
+        let aServerUrls = new Array();
+        let sServerUrl = "";
+        let aSymbols = sSymbolsToUse.split(",");
+        if (aSymbols.length > iSymbolLimit) {
+            for (let idxXXX = 0; idxXXX < aSymbols.length; idxXXX = idxXXX + iSymbolLimit) {
+                let iEnd = 0;
+                let sThisSet = "";
+                let sSep = "";
+                if (idxXXX + iSymbolLimit < aSymbols.length) {
+                    iEnd = idxXXX + iSymbolLimit;
+                } else {
+                    iEnd = aSymbols.length;
+                }
+                for (let idxSym = idxXXX; idxSym < iEnd; idxSym++) {
+                    sThisSet = sThisSet + sSep + aSymbols[idxSym];
+                    sSep = ",";
+                }
+                aServerUrls[aServerUrls.length] = sThisSet;
+            }
+        } else {
+            aServerUrls[aServerUrls.length] = sSymbolsToUse;
+        }
+
+        for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
+            sServerUrl = sServerUrlBase + DoURLEncode(aServerUrls[idxServerURL]);
+            let sThisSetOfSymbols = "," + aServerUrls[idxServerURL] + ",";
+            iTryCount = 0;
+            while (iTryCount < 2) {
+                let xhttp = null;
+                let iInnerTryCount = 0;
+                xhttp = oHTTP();
+                while ((xhttp == null) && (iInnerTryCount < 5)) {
+                    xhttp = oHTTP();
+                    iInnerTryCount = iInnerTryCount + 1;
+                }
+                iInnerTryCount = 0;
+                if (CheckHTTPOpenGet(xhttp, sServerUrl, "Error during xhttp.open to " + sServerUrl, false, false, "", "")) {
+                    // set the request header
+                    xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+
+                    // send the request
+                    try {
+                        //debugger
+                        xhttp.send();
+                        if (xhttp.responseText != null) {
+                            if (xhttp.responseText != "") {
+                                //alert("GetCurrentPrice xhttp.responseText length = " + xhttp.responseText.length);
+                                oCM = myJSON.parse(xhttp.responseText);
+                                switch (checkTDAPIError(oCM)) {
+                                    case 0: //no error
+                                        {
+                                            for (let idxSymbol = 0; idxSymbol < gSymbolsAuto.length; idxSymbol++) {
+                                                let sSymbol = gSymbolsAuto[idxSymbol].symbol;
+                                                if (sThisSetOfSymbols.indexOf("," + sSymbol + ",") != -1) {
+                                                    if (oCM[sSymbol] != null) {
+                                                        if (gSymbolsAuto[idxSymbol].assetType == "OPTION") {
+                                                            if (oCM[sSymbol].description == undefined) {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.description = "";
+                                                            } else {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.description = oCM[sSymbol].description;
+                                                            }
+                                                            if (oCM[sSymbol].mark == undefined) {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.price = 0.0;
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.description = "Option price not found";
+                                                            } else {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.price = oCM[sSymbol].mark;
+                                                            }
+                                                        } else {
+                                                            if (oCM[sSymbol].description == undefined) {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.description = "";
+                                                            } else {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.description = oCM[sSymbol].description;
+                                                            }
+                                                            if (oCM[sSymbol].quoteTimeInLong == undefined) {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.quoteTimeInLong = 0;
+                                                            } else {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.quoteTimeInLong = oCM[sSymbol].quoteTimeInLong;
+                                                            }
+                                                            if (oCM[sSymbol].tradeTimeInLong == undefined) {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.tradeTimeInLong = 0;
+                                                            } else {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.tradeTimeInLong = oCM[sSymbol].tradeTimeInLong;
+                                                            }
+                                                            if (oCM[sSymbol].totalVolume == undefined) {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.totalVolume = 0;
+                                                            } else {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.totalVolume = oCM[sSymbol].totalVolume;
+                                                            }
+                                                            if (oCM[sSymbol].lastPrice == undefined) {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.price = 0.0;
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.description = "Lastprice not found";
+                                                            } else {
+                                                                gSymbolsAuto[idxSymbol].SymbolPrice.price = oCM[sSymbol].lastPrice;
+                                                            }
+                                                        }
+                                                    } else {
+                                                        gSymbolsAuto[idxSymbol].SymbolPrice.description = "Symbol not returned";
+                                                        //debugger
+                                                    }
+                                                }
+                                            }
+                                            iTryCount = 2;
+                                            break;
+                                        }
+                                    case 1: //acces code expired
+                                        {
+                                            xhttp = null;
+                                            if (GetAccessCodeUsingRefreshToken()) {
+                                                iTryCount++;
+                                            } else {
+                                                alert("An error occurred attempting to refresh the access code. Please reload the app.");
+                                                return;
+                                            }
+                                            break;
+                                        }
+                                    case 2: //other error
+                                        {
+                                            iTryCount = 2;
+                                            break;
+                                        }
+                                    default:
+                                        {
+                                            iTryCount = 2;
+                                            break;
+                                        }
+                                }
+                            }
+                            else {
+                                iTryCount++;
+                                if (iTryCount < 2) {
+                                    xhttp = null;
+                                }
+                                else {
+                                    //alert ("GetCurrentPriceAuto Error - HTTP response is blank." + " (" + iTryCount.toString() + ")");
+                                }
+                            }
+                        }
+                        else {
+                            iTryCount++;
+                            if (iTryCount < 2) {
+                                xhttp = null;
+                            }
+                            else {
+                                //alert ("GetCurrentPriceAuto Error - HTTP response is null." + " (" + iTryCount.toString() + ")");
+                            }
+                        }
+                    }
+                    catch (e1) {
+                        //debugger
+                        iTryCount++;
+                        if (iTryCount < 2) {
+                            xhttp = null;
+                        }
+                        else {
+                            //alert("GetCurrentPriceAuto Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
                         }
                     }
                 }
@@ -6709,6 +6990,544 @@ function GetTradesAddSymbol(iAccountsIdx, sSymbolsToLookup, sRADSymbol, oTradeIn
 
 }
 
+function GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeIn) {
+    let oTrade = new Trade();
+    let bNeedToAddSymbol = false;
+    oTrade.accountId = oTradeIn.accountId
+    oTrade.accountName = oTradeIn.accountName;
+    oTrade.amount = oTradeIn.amount;
+    oTrade.assetType = oTradeIn.assetType;
+    oTrade.cost = oTradeIn.cost;
+    oTrade.date = oTradeIn.date;
+    oTrade.netAmount = oTradeIn.netAmount;
+    oTrade.fees = oTradeIn.fees;
+    oTrade.price = oTradeIn.price;
+    oTrade.symbol = oTradeIn.symbol;
+    oTrade.transactionSubType = oTradeIn.transactionSubType;
+
+    if ((sSymbolsToLookup.indexOf("," + sRADSymbol.toUpperCase() + ",") != -1) ||
+        (sSymbolsToLookup == "ALLSYMBOLS")) {
+        bNeedToAddSymbol = true;
+        if (gSymbolsAuto.length > 0) {
+            for (let idxTmp = 0; idxTmp < gSymbolsAuto.length; idxTmp++) {
+                if (gSymbolsAuto[idxTmp].symbol == sRADSymbol) {
+                    bNeedToAddSymbol = false;
+                    if (oTrade.netAmount < 0.0) {
+                        //buy
+                        gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares + oTrade.amount;
+                        gSymbolsAuto[idxTmp].buy = gSymbolsAuto[idxTmp].buy - oTrade.netAmount;
+                    } else {
+                        //sell
+                        gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares - oTrade.amount;
+                        gSymbolsAuto[idxTmp].sell = gSymbolsAuto[idxTmp].sell + oTrade.netAmount;
+                    }
+                    gSymbolsAuto[idxTmp].trades[gSymbolsAuto[idxTmp].trades.length] = oTrade;
+                    gSymbolsAuto[idxTmp].fees = gSymbolsAuto[idxTmp].fees + oTrade.fees;
+                    break;
+                }
+            }
+        }
+    }
+    if (bNeedToAddSymbol) {
+        let oSymbol = new Symbol();
+        oSymbol.symbol = oTrade.symbol;
+        oSymbol.accountId = gWatchlists[idxWL].accountId;
+        oSymbol.accountName = "";
+        oSymbol.assetType = oTrade.assetType;
+        if (oTrade.netAmount < 0.0) {
+            //buy
+            oSymbol.shares = oTrade.amount;
+            oSymbol.buy = -1 * oTrade.netAmount;
+        } else {
+            //sell
+            oSymbol.shares = -1 * oTrade.amount;
+            oSymbol.sell = oTrade.netAmount;
+        }
+        oSymbol.trades[oSymbol.trades.length] = oTrade;
+        oSymbol.fees = oTrade.fees;  
+        gSymbolsAuto[gSymbolsAuto.length] = oSymbol;
+    }
+
+}
+
+function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
+    let iTryCount = 0;
+    let vTmp = null;
+    let sTmp = "";
+    let bNeedToAddSymbol = false;
+    let bOk = true;
+
+    //debugger
+    let sServerUrlBase = "https://api.tdameritrade.com/v1/accounts/xxxxx/transactions?symbol=aaaaaaa&startDate=yyyyy&endDate=zzzzz";
+    let sServerUrlBaseAllSymbols = "https://api.tdameritrade.com/v1/accounts/xxxxx/transactions?startDate=yyyyy&endDate=zzzzz";
+    let sStartDate = sStartDateIn;
+    let sEndDate = "";
+
+    let sSymbolToLookup = "";
+    let sSymbolsToLookupTmp = "";
+
+    let oCM;
+    let sSymbolsToLookup = "";
+    let sSymbolsToLookupServer = "";
+
+    let bEndDateISTodaysDate = false;
+    let idxDatesStart = 0;
+    let bDoneGettingSymbolData = false;
+
+    if (bFirstTime) {
+        gbDoingGetTrades = true;
+        gGetTradesContextAuto = new GetTradesContext();
+        let sSymbolsToLookupSep = "";
+        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                sSymbolsToLookupSep = ",";
+            }
+        }
+
+        sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp); 
+        vTmp = sSymbolsToLookupTmp.split(",");
+        if (vTmp.length == 1) {
+            sSymbolsToLookupServer = sSymbolsToLookupTmp.toUpperCase();
+        } else {
+            sSymbolsToLookupServer = "ALLSYMBOLS"; //set to this if nothing entered or more than one symbol entered
+        }
+        sSymbolsToLookup = "," + sSymbolsToLookupTmp.toUpperCase() + ",";
+
+        sEndDate = FormatCurrentDateForTD();
+
+        bEndDateISTodaysDate = BuildStartEndDates(sStartDate, sEndDate);
+
+        gTradesAuto.length = 0;
+        gSymbolsAuto.length = 0;
+
+        giProgress = 0;
+        ShowProgress(true, false);
+        idxDatesStart = gsStartDates.length - 1;
+
+        gGetTradesContextAuto.iProgressIncrement = 100 / gsStartDates.length;
+
+        idxStart = 0;
+    } else {
+        sServerUrlBase = gGetTradesContextAuto.sServerUrlBase;
+        sServerUrlBaseAllSymbols = gGetTradesContextAuto.sServerUrlBaseAllSymbols;
+        sStartDate = gGetTradesContextAuto.sStartDate;
+        sEndDate = gGetTradesContextAuto.sEndDate;
+
+        sSymbolToLookup = gGetTradesContextAuto.sSymbolToLookup;
+        sSymbolsToLookupTmp = gGetTradesContextAuto.sSymbolsToLookupTmp;
+
+        sSymbolsToLookup = gGetTradesContextAuto.sSymbolsToLookup;
+        sSymbolsToLookupServer = gGetTradesContextAuto.sSymbolsToLookupServer;
+
+        bEndDateISTodaysDate = gGetTradesContextAuto.bEndDateISTodaysDate;
+        idxDatesStart = gGetTradesContextAuto.idxDatesStart;
+
+        bOk = gGetTradesContextAuto.bOk;
+        bDoneGettingSymbolData = gGetTradesContextAuto.bDoneGettingSymbolData;
+        bNeedToAddSymbol = gGetTradesContextAuto.bNeedToAddSymbol;
+        idxStart = gGetTradesContextAuto.idxStart;
+
+    }
+
+    for (let idxDates = idxDatesStart; idxDates > -1; idxDates--) {
+        //if (gbStopGetTrades) {
+        //    GetTradesCanceled();
+        //    return;
+        //}
+        sStartDate = gsStartDates[idxDates];
+        sEndDate = gsEndDates[idxDates];
+        if (giProgress < 100) {
+            giProgress = giProgress + gGetTradesContext.iProgressIncrement;
+        }
+
+        iTryCount = 0;
+        while (iTryCount < 2) {
+            let sServerUrl = "";
+            if (sSymbolsToLookupServer == "ALLSYMBOLS") {
+                sServerUrl = sServerUrlBaseAllSymbols.replace("xxxxx", gWatchlists[idxWL].accountId);
+            } else {
+                sServerUrl = sServerUrlBase.replace("aaaaaaa", sSymbolsToLookupServer);
+                sServerUrl = sServerUrl.replace("xxxxx", gWatchlists[idxWL].accountId);
+            }
+            sServerUrl = sServerUrl.replace("yyyyy", sStartDate);
+            sServerUrl = sServerUrl.replace("zzzzz", sEndDate);
+
+            let xhttp = null;
+            let iInnerTryCount = 0;
+            xhttp = oHTTP();
+            while ((xhttp == null) && (iInnerTryCount < 5)) {
+                xhttp = oHTTP();
+                iInnerTryCount = iInnerTryCount + 1;
+            }
+            iInnerTryCount = 0;
+            if (CheckHTTPOpenGet(xhttp, sServerUrl, "Error during xhttp.open to " + sServerUrl, false, false, "", "")) {
+                // set the request header
+                xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+
+                // send the request
+                try {
+                    //                                    debugger
+                    xhttp.send();
+                    if (xhttp.responseText != null) {
+                        if (xhttp.responseText != "") {
+                            //alert("GetTrades xhttp.responseText length = " + xhttp.responseText.length);
+
+                            let oCMLength = 0;
+                            oCM = myJSON.parse(xhttp.responseText);
+                            switch (checkTDAPIError(oCM)) {
+                                case 0: //no error
+                                    {
+                                        try {
+                                            oCMLength = oCM.length;
+                                        } catch (e2) {
+                                            oCMLength = 0;
+                                        }
+                                        break;
+                                    }
+                                case 1: //acces code expired
+                                    {
+                                        xhttp = null;
+                                        if (GetAccessCodeUsingRefreshToken()) {
+                                            oCMLength = -1;
+                                        } else {
+                                            alert("An error occurred attempting to refresh the access code. Please logoff or reload the app.");
+                                            GetTradesCanceled();
+                                            return;
+                                        }
+                                        break;
+                                    }
+                                case 2: //other error
+                                    {
+                                        oCMLength = 0;
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        oCMLength = 0;
+                                        break;
+                                    }
+                            }
+
+                            if (oCMLength > 0) {
+                                let bUseTradeRS = false;
+                                let oTradeRS = new Trade();
+                                for (let idxTrade = 0; idxTrade < oCM.length; idxTrade++) {
+                                    //if (gbStopGetTrades) {
+                                    //    GetTradesCanceled();
+                                    //    return;
+                                    //}
+                                    if (oCM[idxTrade].type == "DIVIDEND_OR_INTEREST") {
+                                        bUseTradeRS = false;
+                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                            let oTrade = new Trade();
+                                            oTrade.accountId = gWatchlists[idxWL].accountId;
+                                            oTrade.accountName = "";
+                                            oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                            oTrade.date = oCM[idxTrade].transactionDate;
+                                            oTrade.amount = 0;
+                                            oTrade.price = 0;
+                                            oTrade.cost = 0;
+                                            oTrade.netAmount = oCM[idxTrade].netAmount;
+                                            if (isUndefined(oCM[idxTrade].transactionSubType)) {
+                                                oTrade.transactionSubType = "";
+                                            } else {
+                                                oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                            }
+                                            oTrade.fees = 0;
+
+                                            //now update the Symbols
+                                            if (!isUndefined(oCM[idxTrade].transactionItem)) {
+                                                if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                    if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                        bNeedToAddSymbol = false;
+                                                        if ((sSymbolsToLookup.indexOf("," + oCM[idxTrade].transactionItem.instrument.symbol.toUpperCase() + ",") != -1) ||
+                                                            (sSymbolsToLookup == "ALLSYMBOLS")) {
+                                                            bNeedToAddSymbol = true;
+                                                            if (gSymbolsAuto.length > 0) {
+                                                                for (let idxTmp = 0; idxTmp < gSymbolsAuto.length; idxTmp++) {
+                                                                    if (gSymbolsAuto[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) {
+                                                                        bNeedToAddSymbol = false;
+                                                                        gSymbolsAuto[idxTmp].sell = gSymbolsAuto[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                        gSymbolsAuto[idxTmp].trades[gSymbolsAuto[idxTmp].trades.length] = oTrade;
+                                                                        gSymbolsAuto[idxTmp].fees = gSymbolsAuto[idxTmp].fees + oTrade.fees;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        if (bNeedToAddSymbol) {
+                                                            let oSymbol = new Symbol();
+                                                            oSymbol.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                            oSymbol.accountId = gWatchlists[idxWL].accountId;
+                                                            oSymbol.accountName = "";
+                                                            oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                            oSymbol.sell = oCM[idxTrade].netAmount;
+                                                            oSymbol.trades[oSymbol.trades.length] = oTrade;
+                                                            oSymbol.fees = oTrade.fees;
+                                                            gSymbolsAuto[gSymbolsAuto.length] = oSymbol;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else if (oCM[idxTrade].type == "RECEIVE_AND_DELIVER") {
+                                        if (!isUndefined(oCM[idxTrade].transactionItem)) {
+                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                if (!isUndefined(oCM[idxTrade].transactionSubType)) {
+                                                    let bFoundSubType = false;
+                                                    let oTrade = new Trade();
+                                                    let sRADSymbol = "";
+                                                    oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                    if (oCM[idxTrade].transactionSubType == "TI") {
+                                                        bUseTradeRS = false;
+                                                        //TRANSFER OF SECURITY OR OPTION IN
+                                                        oTrade.accountId = gWatchlists[idxWL].accountId;
+                                                        oTrade.accountName = "";
+                                                        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                        sRADSymbol = oTrade.symbol;
+                                                        oTrade.date = oCM[idxTrade].transactionDate;
+                                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                        oTrade.fees = 0;
+                                                        //need to get price on the transaction date
+                                                        let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
+                                                        if (gaFixedPrices.length > 0) {
+                                                            for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
+                                                                let oFP = new FixedPrice();
+                                                                oFP = gaFixedPrices[idxFP];
+                                                                if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
+                                                                    (oFP.date == vTmp[0])) {
+                                                                    oTrade.price = oFP.price;
+                                                                    oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
+                                                                    oTrade.netAmount = oTrade.cost;
+                                                                    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                    bFoundSubType = true;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    } else if (oCM[idxTrade].transactionSubType == "RS") {
+                                                        //MANDATORY REVERSE SPLIT
+                                                        oTrade.accountId = gWatchlists[idxWL].accountId;
+                                                        oTrade.accountName = "";
+                                                        oTrade.date = oCM[idxTrade].transactionDate;
+                                                        oTrade.price = 0.0;
+                                                        oTrade.cost = 0.0;
+                                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                        oTrade.fees = 0;
+                                                        if (isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                            //decreasing number of shares - cost 0
+                                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                            oTrade.netAmount = 0.0;
+                                                            //need to lookup cusip to get symbol
+                                                            let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/instruments?symbol=" + oCM[idxTrade].transactionItem.instrument.cusip + "&projection=symbol-search", 0);
+                                                            if (iReturn == 0) {
+                                                                if (!isUndefined(oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip])) {
+                                                                    oTrade.symbol = oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip].symbol;
+                                                                    sRADSymbol = oTrade.symbol;
+                                                                    bFoundSubType = true;
+                                                                    bUseTradeRS = false;
+                                                                } else {
+                                                                    oTradeRS = new Trade();
+                                                                    oTradeRS.accountId = oTrade.accountId
+                                                                    oTradeRS.accountName = oTrade.accountName;
+                                                                    oTradeRS.amount = oTrade.amount;
+                                                                    oTradeRS.assetType = oTrade.assetType;
+                                                                    oTradeRS.cost = oTrade.cost;
+                                                                    oTradeRS.date = oTrade.date;
+                                                                    oTradeRS.netAmount = oTrade.netAmount;
+                                                                    oTradeRS.fees = oTrade.fees;
+                                                                    oTradeRS.price = oTrade.price;
+                                                                    oTradeRS.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                                    bUseTradeRS = true;
+                                                                }
+                                                            }
+                                                        } else {
+                                                            //increasing number of shares - cost 0
+                                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                            oTrade.netAmount = -0.00001;
+                                                            oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                            sRADSymbol = oTrade.symbol;
+                                                            bFoundSubType = true;
+                                                        }
+                                                    } else {
+                                                        bUseTradeRS = false;
+                                                    }
+
+                                                    if (bFoundSubType) {
+                                                        if (bUseTradeRS) {
+                                                            bUseTradeRS = false;
+                                                            oTradeRS.symbol = sRADSymbol;
+                                                            GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeRS);
+                                                        }
+                                                        GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTrade);
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                    } else if (oCM[idxTrade].type == "TRADE") {
+                                        bUseTradeRS = false;
+                                        let oTrade = new Trade();
+                                        oTrade.accountId = gWatchlists[idxWL].accountId;
+                                        oTrade.accountName = "";
+                                        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                        oTrade.date = oCM[idxTrade].transactionDate;
+                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                        oTrade.price = oCM[idxTrade].transactionItem.price;
+                                        oTrade.cost = oCM[idxTrade].transactionItem.cost;
+                                        oTrade.netAmount = oCM[idxTrade].netAmount;
+                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                        if (isUndefined(oCM[idxTrade].transactionSubType)) {
+                                            oTrade.transactionSubType = "";
+                                        } else {
+                                            oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                        }
+                                        oTrade.fees = 0;
+
+                                        //now update the Symbols
+                                        if (!isUndefined(oCM[idxTrade].transactionItem)) {
+                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                    bNeedToAddSymbol = false;
+                                                    if ((sSymbolsToLookup.indexOf("," + oCM[idxTrade].transactionItem.instrument.symbol.toUpperCase() + ",") != -1) ||
+                                                        (sSymbolsToLookup == "ALLSYMBOLS")) {
+                                                        bNeedToAddSymbol = true;
+                                                        if (gSymbolsAuto.length > 0) {
+                                                            for (let idxTmp = 0; idxTmp < gSymbolsAuto.length; idxTmp++) {
+                                                                if (gSymbolsAuto[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) {
+                                                                    bNeedToAddSymbol = false;
+                                                                    if (oCM[idxTrade].netAmount < 0.0) {
+                                                                        //buy
+                                                                        gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares + oCM[idxTrade].transactionItem.amount;
+                                                                        gSymbolsAuto[idxTmp].buy = gSymbolsAuto[idxTmp].buy - oCM[idxTrade].netAmount;
+                                                                    } else {
+                                                                        //sell
+                                                                        gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares - oCM[idxTrade].transactionItem.amount;
+                                                                        gSymbolsAuto[idxTmp].sell = gSymbolsAuto[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                    }
+                                                                    gSymbolsAuto[idxTmp].trades[gSymbolsAuto[idxTmp].trades.length] = oTrade;
+                                                                    gSymbolsAuto[idxTmp].fees = gSymbolsAuto[idxTmp].fees + oTrade.fees;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    if (bNeedToAddSymbol) {
+                                                        let oSymbol = new Symbol();
+                                                        oSymbol.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                        oSymbol.accountId = gWatchlists[idxWL].accountId;
+                                                        oSymbol.accountName = "";
+                                                        oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                        if (oCM[idxTrade].netAmount < 0.0) {
+                                                            //buy
+                                                            oSymbol.shares = oCM[idxTrade].transactionItem.amount;
+                                                            oSymbol.buy = -1 * oCM[idxTrade].netAmount;
+                                                        } else {
+                                                            //sell
+                                                            oSymbol.shares = -1 * oCM[idxTrade].transactionItem.amount;
+                                                            oSymbol.sell = oCM[idxTrade].netAmount;
+                                                        }
+                                                        oSymbol.trades[oSymbol.trades.length] = oTrade;
+                                                        oSymbol.fees = oTrade.fees;
+                                                        gSymbolsAuto[gSymbolsAuto.length] = oSymbol;
+                                                    }
+
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        bUseTradeRS = false;
+                                    }
+                                }
+                            }
+                            if (oCMLength != -1) {
+                                iTryCount = 2;
+                            }
+                        }
+                        else {
+                            iTryCount++;
+                            if (iTryCount < 2) {
+                                xhttp = null;
+                            }
+                            else {
+                                //alert ("GetTradesAuto Error - HTTP response is blank." + " (" + iTryCount.toString() + ")");
+                            }
+                        }
+                    }
+                    else {
+                        iTryCount++;
+                        if (iTryCount < 2) {
+                            xhttp = null;
+                        }
+                        else {
+                            //alert ("GetTradesAuto Error - HTTP response is null." + " (" + iTryCount.toString() + ")");
+                        }
+                    }
+                }
+                catch (e1) {
+                    //debugger
+                    iTryCount++;
+                    if (iTryCount < 2) {
+                        xhttp = null;
+                    }
+                    else {
+                        alert("GetTradesAuto Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                        bOk = false;
+                    }
+                }
+            }
+            else {
+                break;
+            }
+        }
+
+        if (!bOk) {
+            break;
+        }
+        gGetTradesContextAuto.sServerUrlBase = sServerUrlBase;
+        gGetTradesContextAuto.sServerUrlBaseAllSymbols = sServerUrlBaseAllSymbols;
+        gGetTradesContextAuto.sStartDate = sStartDate;
+        gGetTradesContextAuto.sEndDate = sEndDate;
+
+        gGetTradesContextAuto.sSymbolToLookup = sSymbolToLookup;
+        gGetTradesContextAuto.sSymbolsToLookupTmp = sSymbolsToLookupTmp;
+
+        gGetTradesContextAuto.sSymbolsToLookup = sSymbolsToLookup;
+        gGetTradesContextAuto.sSymbolsToLookupServer = sSymbolsToLookupServer;
+
+        gGetTradesContextAuto.bEndDateISTodaysDate = bEndDateISTodaysDate;
+        gGetTradesContextAuto.idxDatesStart = idxDates - 1;
+
+        gGetTradesContextAuto.bOk = bOk;
+        gGetTradesContextAuto.bDoneGettingSymbolData = bDoneGettingSymbolData;
+        gGetTradesContextAuto.bNeedToAddSymbol = bNeedToAddSymbol;
+        gGetTradesContextAuto.idxStart = 0;
+
+        window.setTimeout("GetTradesAuto(false,''," + idxWL.toString() + ")", 100);
+        return;
+
+    }
+    //if (gbStopGetTrades) {
+    //    GetTradesCanceled();
+    //    return;
+    //}
+    if (bOk) {
+        if (gSymbolsAuto.length > 0) {
+            GetCurrentPricesAuto();
+            gSymbolsAuto.sort(sortBySymbol);
+            window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', '" + sStartDate + "', " + idxWL + ")", 10);
+        } else {
+            if (sSymbolsToLookupTmp.split(",").length == 1) {
+                alert("No trades found for the selected symbol.");
+            } else {
+                alert("No trades found for the selected symbols.");
+            }
+        }
+    }
+    GetTradesCanceled();
+}
+
 function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idxSymbol) {
     let sBodyTextAlign = "right";
     let sTotalsBackcolor = gsBodyBackgroundColor;
@@ -7007,10 +7826,11 @@ function GetWatchlistPrices() {
                             }
                             //get OldGL value
                             oWLItemDetail.averagePrice = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.averagePrice;
+                            oWLItemDetail.GLUpdateDate = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.GLUpdateDate;
 
                             //get purchased date
                             oWLItemDetail.purchasedDate = gWatchlists[idxWLMain].WLItems[idxWLItem].purchasedDate;
-
+                            oWLItemDetail.GLUpdateStartDate = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.GLUpdateStartDate;
 
                             if (oPositions.length > 0) {
                                 for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
@@ -7484,6 +8304,7 @@ function GetWatchlistPrices() {
                         let oWLDisplayed = new WLDisplayed();
                         oWLDisplayed = gWLDisplayed[idxDisplayed];
                         let sSymbol = oWLDisplayed.symbol;
+
                         let oWLItemDetail = new WLItemDetail();
                         let dCost = 0.0;
                         let dQty = 0.0;
@@ -7497,6 +8318,9 @@ function GetWatchlistPrices() {
                                 }
 
                                 if (bOkToShowThisDetail) {
+
+                                    let sOldGLOnclick = "onclick=\"ShowAutoUpdateDates('" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ") \" ";
+
                                     iLineCnt++;
                                     let sCurrentPurchasedDate = "";
                                     let dCurrentAveragePrice = 0.0;
@@ -7941,17 +8765,17 @@ function GetWatchlistPrices() {
                                         }
                                         if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
                                             if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
                                             } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td " + sOldGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
                                         } else {
                                             if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                             } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
@@ -7990,17 +8814,17 @@ function GetWatchlistPrices() {
                                         }
                                         if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
                                             if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
                                             } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
                                         } else {
                                             if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                             } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
@@ -8195,1304 +9019,6 @@ function GetWatchlistPrices() {
                         document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
                     }
                 }
-
-//---------------------------------------------------------------------------------------
-                //let sSymbols = "";
-                //let sSep = "";
-                //for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
-                //    if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
-                //        sSymbols = sSymbols + sSep + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol;
-                //        sSep = ",";
-                //    }
-                //}
-                //sSymbols = GetUniqueListOfSymbols(sSymbols);
-
-                //if (sSymbols.length > 0) {
-                //    let aSymbolsToUse = sSymbols.split(",");
-
-                //    gWLDisplayed.length = 0;
-                //    for (let idxSymbol = 0; idxSymbol < aSymbolsToUse.length; idxSymbol++) {
-                //        let sSymbol = aSymbolsToUse[idxSymbol];
-                //        if (!isUndefined(oMDQ[sSymbol])) {
-                //            let oWLDisplayed = new WLDisplayed();
-                //            oWLDisplayed.symbol = sSymbol;
-                //            oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
-
-                //            //get account position info if it exists
-                //            let oPositions = new Array();
-                //            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                //                if ((gAccounts[idxAccount].positions.length > 0) &&
-                //                    (gAccounts[idxAccount].accountId == gWatchlists[idxWLMain].accountId)) {
-                //                    for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
-                //                        if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
-                //                            let oPosition = new Position();
-                //                            oPosition = gAccounts[idxAccount].positions[idxPositions];
-                //                            oPosition.accountId = gAccounts[idxAccount].accountId;
-                //                            oPosition.accountName = gAccounts[idxAccount].accountName;
-                //                            oPositions[oPositions.length] = oPosition;
-                //                            break;
-                //                        }
-                //                    }
-                //                    break;
-                //                }
-                //            }
-
-                //            oWLItemDetail = new WLItemDetail();
-                //            if (oWLDisplayed.assetType == "OPTION") {
-                //                if (!isUndefined(oMDQ[sSymbol].mark)) {
-                //                    oWLItemDetail.lastPrice = oMDQ[sSymbol].mark;
-                //                }
-                //            } else if (oWLDisplayed.assetType == "INDEX") {
-                //                if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
-                //                    oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].highPrice)) {
-                //                    oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
-                //                    oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].netChange)) {
-                //                    oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
-                //                    oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
-                //                }
-                //            } else {
-                //                if (!isUndefined(oMDQ[sSymbol].lastPrice)) {
-                //                    oWLItemDetail.lastPrice = oMDQ[sSymbol].lastPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].askPrice)) {
-                //                    oWLItemDetail.askPrice = oMDQ[sSymbol].askPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].bidPrice)) {
-                //                    oWLItemDetail.bidPrice = oMDQ[sSymbol].bidPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].highPrice)) {
-                //                    oWLItemDetail.highPrice = oMDQ[sSymbol].highPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
-                //                    oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].netChange)) {
-                //                    oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].netPercentChangeInDouble)) {
-                //                    oWLItemDetail.netPercentChangeInDouble = oMDQ[sSymbol].netPercentChangeInDouble;
-                //                }
-
-                //                if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
-                //                    oWLItemDetail.regularMarketLastPrice = oMDQ[sSymbol].regularMarketLastPrice;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].regularMarketNetChange)) {
-                //                    oWLItemDetail.regularMarketNetChange = oMDQ[sSymbol].regularMarketNetChange;
-                //                }
-                //                if (!isUndefined(oMDQ[sSymbol].regularMarketPercentChangeInDouble)) {
-                //                    oWLItemDetail.regularMarketPercentChangeInDouble = oMDQ[sSymbol].regularMarketPercentChangeInDouble;
-                //                }
-                //                //"peRatio": 33.3568,
-                //                if (!isUndefined(oMDQ[sSymbol].peRatio)) {
-                //                    oWLItemDetail.peRatio = oMDQ[sSymbol].peRatio;
-                //                }
-                //                //"divAmount": 0.82,
-                //                if (!isUndefined(oMDQ[sSymbol].divAmount)) {
-                //                    oWLItemDetail.divAmount = oMDQ[sSymbol].divAmount / 4;
-                //                }
-                //                //"divYield": 0.67,
-                //                if (!isUndefined(oMDQ[sSymbol].divYield)) {
-                //                    oWLItemDetail.divYield = oMDQ[sSymbol].divYield;
-                //                }
-                //                //"divDate": "2021-02-05 00:00:00.000",
-                //                if (!isUndefined(oMDQ[sSymbol].divDate)) {
-                //                    oWLItemDetail.divDate = oMDQ[sSymbol].divDate;
-                //                }
-
-                //            }
-                //            //get OldGL value
-                //            for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                //                if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == oWLDisplayed.symbol) {
-                //                    oWLItemDetail.oldGL = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-                //                    break;
-                //                }
-                //            }
-
-                //            if (oPositions.length > 0) {
-                //                for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
-                //                    let oPosition = new Position();
-                //                    oPosition = oPositions[idxPositions];
-
-                //                    oWLItemDetail.shares = 0;
-                //                    oWLItemDetail.dayGain = 0.0;
-                //                    oWLItemDetail.costPerShare = 0.0;
-                //                    oWLItemDetail.gain = 0.0;
-                //                    oWLItemDetail.gainPercent = 0.0;
-                //                    oWLItemDetail.accountId = "";
-                //                    oWLItemDetail.marketValue = oPosition.marketValue;
-
-                //                    oWLItemDetail.accountId = oPosition.accountId;
-                //                    oWLItemDetail.accountName = oPosition.accountName;
-                //                    oWLItemDetail.shares = oPosition.longQuantity;
-                //                    oWLItemDetail.dayGain = oPosition.currentDayProfitLoss;
-                //                    oWLItemDetail.costPerShare = oPosition.averagePrice;
-                //                    if ((oWLItemDetail.shares > 0) || (oWLItemDetail.shares < 0)) {
-                //                        oWLItemDetail.gain = oWLItemDetail.shares * (oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare);
-                //                        if (oWLItemDetail.costPerShare != 0.0) {
-                //                            oWLItemDetail.gainPercent = ((oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare) / oWLItemDetail.costPerShare) * 100.0;
-                //                        }
-                //                    }
-                //                    oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
-                //                }
-                //            } else {
-                //                oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
-                //            }
-                //            oWLDisplayed.sSortOrderFields = gWatchlists[idxWLMain].sSortOrderFields;
-                //            oWLDisplayed.iSortOrderAscDesc = gWatchlists[idxWLMain].iSortOrderAscDesc;
-
-                //            gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
-
-                    //    }
-                    //}
-
-//                    //now show the results
-//                    let sThisDiv = "";
-//                    let sThisTable = "";
-//                    let sLastWLName = "";
-//                    let sLastWLAccountName = "";
-//                    let sLastWLAccountId = "";
-//                    let sThisId = "";
-//                    let sHeadingTextAlign = "right";
-//                    let sBodyTextAlign = "right";
-//                    let sTableRowVerticalAlignment = "middle";
-//                    let sTmp = "";
-//                    let bEverythingIsChecked = true;
-
-//                    let sTitleDividend = {
-//                        "Symbol": "<b><I><U>Symbol</U>&nbsp;&nbsp;</I></b>",
-//                        "DivPercent": "<b><I><U>Div%</U></I></b>",
-//                        "DivDollar": "<b><I><U>Div$</U></I></b>",
-//                        "Amt": "<b><I>&nbsp;&nbsp;<U>Amt</U>&nbsp;&nbsp;</I></b>",
-//                        "DivDate": "<b><I><U>Div&nbsp;Date</U></I></b>",
-//                        "PE": "<b><I><U>P/E</U></I></b>",
-//                        "Price": "<b><I><U>Price</U></I></b>",
-//                        "ChgPercent": "<b><I><U>Chg(%)</U></I></b>",
-//                        "ChgDollar": "<b><I><U>Chg($)</U></I></b>",
-//                        "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I></b>",
-//                        "GainDollar": "<b><I><U>Gain($)</U></I></b>",
-//                        "GainPercent": "<b><I><U>Gain(%)</U></I></b>",
-//                        "Qty": "<b><I><U>Qty</I></U></b>",
-//                        "CostPerShare": "<b><I><U>Cost</I></U></b>",
-//                        "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I></b>",
-//                        "OldGL": "<b><I>Old&nbsp;G/L</I></b>",
-//                        "PurchaseDate": "<b><I>Acquired</I></b>"
-//                    };
-
-//                    let sTitleDividendWithArrow = {
-//                        "Symbol": "<b><I><U>Symbol</U>&nbsp;</I>xxx</b>",
-//                        "DivPercent": "<b><I><U>Div%</U></I>xxx</b>",
-//                        "DivDollar": "<b><I><U>Div$</U></I>xxx</b>",
-//                        "Amt": "<b><I>&nbsp;&nbsp;<U>Amt</U>&nbsp;</I>xxx</b>",
-//                        "DivDate": "<b><I><U>Div&nbsp;Date</U></I>xxx</b>",
-//                        "PE": "<b><I><U>P/E</U></I>xxx</b>",
-//                        "Price": "<b><I><U>Price</U></I>xxx</b>",
-//                        "ChgPercent": "<b><I><U>Chg(%)</U></I>xxx</b>",
-//                        "ChgDollar": "<b><I><U>Chg($)</U></I>xxx</b>",
-//                        "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I>xxx</b>",
-//                        "GainDollar": "<b><I><U>Gain($)</U></I>xxx</b>",
-//                        "GainPercent": "<b><I><U>Gain(%)</U></I>xxx</b>",
-//                        "Qty": "<b><I><U>Qty</I></U>xxx</b>",
-//                        "CostPerShare": "<b><I><U>Cost</I></U>xxx</b>",
-//                        "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I>xxx</b>",
-//                        "OldGL": "<b><I>Old&nbsp;G/L</I>xxx</b>",
-//                        "PurchaseDate": "<b><I>Acquired</I>xxx</b>"
-//                    };
-
-//                    if (gWLDisplayed.length > 0) {
-
-//                        //let bDoingDividendWL = false;
-//                        //if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
-//                        //    bDoingDividendWL = true;
-//                        //}
-
-//                        if (bDoingDividendWL) {
-
-//                            let sDownArrow = "&darr;";
-//                            let sUpArrow = "&uarr;";
-//                            let sArrow = "";
-//                            if (gWatchlists[idxWLMain].iSortOrderAscDesc == 0) {
-//                                sArrow = sDownArrow;
-//                            } else {
-//                                sArrow = sUpArrow;;
-//                            }
-//                            gWLDisplayed.sort(sortWL);
-//                            sTitleDividend[gWatchlists[idxWLMain].sSortOrderFields] = sTitleDividendWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
-//                        //    for (var key in sTitleDividend) {
-//                        //        sTitleDividend[key] = sTitleDividend[key].replace("xxx", "");
-//                        //    }
-//                        } else {
-//                            gWLDisplayed.sort(sortWL);
-////                            gWLDisplayed.sort(sortBySymbol);
-//                        }
-
-
-//                        bEverythingIsChecked = true;
-//                        let iTotalSymbolsUp = 0;
-//                        let iTotalSymbolsDown = 0;
-//                        let iTotalSymbolsUpDay = 0;
-//                        let iTotalSymbolsDownDay = 0;
-//                        let sSymbolsThisWL = "";
-//                        let sSymbolsSelectedForOrderThisWL = "";
-//                        let sSep = "";
-//                        let sSepForOrder = "|";
-
-
-//                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
-//                            if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
-//                                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol;
-//                                sSep = ",";
-
-//                                //sSymbolsSelectedForOrderThisWL will contain: |symbol,idxWLItem,true|symbol,idxWLItem,false...
-//                                sSymbolsSelectedForOrderThisWL = sSymbolsSelectedForOrderThisWL + sSepForOrder + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol + "," + idxWLItem.toString() + "," + gWatchlists[idxWLMain].WLItems[idxWLItem].bSelectedForOrder;
-//                            }
-//                        }
-//                        sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
-
-//                        sThisDiv = "";
-//                        sLastWLName = gWatchlists[idxWLMain].name;
-//                        sLastWLAccountName = gWatchlists[idxWLMain].accountName;
-//                        sLastWLAccountId = gWatchlists[idxWLMain].accountId;
-//                        sThisId = gWatchlists[idxWLMain].watchlistId + sLastWLAccountId;
-
-//                        if (gbUsingCell) {
-////                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
-//                            if (bDoingAccountWL) {
-//                                sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                                sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-//                                sThisDiv = sThisDiv + "<tr>";
-
-//                                sThisDiv = sThisDiv + "<th colspan=\"3\" style=\"height:30px;vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
-//                                    "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-//                                    "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-//                                    "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-//                                    "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
-
-//                                sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-//                                sThisDiv = sThisDiv + "</tr>";
-
-//                                sThisDiv = sThisDiv + "<tr>";
-
-//                            } else {
-//                                if (bDoingDividendWL) {
-//                                    sThisDiv = sThisDiv + "<div style=\"width:1040px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                                    sThisDiv = sThisDiv + "<table style=\"width:1040px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-//                                } else {
-//                                    sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                                    sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-//                                }
-//                                sThisDiv = sThisDiv + "<tr>";
-//                                //style=\"vertical-align:bottom\">
-//                                sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-//                                    "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols(" + idxWLMain.toString() + ")\" />" +
-//                                    "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" />" +
-//                                    "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-//                                    "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
-
-//                                //"&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
-
-//                                sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-//                                    "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-//                                    "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-//                                    "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
-//                                    "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
-
-//                                sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-//                                    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
-//                                    "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-
-//                                sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-
-//                                sThisDiv = sThisDiv + "</tr>";
-
-//                                sThisDiv = sThisDiv + "<tr>";
-//                            }
-
-//                            sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-//                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-//                                "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:50px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
-
-//                            sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
-//                            sThisDiv = sThisDiv + "</th>";
-
-
-//                            sThisDiv = sThisDiv + "<th style=\"text-align:center; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-//                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-//                                "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%";
-//                            sThisDiv = sThisDiv + "</th>";
-
-
-//                            sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-//                            sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-//                                "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
-//                                "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-//                                "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-//                            sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkbuyLimit" + sThisId + "\" name=\"chkbuyLimit" + sThisId + "\" value=\"\" > Limit";
-//                            sThisDiv = sThisDiv + "</th > ";
-
-//                            sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
-//                            sThisDiv = sThisDiv + "&nbsp;";
-
-//                            sThisDiv = sThisDiv + "</th > ";
-
-//                            sThisDiv = sThisDiv + "</tr>";
-
-
-//                            sThisDiv = sThisDiv + "<tr>";
-
-//                            sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-//                        } else { //not using cell
-////                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
-//                            if (bDoingAccountWL) {
-//                                sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                                sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-//                                sThisDiv = sThisDiv + "<tr>";
-
-//                                sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
-//                                                       "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-//                                                       "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-//                                                       "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
-//                                                       "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
-//                                sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-//                                sThisDiv = sThisDiv + "</tr>";
-
-//                                sThisDiv = sThisDiv + "<tr>";
-//                                sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
-
-//                            } else {
-//                                if (bDoingDividendWL) {
-//                                    sThisDiv = sThisDiv + "<div style=\"width:1040px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                                    sThisDiv = sThisDiv + "<table style=\"width:1040px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-//                                } else {
-//                                    sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                                    sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-//                                }
-//                                sThisDiv = sThisDiv + "<tr>";
-
-//                                sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-//                                    "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols(" + idxWLMain.toString() + ")\" />" +
-//                                    "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" />" +
-//                                    "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-//                                    "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
-
-//                                //"&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
-
-
-//                                sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" + 
-//                                                      "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-//                                                      "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-//                                                      "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" + 
-//                                                      "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
-
-//                                sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-//                                    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
-//                                    "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-
-//                                sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-//                                sThisDiv = sThisDiv + "</tr>";
-
-//                                sThisDiv = sThisDiv + "<tr>";
-//                                sThisDiv = sThisDiv + "<th colspan=\"4\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
-//                            }
-
-//                            sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-//                                "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
-
-//                            sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
-
-
-//                            sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-//                                "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-//                                "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
-
-
-//                            sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-//                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-//                                "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%" +
-//                                "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-//                                "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:45px\" value=\"\">";
-//                            sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkbuyLimit" + sThisId + "\" name=\"chkbuyLimit" + sThisId + "\" value=\"\" > Limit";
-
-//                            sThisDiv = sThisDiv + "</th > ";
-
-//                            sThisDiv = sThisDiv + "</tr>";
-
-
-//                            sThisDiv = sThisDiv + "<tr>";
-
-//                            sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-
-//                        }
-
-
-//                        sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                        sThisTable = "";
-//                        sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-
-//                        sThisTable = sThisTable + "<tr>";
-//                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + "000";
-
-//                        let sAcquiredSpaces = "";
-//                        if (bDoingDividendWL) {
-//                            sAcquiredSpaces = "";
-//                        }
-
-//                        if (bDoingDividendWL) {
-//                            //doing dividend WL
-//                            let sonClickChangeOrderBase = "onclick =\"wlChangeOrder(" + idxWLMain.toString() + ", 'xxx')\"";
-//                            let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Symbol);
-//                            sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
-//                                "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
-//                                "<span " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-//                                sTitleDividend.Symbol + "</span></td > ";
-
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivPercent);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivPercent + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivDollar);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDollar + "</td>";
-
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Amt);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Amt + "</td>";
-
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivDate);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDate + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PE);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.PE + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Price + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgPercent);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.ChgPercent + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgDollar);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.ChgDollar + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DayGain);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DayGain + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainDollar);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainDollar + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainPercent);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainPercent + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Qty + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.CostPerShare);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.CostPerShare + "</td>";
-//                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.MktValue);
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.MktValue + "</td>";
-
-//                            sonClickChangeOrder = "";
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b>" + sTitleDividend.OldGL + "</td>";
-//                            sonClickChangeOrder = "";
-//                            sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.PurchaseDate + "</td>";
-
-//                        } else {
-//                            sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
-//                                "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
-//                                "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-//                                "<b><I>Symbol&nbsp;&nbsp;</I ></b></span></td > ";
-
-//                            //not doing dividend WL
-//                            sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Acquired</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Qty</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Price</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg(%)</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg($)</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Bid</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Ask</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;gain($)</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain($)</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain(%)</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Cost</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Old&nbsp;G/L</I></b></td>";
-//                            sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Mkt&nbsp;Value</I></b></td>";
-//                        }
-//                        sThisTable = sThisTable + "</tr>";
-
-//                        let dTotalCost = 0.0;
-//                        let iLineCnt = 0;
-//                        let dTotalHoldingsGain = 0.0;
-//                        let dTotalGain = 0.0;
-//                        let dTotalDayGain = 0.0;
-//                        for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-//                            let oWLDisplayed = new WLDisplayed();
-//                            oWLDisplayed = gWLDisplayed[idxDisplayed];
-//                            let sSymbol = oWLDisplayed.symbol;
-//                            let oWLItemDetail = new WLItemDetail();
-//                            let dCost = 0.0;
-//                            let dQty = 0.0;
-//                            if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
-//                                for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-//                                    oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-//                                    let bOkToShowThisDetail = false;
-//                                    if ((gWatchlists[idxWLMain].accountId == oWLItemDetail.accountId) ||
-//                                        (oWLItemDetail.accountId == "")) {
-//                                        bOkToShowThisDetail = true;
-//                                    }
-
-//                                    if (bOkToShowThisDetail) {
-//                                        iLineCnt++;
-//                                        let sCurrentPurchasedDate = "";
-//                                        let dCurrentAveragePrice = 0.0;
-//                                        for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-//                                            if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-//                                                sCurrentPurchasedDate = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
-//                                                dCurrentAveragePrice = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-//                                                break;
-//                                            }
-//                                        }
-
-//                                        let sChecked = "";
-//                                        let sThisidxWLItem = "";
-//                                        let idxThisSymbol = sSymbolsSelectedForOrderThisWL.indexOf("|" + sSymbol + ",");
-//                                        let idxThisSymbolidxWLItem = sSymbolsSelectedForOrderThisWL.substring(idxThisSymbol + 1, sSymbolsSelectedForOrderThisWL.length - 1).indexOf(",");
-//                                        let idxThisSymbolselected = sSymbolsSelectedForOrderThisWL.substring(idxThisSymbolidxWLItem + idxThisSymbol + 2, sSymbolsSelectedForOrderThisWL.length - 1).indexOf(",");
-//                                        sThisidxWLItem = sSymbolsSelectedForOrderThisWL.substr(idxThisSymbol + idxThisSymbolidxWLItem + 2, idxThisSymbolselected);
-
-
-//                                        if (sSymbolsSelectedForOrderThisWL.substr(idxThisSymbol + idxThisSymbolidxWLItem + idxThisSymbolselected + 3, 4).toUpperCase() == "TRUE") {
-//                                            sChecked = "checked";
-//                                        } else {
-//                                            bEverythingIsChecked = false;
-//                                        }
-
-//                                        let sThisTRId = "TR" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
-//                                        if (sChecked == "checked") {
-//                                            sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableSelectedRowBackgroundColor + ";\">";
-//                                        } else {
-//                                            if ((iLineCnt % 2) == 0) {
-//                                                sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableEvenRowBackgroundColor + ";\">";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableOddRowBackgroundColor + ";\">";
-//                                            }
-//                                        }
-
-//                                        sTmp = "";
-//                                        //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-//                                        //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-//                                        //        sTmp = "&nbsp;(" + gWatchlists[idxWLMain].WLItems[idxTmp].sequenceId + ")";
-//                                        //        break;
-//                                        //    }
-//                                        //}
-
-//                                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
-
-//                                        if (oWLItemDetail.shares < 0.0) {
-//                                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
-//                                                "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
-//                                                "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-//                                                "<b>" + sSymbol + "</b>" + sTmp + "</span></td>";
-//                                        } else {
-//                                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
-//                                                "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
-//                                                "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-//                                                sSymbol + sTmp + "</span></td>";
-//                                        }
-
-//                                        if ((isUndefined(goWLDisplayed)) || (isUndefined(goWLDisplayed[sThisId + sSymbol]))) {
-//                                            let oT = {
-//                                                "symbol": sSymbol,
-//                                                "assetType": oWLDisplayed.assetType,
-//                                                "accountId": sLastWLAccountId,
-//                                                "accountName": "",
-//                                                "purchasedDate": oWLItemDetail.purchasedDate,
-//                                                "askPrice": oWLItemDetail.askPrice,
-//                                                "bidPrice": oWLItemDetail.bidPrice,
-//                                                "highPrice": oWLItemDetail.highPrice,
-//                                                "lowPrice": oWLItemDetail.lowPrice,
-//                                                "lastPrice": oWLItemDetail.lastPrice,
-//                                                "netChange": oWLItemDetail.netChange,
-//                                                "netPercentChangeInDouble": oWLItemDetail.netPercentChangeInDouble,
-//                                                "regularMarketLastPrice": oWLItemDetail.regularMarketLastPrice,
-//                                                "regularMarketNetChange": oWLItemDetail.regularMarketNetChange,
-//                                                "regularMarketPercentChangeInDouble": oWLItemDetail.regularMarketPercentChangeInDouble,
-//                                                "shares": oWLItemDetail.shares,
-//                                                "dayGain": oWLItemDetail.dayGain,
-//                                                "costPerShare": oWLItemDetail.costPerShare,
-//                                                "marketValue": oWLItemDetail.marketValue,
-//                                                "gain": oWLItemDetail.gain,
-//                                                "gainPercent": oWLItemDetail.gainPercent,
-//                                                "averagePrice": oWLItemDetail.oldGL,
-//                                                "peRatio": oWLItemDetail.peRatio,
-//                                                "divAmount": oWLItemDetail.divAmount,
-//                                                "divDate": oWLItemDetail.divDate,
-//                                                "divYield": oWLItemDetail.divYield
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol] = oT;
-//                                        }
-
-//                                        if (bDoingDividendWL) {
-//                                            //Div Yield
-//                                            sTmp = FormatDecimalNumber(oWLItemDetail.divYield, 5, 2, "") + "%";
-//                                            if (goWLDisplayed[sThisId + sSymbol].divYield == oWLItemDetail.divYield) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                goWLDisplayed[sThisId + sSymbol].divYield = oWLItemDetail.divYield;
-//                                            }
-
-//                                            //Div Amount
-//                                            sTmp = "&nbsp;&nbsp;" + FormatDecimalNumber(oWLItemDetail.divAmount, 5, 2, "");
-//                                            if (goWLDisplayed[sThisId + sSymbol].divAmount == oWLItemDetail.divAmount) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                goWLDisplayed[sThisId + sSymbol].divAmount = oWLItemDetail.divAmount;
-//                                            }
-
-//                                            //Amt
-//                                            sTmp = FormatDecimalNumber((oWLItemDetail.divAmount * oWLItemDetail.shares), 5, 2, "");
-//                                            let dAmt = parseFloat(sTmp);
-//                                            if (dAmt == 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                goWLDisplayed[sThisId + sSymbol].shares = dQty;
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            }
-
-//                                            //Div Date
-//                                            sTmp = oWLItemDetail.divDate;
-//                                            let sTodayTD = FormatCurrentDateForTD()
-//                                            let sDivDate = sTmp.split(' ')[0];
-//                                            let dtToday = new Date(sTodayTD);
-//                                            let dtDiv = new Date(sDivDate);
-//                                            let sDivDateColor = "";
-//                                            if (dtDiv < dtToday) {
-//                                                dtDiv.setDate(dtDiv.getDate() + 90);
-//                                            }
-//                                            let iDiffDays = DateDiff.inDays(dtToday, dtDiv);
-//                                            if (iDiffDays == 0) {
-//                                                sDivDateColor = "font-weight: bold;color:white; background-color:" + gsNegativeColor + ";";
-//                                            } else if (iDiffDays == 1) {
-//                                                sDivDateColor = "font-weight: bold;color:white; background-color:" + gsNegativeColor + ";";
-//                                            } else if ((iDiffDays >= 2) && (iDiffDays <= 5)) {
-//                                                sDivDateColor = "font-weight: bold;color:white; background-color:blue;";
-//                                            } else if ((iDiffDays > 0) && (iDiffDays < 30)) {
-//                                                sDivDateColor = "font-weight: bold;color:white; background-color:green;";
-//                                            }
-
-//                                            if (sTmp != "") {
-//                                                sTmp = "&nbsp;&nbsp;&nbsp;&nbsp;" + sTmp.split(" ")[0];
-//                                            }
-//                                            if (goWLDisplayed[sThisId + sSymbol].divDate == oWLItemDetail.divDate) {
-//                                                sThisTable = sThisTable + "<td style=\"" + sDivDateColor + "text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"" + sDivDateColor + "text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                goWLDisplayed[sThisId + sSymbol].divDate = oWLItemDetail.divDate;
-//                                            }
-
-//                                            //P/E
-//                                            sTmp = FormatDecimalNumber(oWLItemDetail.peRatio, 5, 0, "");
-//                                            if (goWLDisplayed[sThisId + sSymbol].peRatio == oWLItemDetail.peRatio) {
-//                                                if (parseFloat(sTmp) < 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                } else if (parseFloat(sTmp) > 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                }
-//                                            } else {
-//                                                if (parseFloat(sTmp) < 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                } else if (parseFloat(sTmp) > 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                }
-//                                                goWLDisplayed[sThisId + sSymbol].peRatio = oWLItemDetail.peRatio;
-//                                            }
-//                                        }
-
-//                                        if (!bDoingDividendWL) {
-//                                            //Acquired
-//                                            sTmp = "";
-//                                            for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-//                                                if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-//                                                    sTmp = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
-//                                                    break;
-//                                                }
-//                                            }
-//                                            if (goWLDisplayed[sThisId + sSymbol].purchasedDate == sTmp) {
-//                                                if (sTmp == "") {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + sTmp + "</td>";
-//                                                }
-//                                            } else {
-//                                                if (sTmp == "") {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sAcquiredSpaces + sTmp + "</b></td>";
-//                                                }
-//                                                goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
-//                                            }
-//                                        }
-
-//                                        //Qty
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
-//                                        dQty = parseFloat(sTmp);
-
-//                                        if (!bDoingDividendWL) {
-//                                            if (dQty == 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                goWLDisplayed[sThisId + sSymbol].shares = dQty;
-//                                            } else {
-//                                                if (oWLItemDetail.shares < 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
-//                                                } else {
-//                                                    if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
-//                                                        if (oWLItemDetail.shares < 0.0) {
-//                                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                        } else {
-//                                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                        }
-//                                                    } else {
-//                                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                        goWLDisplayed[sThisId + sSymbol].shares = dQty;
-//                                                    }
-//                                                }
-//                                            }
-
-//                                        }
-
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketLastPrice, 5, 2, "");
-//                                        if (goWLDisplayed[sThisId + sSymbol].regularMarketLastPrice == oWLItemDetail.regularMarketLastPrice) {
-//                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                        } else {
-//                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            goWLDisplayed[sThisId + sSymbol].regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-//                                        }
-
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketPercentChangeInDouble, 5, 2, "") + "%";
-//                                        if (goWLDisplayed[sThisId + sSymbol].regularMarketPercentChangeInDouble == oWLItemDetail.regularMarketPercentChangeInDouble) {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                        } else {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol].regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-//                                        }
-
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketNetChange, 5, 2, "");
-//                                        if (goWLDisplayed[sThisId + sSymbol].regularMarketNetChange == oWLItemDetail.regularMarketNetChange) {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                        } else {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol].regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-//                                        }
-
-//                                        if (!bDoingDividendWL) {
-//                                            sTmp = FormatDecimalNumber(oWLItemDetail.bidPrice, 5, 2, "");
-//                                            if (goWLDisplayed[sThisId + sSymbol].bidPrice == oWLItemDetail.bidPrice) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                goWLDisplayed[sThisId + sSymbol].bidPrice = oWLItemDetail.bidPrice;
-//                                            }
-
-//                                            sTmp = FormatDecimalNumber(oWLItemDetail.askPrice, 5, 2, "");
-//                                            if (goWLDisplayed[sThisId + sSymbol].askPrice == oWLItemDetail.askPrice) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                goWLDisplayed[sThisId + sSymbol].askPrice = oWLItemDetail.askPrice;
-//                                            }
-//                                        }
-
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
-//                                        dTotalDayGain = dTotalDayGain + parseFloat(sTmp);
-//                                        if (goWLDisplayed[sThisId + sSymbol].dayGain == oWLItemDetail.dayGain) {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsDownDay++;
-//                                                }
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsUpDay++;
-//                                                }
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                        } else {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsDownDay++;
-//                                                }
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsUpDay++;
-//                                                }
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol].dayGain = oWLItemDetail.dayGain;
-//                                        }
-
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.gain, 5, 2, "");
-//                                        if (goWLDisplayed[sThisId + sSymbol].gain == oWLItemDetail.gain) {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsDown++;
-//                                                }
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsUp++;
-//                                                }
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                        } else {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsDown++;
-//                                                }
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-//                                                    iTotalSymbolsUp++;
-//                                                }
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol].gain = oWLItemDetail.gain;
-//                                        }
-//                                        dTotalGain = dTotalGain + parseFloat(sTmp);
-//                                        dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
-
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.gainPercent, 5, 2, "") + "%";
-//                                        if (goWLDisplayed[sThisId + sSymbol].gainPercent == oWLItemDetail.gainPercent) {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                        } else {
-//                                            if (parseFloat(sTmp) < 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            } else if (parseFloat(sTmp) > 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol].gainPercent = oWLItemDetail.gainPercent;
-//                                        }
-
-//                                        if (bDoingDividendWL) {
-//                                            sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
-//                                            dQty = parseFloat(sTmp);
-//                                            if (dQty == 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                goWLDisplayed[sThisId + sSymbol].shares = dQty;
-//                                            } else {
-//                                                if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
-//                                                    if (oWLItemDetail.shares < 0.0) {
-//                                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                    } else {
-//                                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                    }
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
-//                                                }
-//                                            }
-
-//                                        }
-
-//                                        //Cost
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
-//                                        dCost = parseFloat(sTmp);
-//                                        if (goWLDisplayed[sThisId + sSymbol].costPerShare == oWLItemDetail.costPerShare) {
-//                                            if (dCost == 0.0) {
-//                                                if (dQty == 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">???</td>";
-//                                                }
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            }
-//                                        } else {
-//                                            if (dCost == 0.0) {
-//                                                if (dQty == 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>???</b></td>";
-//                                                }
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol].costPerShare = oWLItemDetail.costPerShare;
-//                                        }
-//                                        dTotalCost = dTotalCost + (dCost * dQty);
-
-//                                        if (!bDoingDividendWL) {
-//                                            //Old G/L
-//                                            let dTmpOrig = 0.0;
-//                                            dTmpOrig = oWLItemDetail.oldGL;
-//                                            //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-//                                            //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-//                                            //        dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-//                                            //        break;
-//                                            //    }
-//                                            //}
-//                                            sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-//                                            let dTmp = parseFloat(sTmp);
-//                                            dTotalGain = dTotalGain + dTmp;
-//                                            if (dTmp == 0) {
-//                                                sTmp = "";
-//                                            }
-//                                            if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
-//                                                if (dTmp < 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                } else if (dTmp > 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                }
-//                                            } else {
-//                                                if (dTmp < 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                } else if (dTmp > 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                }
-//                                                goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
-//                                            }
-
-//                                        }
-
-//                                        //Mkt Value
-//                                        sTmp = FormatDecimalNumber(oWLItemDetail.marketValue, 5, 2, "");
-//                                        if (goWLDisplayed[sThisId + sSymbol].marketValue == oWLItemDetail.marketValue) {
-//                                            if (parseFloat(sTmp) == 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                            }
-//                                        } else {
-//                                            if (parseFloat(sTmp) == 0.0) {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                            }
-//                                            goWLDisplayed[sThisId + sSymbol].marketValue = oWLItemDetail.marketValue;
-//                                        }
-
-//                                        if (bDoingDividendWL) {
-
-//                                            //Old G/L
-//                                            let dTmpOrig = 0.0;
-//                                            dTmpOrig = oWLItemDetail.oldGL;
-//                                            //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-//                                            //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-//                                            //        dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-//                                            //        break;
-//                                            //    }
-//                                            //}
-//                                            sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-//                                            let dTmp = parseFloat(sTmp);
-//                                            dTotalGain = dTotalGain + dTmp;
-//                                            if (dTmp == 0) {
-//                                                sTmp = "";
-//                                            }
-//                                            if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
-//                                                if (dTmp < 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                } else if (dTmp > 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                }
-//                                            } else {
-//                                                if (dTmp < 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                } else if (dTmp > 0.0) {
-//                                                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-//                                                }
-//                                                goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
-//                                            }
-
-//                                            //Acquired
-//                                            sTmp = oWLItemDetail.purchasedDate;
-//                                            //sTmp = "";
-//                                            //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-//                                            //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-//                                            //        sTmp = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
-//                                            //        break;
-//                                            //    }
-//                                            //}
-//                                            if (goWLDisplayed[sThisId + sSymbol].purchasedDate == sTmp) {
-//                                                if (sTmp == "") {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + sTmp + "</td>";
-//                                                }
-//                                            } else {
-//                                                if (sTmp == "") {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-//                                                } else {
-//                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sAcquiredSpaces + sTmp + "</b></td>";
-//                                                }
-//                                                goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
-//                                            }
-//                                        }
-
-//                                        sThisTable = sThisTable + "</tr>";
-//                                        //    iLineCnt++;
-//                                    }
-//                                }
-//                            }
-
-//                        }
-//                        if (sThisTable != "") {
-//                            let sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-//                            if (sLastWLName == "Account") {
-//                                sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-//                            }
-
-//                            if (bDoingDividendWL) {
-//                                sThisTable = sThisTable + "<tr><td colspan=\"16\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
-//                            } else {
-//                                sThisTable = sThisTable + "<tr><td colspan=\"14\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
-//                            }
-//                            if (iLineCnt != gWatchlists[idxWLMain].WLItems.length) {
-//                                //debugger
-//                                return;
-//                                sThisTable = sThisTable + "<I>*Day</I>";
-//                            } else {
-//                                sThisTable = sThisTable + "<I>Day</I>";
-//                            }
-//                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUpDay.toString() + "</span>";
-//                            sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownDay.toString() + "</span>";
-//                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Cost:&nbsp;";
-//                            sTmp = FormatDecimalNumber(dTotalCost, 5, 2, "");
-//                            sThisTable = sThisTable + sTmp;
-
-//                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;G/L:&nbsp;";
-//                            sTmp = FormatDecimalNumber(dTotalDayGain, 5, 2, "");
-//                            if (dTotalDayGain < 0.0) {
-//                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
-//                            } else {
-//                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
-//                            }
-//                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;";
-//                            if (dTotalCost == 0) {
-//                                sTmp = "0.00";
-//                            } else {
-//                                sTmp = FormatDecimalNumber((dTotalDayGain / dTotalCost) * 100, 5, 2, "");
-//                            }
-//                            if (dTotalDayGain < 0.0) {
-//                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "%</span>";
-//                            } else {
-//                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
-//                            }
-
-
-//                            sThisTable = sThisTable + sPrecedingSpaces + "<I>Holding</I>&nbsp;G/L:&nbsp;";
-//                            sTmp = FormatDecimalNumber(dTotalHoldingsGain, 5, 2, "");
-//                            if (dTotalHoldingsGain < 0.0) {
-//                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
-//                            } else {
-//                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
-//                            }
-//                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;&nbsp;";
-//                            if (dTotalCost == 0) {
-//                                sTmp = "0.00";
-//                            } else {
-//                                sTmp = FormatDecimalNumber((dTotalHoldingsGain / dTotalCost) * 100, 5, 2, "");
-//                            }
-//                            if (dTotalHoldingsGain < 0.0) {
-//                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "%</span>";
-//                            } else {
-//                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
-//                            }
-//                            if (sLastWLName == "Account") {
-//                                for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-//                                    if (gWatchlists[idxWLMain].accountId == gAccounts[idxAccount].accountId) {
-//                                        //this.IBliquidationValue = 0.0;
-//                                        //this.CBliquidationValue = 0.0;
-//                                        //this.CBcashBalance = 0.0;
-//                                        if (gAccounts[idxAccount].CBliquidationValue != 0) {
-//                                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Cash:&nbsp;";
-//                                            let dCashPercentage = gAccounts[idxAccount].CBcashBalance / gAccounts[idxAccount].CBliquidationValue;
-//                                            sTmp = FormatDecimalNumber(dCashPercentage * 100, 5, 2, "");
-//                                            if (dCashPercentage < 0.0) {
-//                                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "%</span>";
-//                                            } else {
-//                                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
-//                                            }
-
-//                                            sThisTable = sThisTable + sPrecedingSpaces + "<I>Account</I>";
-//                                            sThisTable = sThisTable + "&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
-//                                            sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
-//                                        }
-//                                    }
-//                                }
-//                            } else {
-//                                sThisTable = sThisTable + sPrecedingSpaces + "<I>Portfolio</I>";
-//                                sThisTable = sThisTable + "&nbsp;&nbsp;G/L:&nbsp;";
-//                                sTmp = FormatDecimalNumber(dTotalGain, 5, 2, "");
-//                                if (dTotalGain < 0.0) {
-//                                    sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
-//                                } else {
-//                                    sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
-//                                }
-//                                sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
-//                                sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
-//                            }
-
-//                            sThisTable = sThisTable + "<b></td></tr>";
-
-//                            sThisTable = sThisTable + "</table>";
-//                            if (bEverythingIsChecked) {
-//                                sThisTable = sThisTable.replace("xxthisWillBeReplacedxx", "checked");
-//                            }
-
-//                            sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
-//                        }
-//                        if (gWatchlists[idxWLMain].spanName == "") {
-//                            gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
-//                            sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWLMain].spanName);
-//                            wlAddDiv(gWatchlists[idxWLMain].spanName, sThisDiv);
-//                        } else {
-//                            if (document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML == "") {
-//                                sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWLMain].spanName);
-//                                document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
-//                            } else {
-//                                document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
-//                                document.getElementById("spanWLDate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
-//                            }
-//                        }
-//                    } else {
-//                        //no symbols found for the selected watchlist 
-//                        sThisDiv = "";
-//                        sLastWLName = gWatchlists[idxWLMain].name;
-//                        sLastWLAccountName = gWatchlists[idxWLMain].accountName;
-//                        sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                        sThisDiv = sThisDiv + "<table style=\"width:100%; border-width:1px; border-style:solid;border-spacing:1px;border-color:White;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-//                        sThisDiv = sThisDiv + "<tr>";
-//                        sThisDiv = sThisDiv + "<th style=\"width:780px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-//                        sThisDiv = sThisDiv + "<th style=\"width:18px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">X&nbsp;&nbsp;</th>";
-//                        //                                                            sThisDiv = sThisDiv + "<th style=\"width:100%; vertical-align:top; border-width:1px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-//                        sThisDiv = sThisDiv + "</tr>";
-//                        sThisDiv = sThisDiv + "<tr>";
-//                        sThisDiv = sThisDiv + "<td style=\"width:100%; vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-//                        sThisDiv = sThisDiv + "<div style=\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-
-//                        sThisDiv = sThisDiv + "<table style=\"width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-
-//                        sThisDiv = sThisDiv + "<tr>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:left;vertical-align:top;border-width:0px;\"><I>Symbol&nbsp;&nbsp;</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:left;vertical-align:top;border-width:0px;\"><I>Acct&nbsp;&nbsp;</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Qty</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Price</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Chg(%)</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Chg($)</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;&nbsp;Bid</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;&nbsp;Ask</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;Day gain($)</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Gain($)</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Gain(%)</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Cost</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Old&nbsp;G/L</I></td>";
-//                        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Mkt&nbsp;Value</I></td>";
-
-//                        sThisDiv = sThisDiv + "</tr>";
-
-//                        sThisDiv = sThisDiv + "</table></div></td></tr></table></div>";
-//                        if (gWatchlists[idxWLMain].spanName == "") {
-//                            gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
-//                            wlAddDiv(gWatchlists[idxWLMain].spanName, sThisDiv);
-//                        } else {
-//                            document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
-//                        }
-//                    }
-            //    } else {
-            //        //no symbols found for the selected watchlist 
-            //        sThisDiv = "";
-            //        sLastWLName = gWatchlists[idxWLMain].name;
-            //        sLastWLAccountName = gWatchlists[idxWLMain].accountName;
-            //        sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-            //        sThisDiv = sThisDiv + "<table style=\"width:100%; border-width:1px; border-style:solid;border-spacing:1px;border-color:White;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-            //        sThisDiv = sThisDiv + "<tr>";
-            //        sThisDiv = sThisDiv + "<th style=\"width:780px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-            //        sThisDiv = sThisDiv + "<th style=\"width:18px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">X&nbsp;&nbsp;</th>";
-            //        //                                                            sThisDiv = sThisDiv + "<th style=\"width:100%; vertical-align:top; border-width:1px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-            //        sThisDiv = sThisDiv + "</tr>";
-            //        sThisDiv = sThisDiv + "<tr>";
-            //        sThisDiv = sThisDiv + "<td style=\"width:100%; vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-            //        sThisDiv = sThisDiv + "<div style=\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-
-            //        sThisDiv = sThisDiv + "<table style=\"width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-
-            //        sThisDiv = sThisDiv + "<tr>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:left;vertical-align:top;border-width:0px;\"><I>Symbol&nbsp;&nbsp;</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:left;vertical-align:top;border-width:0px;\"><I>Acct&nbsp;&nbsp;</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Qty</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Price</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Chg(%)</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Chg($)</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;&nbsp;Bid</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;&nbsp;Ask</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;Day gain($)</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Gain($)</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>&nbsp;&nbsp;&nbsp;Gain(%)</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Cost</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Old&nbsp;G/L</I></td>";
-            //        sThisDiv = sThisDiv + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><I>Mkt&nbsp;Value</I></td>";
-
-            //        sThisDiv = sThisDiv + "</tr>";
-
-            //        sThisDiv = sThisDiv + "</table></div></td></tr></table></div>";
-            //        if (gWatchlists[idxWLMain].spanName == "") {
-            //            gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
-            //            wlAddDiv(gWatchlists[idxWLMain].spanName, sThisDiv);
-            //        } else {
-            //            document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
-            //        }
-            //    }
             }
         }
     }
@@ -9540,6 +9066,15 @@ function GetWatchlists(bDoingReset) {
                                     if (oWLItem.priceInfo.averagePrice > 1000000.0) {
                                         oWLItem.priceInfo.averagePrice = -1 * (oWLItem.priceInfo.averagePrice - 1000000.0);
                                     }
+
+                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
+                                        oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
+                                    }
+
+                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
+                                        oWLItem.priceInfo.GLUpdateStartDate = oCMWL[idxWL].watchlistItems[idxWLItem].quantity * 100000;
+                                    }
+
                                     oWL.WLItems[oWL.WLItems.length] = oWLItem;
                                 }
                             }
@@ -9611,6 +9146,14 @@ function GetWatchlists(bDoingReset) {
                                     if (oWLItem.priceInfo.averagePrice > 1000000.0) {
                                         oWLItem.priceInfo.averagePrice = -1 * (oWLItem.priceInfo.averagePrice - 1000000.0);
                                     }
+                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
+                                        oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
+                                    }
+
+                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
+                                        oWLItem.priceInfo.GLUpdateStartDate = oCMWL[idxWL].watchlistItems[idxWLItem].quantity * 100000;
+                                    }
+
                                     oWL.WLItems[oWL.WLItems.length] = oWLItem;
                                 }
                             }
@@ -12748,6 +12291,121 @@ function PostTDWLOrder(sAccountId, sWatchlistId, sData) {
     return iReturn;
 }
 
+function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, sWatchlistId, iTryCountIn, idxWL) {
+    let iNumSuccess = iNumSuccessIn;
+    let iNumErrors = iNumErrorsIn;
+    let iProgressIncrement = iProgressIncrementIn;
+    let iTryCount = iTryCountIn;
+    if (bFirstTime) {
+        giProgress = 0;
+        iProgressIncrement = 100 / gTDWLOrders.length;
+        gsLastErrors.length = 0;
+        giTDPostOrderRetryCnt = 0;
+        ShowProgress(true, false);
+    }
+    for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
+        if (giProgress < 100) {
+            giProgress = giProgress + iProgressIncrement;
+        }
+        let oTDWLOrder = new TDWLOrder();
+        oTDWLOrder = gTDWLOrders[idxOrder];
+        if (!oTDWLOrder.bProcessed) {
+            if (oTDWLOrder.sError == gsWLAutoGLUpdateNoAccountError) {
+                // an error occurred
+                iNumErrors++;
+                gTDWLOrders[idxOrder].bProcessed = true;
+            } else {
+                let sOrder = "";
+                sOrder = oTDWLOrder.aWL00Start +
+                    oTDWLOrder.aWL01name +
+                    oTDWLOrder.aWL02watchlistId +
+                    oTDWLOrder.aWL03watchlistItemsStart +
+                    oTDWLOrder.aWL03watchlistItemStart +
+                    oTDWLOrder.aWL04sequenceId +
+                    oTDWLOrder.aWL05Aquantity +
+                    oTDWLOrder.aWL06AaveragePrice +
+                    oTDWLOrder.aWL07commission +
+                    oTDWLOrder.aWL08instrumentStart +
+                    oTDWLOrder.aWL09symbol +
+                    oTDWLOrder.aWL10assetType +
+                    oTDWLOrder.aWL11instrumentEnd +
+                    oTDWLOrder.aWL12watchlistItemEnd +
+                    oTDWLOrder.aWL12watchlistItemsEnd +
+                    oTDWLOrder.aWL13end;
+                if (PostTDWLOrder(sAccountId, sWatchlistId, sOrder) == 0) {
+                    //success
+                    iNumSuccess++;
+                    gTDWLOrders[idxOrder].bProcessed = true;
+                    if (gTDWLOrders[idxOrder].sError != "") {
+                        iNumErrors--;
+                    }
+                    gTDWLOrders[idxOrder].sError = "";
+                } else {
+                    if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                        if (iTryCount < 3) {
+                            iTryCount++;
+                            giProgress = giProgress - 1;
+                            window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "','" + sWatchlistId + "', " + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                            return;
+                        } else {
+                            // an error occurred
+                            iNumErrors++;
+                            gTDWLOrders[idxOrder].sError = oTDWLOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                        }
+                    } else {
+                        // an error occurred
+                        iNumErrors++;
+                        gTDWLOrders[idxOrder].sError = oTDWLOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                    }
+                }
+            }
+        }
+        window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "','" + sWatchlistId + "',  0, " + idxWL.toString() + ")", 200);
+        return;
+    }
+    let sMsg = iNumSuccess.toString() + " watchlist ";
+    if ((iNumSuccess > 1) || (iNumSuccess == 0)) {
+        sMsg = sMsg + "symbols updated";
+    } else {
+        sMsg = sMsg + "symbol updated";
+    }
+    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+        giTDPostOrderRetryCnt++;
+        giProgress = 0;
+        window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "','" + sWatchlistId + "',  0, " + idxWL.toString() + ")", 4000);
+        return;
+    } else {
+        if (iNumErrors > 0) {
+            sMsg = sMsg + " with the following errors:";
+            for (let idxOrder = 0; idxOrder < gTDWLOrders.length; idxOrder++) {
+                if (!gTDWLOrders[idxOrder].bProcessed) {
+                    sMsg = sMsg + gsCRLF + gTDWLOrders[idxOrder].sError;
+                } else {
+                    if (gTDWLOrders[idxOrder].sError == gsWLAutoGLUpdateNoAccountError) {
+                        sMsg = sMsg + gsCRLF + gTDWLOrders[idxOrder].symbol + " -- " + gTDWLOrders[idxOrder].sError;
+                    }
+                }
+            }
+            alert(sMsg);
+        } else {
+            sMsg = sMsg + ".";
+            alert(sMsg);
+        }
+    }
+
+    gbDoResetWatchlists = true;
+    if (giGetTDDataTimeoutId != 0) {
+        window.clearTimeout(giGetTDDataTimeoutId);
+        giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+    }
+    if (iNumErrors == 0) {
+        ClearAllWLInputFields(idxWL);
+    }
+    ShowProgress(false, true);
+    gbDoingCreateOrders = false;
+    SetDefault();
+}
+
 function PostWLBuyOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
     let iNumSuccess = iNumSuccessIn;
     let iNumErrors = iNumErrorsIn;
@@ -14492,6 +14150,21 @@ function showTDAPIError(sError) {
     }
     giAPIErrorTimeoutId = window.setTimeout("hideTDAPIError()", 3000);
 
+}
+
+function ShowAutoUpdateDates(sSymbol, iStartDate, iUpdateDate) {
+    //let sSpanName = "SAU" + (giZIndex++).toString();
+    //let sWidth = "300px";
+    //let sThisDiv = "<div id=\"" + sSpanName + "\" style =\"width:" + sWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+    //sThisDiv = sThisDiv + "<table style=\"width:" + sWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+    //sThisDiv = sThisDiv + "<tr>";
+    //sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:0px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid; border-spacing:0px; border-color: White\" onclick=\"wlRemoveDiv('" + sSpanName + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+    //sThisDiv = sThisDiv + "</tr>";
+    if (iUpdateDate == 0) {
+        alert(sSymbol + " has not been automatically updated.");
+    } else {
+        alert(sSymbol + " was updated on " + FormatDateForTD(new Date(iUpdateDate)) + "\nusing " + FormatDateForTD(new Date(iStartDate)) + " as the start date.");
+    }
 }
 
 function sortByChgShortValue(a, b) {
