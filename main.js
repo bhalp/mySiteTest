@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.2 2021-06-16 01:18"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.2 2021-06-16 01:33"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2380,7 +2380,7 @@ function DoWLCloseSymbol(idxWL) {
                 }
             } else {
                 //treat as date
-                if (ValidateTDDate(sDollars)) {
+                if (ValidateTDDate(sDollars, false)) {
                     let sEndDate = FormatCurrentDateForTD();
                     if (sEndDate < sDollars) {
                         alert("Invalid start date. Please enter a start date less than or equal to today.");
@@ -2388,11 +2388,13 @@ function DoWLCloseSymbol(idxWL) {
                     }
                     bDoingAutoUpdate = true;
                 } else {
+                    alert("Please enter either a date (yyyy-mm-dd) or a dollar amount ($xx.xx).")
                     return;
                 }
             }
         } else {
-            dSelectNum = 0;
+            alert("Please enter either a date (yyyy-mm-dd) or a dollar amount ($xx.xx).")
+            return;
         }
 
         if (bDoingAutoUpdate) {
@@ -2495,7 +2497,7 @@ function DoWLOpenSymbols(idxWL) {
 
         let sAcquiredDate = TrimLikeVB(document.getElementById("txtwlacquired" + sThisId).value);
         if (sAcquiredDate != "") {
-            if (!ValidateTDDate(sAcquiredDate)) {
+            if (!ValidateTDDate(sAcquiredDate, true)) {
                 alert("Please enter an acquired date as yyyy-mm-dd.");
                 return;
             }
@@ -4886,7 +4888,7 @@ function GetStockPriceHistory() {
 
     if (gbUseLastTradingDay) {
         let sStartDate = document.getElementById("txtStartDate").value;
-        if (!ValidateTDDate(sStartDate)) {
+        if (!ValidateTDDate(sStartDate, true)) {
             gbDoingStockPriceHistory = false;
             gbGettingStockPriceHistory = false;
             SetDefault();
@@ -5980,7 +5982,7 @@ function GetTrades(bFirstTime) {
         }
         sStartDate = document.getElementById("txtStartDate").value;
         sEndDate = document.getElementById("txtEndDate").value;
-        if (!ValidateTDDate(sStartDate) || !ValidateTDDate(sEndDate)) {
+        if (!ValidateTDDate(sStartDate, true) || !ValidateTDDate(sEndDate, true)) {
             GetTradesCanceled();
             return;
         }
@@ -14482,7 +14484,7 @@ function UseLastTradingDayChanged(ev) {
     }
 }
 
-function ValidateTDDate(sStartDate) {
+function ValidateTDDate(sStartDate, bShowErrorMsg) {
     let s = "";
     let vTmp;
     let bOk = false;
@@ -14490,22 +14492,30 @@ function ValidateTDDate(sStartDate) {
     try {
         vTmp = sStartDate.split("-")
         if (vTmp.length != 3) {
-            alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+            if (bShowErrorMsg) {
+                alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+            }
             return bOk;
         }
         else {
             if (vTmp[0].toString().length != 4) {
-                alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+                if (bShowErrorMsg) {
+                    alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+                }
                 return bOk;
             }
 
             if (vTmp[1].toString().length != 2) {
-                alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+                if (bShowErrorMsg) {
+                    alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+                }
                 return bOk;
             }
 
             if (vTmp[2].toString().length != 2) {
-                alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+                if (bShowErrorMsg) {
+                    alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+                }
                 return bOk;
             }
 
@@ -14539,11 +14549,15 @@ function ValidateTDDate(sStartDate) {
             }
         }
         if (!bOk) {
-            alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+            if (bShowErrorMsg) {
+                alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+            }
         }
     }
     catch (eDate) {
-        alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+        if (bShowErrorMsg) {
+            alert("Invalid TD date. Please enter a date in the following format: yyyy-mm-dd");
+        }
         return bOk;
     }
     return bOk;
