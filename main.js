@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.2 2021-06-16 01:33"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.2 2021-06-16 04:59"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -1561,7 +1561,7 @@ function BuildStartEndDates(sStartDate, sEndDate) {
     let dEndDate = new Date(sTmp);
     let dCurrentDate = new Date();
 
-    let iMonthRange = 3;
+    let iMonthRange = 1; //6/16/21 changed from 3 to 1 
 
     if (DateDiff.inDays(dEndDate, dCurrentDate) == 0) {
         bEndDateIsCurrentDate = true;
@@ -1584,8 +1584,16 @@ function BuildStartEndDates(sStartDate, sEndDate) {
                 dTmpEndDate = new Date(dStartDate);
                 dTmpEndDate.setMonth(dTmpEndDate.getMonth() + iMonthRange);
                 dTmpEndDate.setDate(dTmpEndDate.getDate() - 1);
-                gsStartDates[gsStartDates.length] = FormatDateForTD(dStartDate);
-                gsEndDates[gsEndDates.length] = FormatDateForTD(dTmpEndDate);
+                if (DateDiff.inDays(dTmpEndDate, dEndDate) < 0) {
+                    gsStartDates[gsStartDates.length] = FormatDateForTD(dStartDate);
+                    gsEndDates[gsEndDates.length] = FormatDateForTD(dEndDate);
+                    bDone = true
+                } else {
+                    gsStartDates[gsStartDates.length] = FormatDateForTD(dStartDate);
+                    gsEndDates[gsEndDates.length] = FormatDateForTD(dTmpEndDate);
+                }
+            } else if (DateDiff.inDays(dStartDate, dEndDate) < 0) {
+                bDone = true;
             } else {
                 gsStartDates[gsStartDates.length] = FormatDateForTD(dStartDate);
                 gsEndDates[gsEndDates.length] = FormatDateForTD(dEndDate);
@@ -7979,6 +7987,8 @@ function GetWatchlistPrices() {
                     let iTotalSymbolsDown = 0;
                     let iTotalSymbolsUpDay = 0;
                     let iTotalSymbolsDownDay = 0;
+                    let iTotalSymbolsUpRealized = 0;
+                    let iTotalSymbolsDownRealized = 0;
                     let sSymbolsThisWL = "";
                     let sSymbolsSelectedForOrderThisWL = "";
                     let sSep = "";
@@ -8666,7 +8676,7 @@ function GetWatchlistPrices() {
                                         }
                                         goWLDisplayed[sThisId + sSymbol].gain = oWLItemDetail.gain;
                                     }
-                                    dTotalGain = dTotalGain + parseFloat(sTmp);
+                                    //dTotalGain = dTotalGain + parseFloat(sTmp);
                                     dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
 
                                     sTmp = FormatDecimalNumber(oWLItemDetail.gainPercent, 5, 2, "") + "%";
@@ -8756,16 +8766,20 @@ function GetWatchlistPrices() {
                                         if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
                                             if (dTmp < 0.0) {
                                                 sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                iTotalSymbolsDownRealized++;
                                             } else if (dTmp > 0.0) {
                                                 sThisTable = sThisTable + "<td " + sOldGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                iTotalSymbolsUpRealized++;
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
                                         } else {
                                             if (dTmp < 0.0) {
                                                 sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                iTotalSymbolsDownRealized++;
                                             } else if (dTmp > 0.0) {
                                                 sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                iTotalSymbolsUpRealized++;
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
@@ -8805,16 +8819,20 @@ function GetWatchlistPrices() {
                                         if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
                                             if (dTmp < 0.0) {
                                                 sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                iTotalSymbolsDownRealized++;
                                             } else if (dTmp > 0.0) {
                                                 sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                iTotalSymbolsUpRealized++;
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
                                         } else {
                                             if (dTmp < 0.0) {
                                                 sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                iTotalSymbolsDownRealized++;
                                             } else if (dTmp > 0.0) {
                                                 sThisTable = sThisTable + "<td " + sOldGLOnclick + " style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                iTotalSymbolsUpRealized++;
                                             } else {
                                                 sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             }
@@ -8864,8 +8882,10 @@ function GetWatchlistPrices() {
                         } else {
                             sThisTable = sThisTable + "<I>Day</I>";
                         }
-                        sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUpDay.toString() + "</span>";
-                        sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownDay.toString() + "</span>";
+                        sThisTable = sThisTable + "&nbsp;&nbsp;<span style=\"color:green\">" + iTotalSymbolsUpDay.toString() + "</span>:" +
+                            "<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownDay.toString() + "</span>";
+                        //sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUpDay.toString() + "</span>";
+                        //sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownDay.toString() + "</span>";
                         sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Cost:&nbsp;";
                         sTmp = FormatDecimalNumber(dTotalCost, 5, 2, "");
                         sThisTable = sThisTable + sTmp;
@@ -8890,7 +8910,10 @@ function GetWatchlistPrices() {
                         }
 
 
-                        sThisTable = sThisTable + sPrecedingSpaces + "<I>Holding</I>&nbsp;G/L:&nbsp;";
+                        sThisTable = sThisTable + sPrecedingSpaces + "<I>Holding</I>&nbsp;&nbsp;&nbsp;" +
+                            "<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>:" +
+                            "<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>&nbsp;&nbsp;G/L:&nbsp; ";
+
                         sTmp = FormatDecimalNumber(dTotalHoldingsGain, 5, 2, "");
                         if (dTotalHoldingsGain < 0.0) {
                             sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
@@ -8931,7 +8954,9 @@ function GetWatchlistPrices() {
                                 }
                             }
                         } else {
-                            sThisTable = sThisTable + sPrecedingSpaces + "<I>Portfolio</I>";
+                            sThisTable = sThisTable + sPrecedingSpaces + "<I>Total</I>&nbsp;&nbsp;" +
+                            "<span style=\"color:green\">" + iTotalSymbolsUpRealized.toString() + "</span>:" +
+                                "<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownRealized.toString() + "</span>";
                             sThisTable = sThisTable + "&nbsp;&nbsp;G/L:&nbsp;";
                             sTmp = FormatDecimalNumber(dTotalGain, 5, 2, "");
                             if (dTotalGain < 0.0) {
@@ -8939,8 +8964,8 @@ function GetWatchlistPrices() {
                             } else {
                                 sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
                             }
-                            sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
-                            sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
+                        //    sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
+                        //    sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
                         }
 
                         sThisTable = sThisTable + "<b></td></tr>";
@@ -11460,7 +11485,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    //debugger
+    debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
