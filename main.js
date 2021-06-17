@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.2 2021-06-16 04:59"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.2 2021-06-16 16:44"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -8867,7 +8867,7 @@ function GetWatchlistPrices() {
                     if (sThisTable != "") {
                         let sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
                         if (sLastWLName == "Account") {
-                            sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                            sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
                         }
 
                         if (bDoingDividendWL) {
@@ -8947,9 +8947,9 @@ function GetWatchlistPrices() {
                                             sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "%</span>";
                                         }
 
-                                        sThisTable = sThisTable + sPrecedingSpaces + "<I>Account</I>";
-                                        sThisTable = sThisTable + "&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
-                                        sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
+                                    //    sThisTable = sThisTable + sPrecedingSpaces + "<I>Account</I>";
+                                    //    sThisTable = sThisTable + "&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
+                                    //    sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
                                     }
                                 }
                             }
@@ -8968,7 +8968,7 @@ function GetWatchlistPrices() {
                         //    sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
                         }
 
-                        sThisTable = sThisTable + "<b></td></tr>";
+                        sThisTable = sThisTable + "</b></td></tr>";
 
                         sThisTable = sThisTable + "</table>";
                         if (bEverythingIsChecked) {
@@ -11485,7 +11485,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    debugger
+    //debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
