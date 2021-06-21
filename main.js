@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.2 2021-06-16 16:44"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.3 2021-06-20 18:10"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -366,6 +366,22 @@ var giWLDragXoffsetLeft = 220;
 var giWLDragXoffsetRight = 700;
 var giWLCol1Width = giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth + giWLColTitleWidth + giWLColCloseLabelWidth + giWLColCloseEntryWidth + 40;
 var giWLCol2Width = 18;
+
+const lengthsWLSO = {
+    WLWidth: "900px",
+    WLColOpenLabelWidth:  80,
+    WLColOpenEntryWidth: 80,
+    WLColAcquiredDateEntryWidth: 80,
+    WLColTitleWidth: 460,
+    WLColCloseLabelWidth: 110,
+    WLColCloseEntryWidth: 60,
+    WLDragXoffsetLeft: 220,
+    WLDragXoffsetRight: 700,
+    WLCol1Width: this.WLColOpenLabelWidth + this.WLColOpenEntryWidth + this.WLColAcquiredDateEntryWidth + this.WLColTitleWidth + this.WLColCloseLabelWidth + this.WLColCloseEntryWidth + 40,
+    WLCol2Width: 18
+}
+//var lengthsWLSOWLCol1Width = lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth + lengthsWLSO.WLColTitleWidth + lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth + 40;
+//var lengthsWLSOWLCol2Width = 18;
 
 var gsBodyBackgroundColor = "#99CCFF";
 var gsWLTableHeadingBackgroundColor = "#99CCFF";
@@ -8023,7 +8039,7 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
                                 "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                 "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
+                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                             sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
@@ -8053,7 +8069,7 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
                                 "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                 "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
+                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                             sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
@@ -8111,7 +8127,7 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
                                 "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                 "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
+                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
                             sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                             sThisDiv = sThisDiv + "</tr>";
@@ -8142,7 +8158,7 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
                                 "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                 "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
+                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
@@ -9455,7 +9471,7 @@ function GetWatchlistSO() {
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                             "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                             "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th > ";
+                            "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders(" + idxWL.toString() + ")\" value=\"Delete\" ></th>";
@@ -9468,23 +9484,23 @@ function GetWatchlistSO() {
                         sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
                     } else { //not using cell
 
-                        sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                        sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLSO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLSO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                         sThisDiv = sThisDiv + "<tr>";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                             "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
                             "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                             "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\"><b>&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th >";
+                            "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders(" + idxWL.toString() + ")\" value=\"Delete\" ></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
