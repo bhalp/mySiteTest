@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.3 2021-06-20 18:10"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.3 2021-06-21 18:23"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -367,6 +367,21 @@ var giWLDragXoffsetRight = 700;
 var giWLCol1Width = giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth + giWLColTitleWidth + giWLColCloseLabelWidth + giWLColCloseEntryWidth + 40;
 var giWLCol2Width = 18;
 
+const lengthsWL = {
+    WLWidth: "900px",
+    WLTrailingstopPercentWidth: "40px",
+    WLColOpenLabelWidth: 80,
+    WLColOpenEntryWidth: 80,
+    WLColAcquiredDateEntryWidth: 80,
+    WLColTitleWidth: 440,
+    WLColCloseLabelWidth: 110,
+    WLColCloseEntryWidth: 80,
+    WLDragXoffsetLeft: 220,
+    WLDragXoffsetRight: 700,
+    WLCol2Width: 18
+}
+var lengthsWLWLCol1Width = lengthsWL.WLColOpenLabelWidth + lengthsWL.WLColOpenEntryWidth + lengthsWL.WLColAcquiredDateEntryWidth + lengthsWL.WLColTitleWidth + lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth + 40;
+
 const lengthsWLSO = {
     WLWidth: "900px",
     WLColOpenLabelWidth:  80,
@@ -377,11 +392,9 @@ const lengthsWLSO = {
     WLColCloseEntryWidth: 60,
     WLDragXoffsetLeft: 220,
     WLDragXoffsetRight: 700,
-    WLCol1Width: this.WLColOpenLabelWidth + this.WLColOpenEntryWidth + this.WLColAcquiredDateEntryWidth + this.WLColTitleWidth + this.WLColCloseLabelWidth + this.WLColCloseEntryWidth + 40,
     WLCol2Width: 18
 }
-//var lengthsWLSOWLCol1Width = lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth + lengthsWLSO.WLColTitleWidth + lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth + 40;
-//var lengthsWLSOWLCol2Width = 18;
+var lengthsWLSOWLCol1Width = lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth + lengthsWLSO.WLColTitleWidth + lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth + 40;
 
 var gsBodyBackgroundColor = "#99CCFF";
 var gsWLTableHeadingBackgroundColor = "#99CCFF";
@@ -2682,7 +2695,7 @@ function DoWLSell(idxWL) {
 function DoWLTrailingStop(idxWL) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
         let sSelectNum = "";
-        let iSelectNum
+        let dSelectNum
         //debugger
         let sAccountId = gWatchlists[idxWL].accountId;
         let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
@@ -2700,23 +2713,23 @@ function DoWLTrailingStop(idxWL) {
         sSelectNum = document.getElementById("txttrailingstoppercent" + sThisId).value;
         sTmp = TrimLikeVB(sSelectNum);
         if (sTmp == "") {
-            alert("Please enter a Trailing Stop percentage from 1 to 100.");
+            alert("Please enter a Trailing Stop percentage from 0.01 to 100.");
             return;
         }
         try {
-            iSelectNum = parseInt(sSelectNum);
-            if ((iSelectNum < 1) || (iSelectNum > 100)) {
-                alert("Invalid Trailing Stop percentage. Must be from 1 to 100.");
+            dSelectNum = parseFloat(sSelectNum);
+            if ((dSelectNum < 0.01) || (dSelectNum > 100)) {
+                alert("Invalid Trailing Stop percentage. Must be from 0.01 to 100.");
                 return;
             }
             else {
-                if (AreYouSure("Set TRAILING STOP at " + iSelectNum.toString() + "% for the selected symbols. ")) {
-                    window.setTimeout("GenerateWLTrailingStopOrders('" + sAccountId + "', " + iSelectNum + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
+                if (AreYouSure("Set TRAILING STOP at " + FormatDecimalNumber(dSelectNum,5,2,"") + "% for the selected symbols. ")) {
+                    window.setTimeout("GenerateWLTrailingStopOrders('" + sAccountId + "', " + parseFloat(FormatDecimalNumber(dSelectNum, 5, 2, "")) + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
                 }
             }
         }
         catch (e) {
-            alert("Invalid Trailing Stop percentage. Must be from 1 to 100.");
+            alert("Invalid Trailing Stop percentage. Must be from 0.01 to 100.");
             sSelectNum = "";
         }
     }
@@ -3840,7 +3853,7 @@ function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL
 
 }
 
-function GenerateWLTrailingStopOrders(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
+function GenerateWLTrailingStopOrders(sAccountId, dSelectNum, sSymbolsThisWL, idxWL) {
     //get cancel time
     let dtCancelTime = new Date(); //get todays date
     dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
@@ -3875,7 +3888,7 @@ function GenerateWLTrailingStopOrders(sAccountId, iSelectNum, sSymbolsThisWL, id
                                     oTDOrder.a02orderType = oTDOrder.a02orderType + "\"TRAILING_STOP\", ";
                                     oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
                                     oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"SELL\", ";
-                                    oTDOrder.a03DstopPriceOffset = oTDOrder.a03DstopPriceOffset + iSelectNum.toString() + ", ";
+                                    oTDOrder.a03DstopPriceOffset = oTDOrder.a03DstopPriceOffset + FormatDecimalNumber(dSelectNum, 5, 2, "") + ", ";
                                     oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
                                     oTDOrder.a08quantity = oTDOrder.a08quantity + oPosition.longQuantity.toString() + ", ";
                                     oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
@@ -8093,7 +8106,7 @@ function GetWatchlistPrices() {
 
                         sThisDiv = sThisDiv + "<th style=\"text-align:center; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
                         sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%";
+                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
                         sThisDiv = sThisDiv + "</th>";
 
 
@@ -8180,7 +8193,7 @@ function GetWatchlistPrices() {
 
                         sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
                             "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
+                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
 
 
                         sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
@@ -8313,6 +8326,7 @@ function GetWatchlistPrices() {
 
                     let dTotalCost = 0.0;
                     let iLineCnt = 0;
+                    let dTotalAmt = 0.0;
                     let dTotalHoldingsGain = 0.0;
                     let dTotalGain = 0.0;
                     let dTotalDayGain = 0.0;
@@ -8449,6 +8463,7 @@ function GetWatchlistPrices() {
                                         //Amt
                                         sTmp = FormatDecimalNumber((oWLItemDetail.divAmount * oWLItemDetail.shares), 5, 2, "");
                                         let dAmt = parseFloat(sTmp);
+                                        dTotalAmt = dTotalAmt + dAmt;
                                         if (dAmt == 0.0) {
                                             sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             goWLDisplayed[sThisId + sSymbol].shares = dQty;
@@ -8970,15 +8985,31 @@ function GetWatchlistPrices() {
                                 }
                             }
                         } else {
-                            sThisTable = sThisTable + sPrecedingSpaces + "<I>Total</I>&nbsp;&nbsp;" +
-                            "<span style=\"color:green\">" + iTotalSymbolsUpRealized.toString() + "</span>:" +
-                                "<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownRealized.toString() + "</span>";
-                            sThisTable = sThisTable + "&nbsp;&nbsp;G/L:&nbsp;";
-                            sTmp = FormatDecimalNumber(dTotalGain, 5, 2, "");
-                            if (dTotalGain < 0.0) {
-                                sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
+                            if (bDoingDividendWL) {
+                                sThisTable = sThisTable + sPrecedingSpaces + "<I>Total</I>&nbsp;&nbsp;" +
+                                    "<span style=\"color:green\">" + iTotalSymbolsUpRealized.toString() + "</span>:" +
+                                    "<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownRealized.toString() + "</span>";
+                                sThisTable = sThisTable + "&nbsp;&nbsp;G/L:&nbsp;";
+                                sTmp = FormatDecimalNumber(dTotalGain, 5, 2, "");
+                                if (dTotalGain < 0.0) {
+                                    sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
+                                } else {
+                                    sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
+                                }
+                                sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Amt:&nbsp;";
+                                sTmp = FormatDecimalNumber(dTotalAmt, 5, 2, "");
+                                sThisTable = sThisTable + sTmp;
                             } else {
-                                sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
+                                sThisTable = sThisTable + sPrecedingSpaces + "<I>Total</I>&nbsp;&nbsp;" +
+                                    "<span style=\"color:green\">" + iTotalSymbolsUpRealized.toString() + "</span>:" +
+                                    "<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownRealized.toString() + "</span>";
+                                sThisTable = sThisTable + "&nbsp;&nbsp;G/L:&nbsp;";
+                                sTmp = FormatDecimalNumber(dTotalGain, 5, 2, "");
+                                if (dTotalGain < 0.0) {
+                                    sThisTable = sThisTable + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
+                                } else {
+                                    sThisTable = sThisTable + "<span style=\"color:green;\">" + sTmp + "</span>";
+                                }
                             }
                         //    sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
                         //    sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
@@ -9618,7 +9649,7 @@ function GetWatchlistSO() {
                             }
 
                             //Activation - stopPriceOffset
-                            sTmp = FormatDecimalNumber(oWLSOItem.stopPriceOffset, 5, 0, "");
+                            sTmp = FormatDecimalNumber(oWLSOItem.stopPriceOffset, 5, 2, "");
                             let stopPriceOffset = parseFloat(sTmp);
                             if (stopPriceOffset == 0.0) {
                                 sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
