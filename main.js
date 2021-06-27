@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.3 2021-06-21 18:23"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.4 2021-06-26 22:46"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -71,6 +71,7 @@ var giGetTDDataTimeoutId = 0;
 var giProgressIntervalId = 0;
 var giProgress = 0;
 var gbStopProgress = false;
+var gsSaveOrdersSummaryMsg = "";
 
 var gsNegativeColor = "darkred";
 
@@ -1810,8 +1811,13 @@ function ClearAllWLInputFields(idxWL) {
     document.getElementById("txtbuydollars" + sThisId).value = "";
     //        document.getElementById("optbuyexisting" + sThisId).checked = true;
     document.getElementById("txtsellpercent" + sThisId).value = "";
-    document.getElementById("chksellLimit" + sThisId).checked = false;
-    document.getElementById("chkbuyLimit" + sThisId).checked = false;
+
+    document.getElementById("chkLimit" + sThisId).checked = false;
+    document.getElementById("chkSave" + sThisId).checked = false;
+    document.getElementById("chkPlace" + sThisId).checked = false;
+
+    //document.getElementById("chksellLimit" + sThisId).checked = false;
+    //document.getElementById("chkbuyLimit" + sThisId).checked = false;
     document.getElementById("txttrailingstoppercent" + sThisId).value = "";
     if (!(document.getElementById("txtwlopen" + sThisId) == null)) {
         document.getElementById("txtwlopen" + sThisId).value = "";
@@ -2319,6 +2325,11 @@ function DoWLBuy(idxWL) {
         //let bExisting = document.getElementById("optbuyexisting" + sThisId).checked;
         let bExisting = false;
 
+        if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
+            alert("Please check Save or Place or check both.");
+            return;
+        }
+
         if ((sPercent == "") && (sDollars == "")) {
             alert("Missing a Buy percentage value OR a Buy dollar amount.");
             return;
@@ -2359,12 +2370,12 @@ function DoWLBuy(idxWL) {
 
         let sConfirmMsg = "";
 
-        if (document.getElementById("chkbuyLimit" + sThisId).checked) {
+        if (document.getElementById("chkLimit" + sThisId).checked) {
             bDoingLimit = true;
         }
 
         //if (!gbRegularMarketHours) {
-        //    if (document.getElementById("chkbuyLimit" + sThisId).checked) {
+        //    if (document.getElementById("chkLimit" + sThisId).checked) {
         //        bDoingLimit = true;
         //    }
         //}
@@ -2643,6 +2654,11 @@ function DoWLSell(idxWL) {
         let sAccountId = gWatchlists[idxWL].accountId;
         let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
+        if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
+            alert("Please check Save or Place or check both.");
+            return;
+        }
+
         let sSymbolsThisWL = "";
         let sSep = "";
         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
@@ -2666,11 +2682,11 @@ function DoWLSell(idxWL) {
                 return;
             }
             else {
-                if (document.getElementById("chksellLimit" + sThisId).checked) {
+                if (document.getElementById("chkLimit" + sThisId).checked) {
                     bDoingLimit = true;
                 }
                 //if (!gbRegularMarketHours) {
-                //    if (document.getElementById("chksellLimit" + sThisId).checked) {
+                //    if (document.getElementById("chkLimit" + sThisId).checked) {
                 //        bDoingLimit = true;
                 //    }
                 //}
@@ -2699,6 +2715,11 @@ function DoWLTrailingStop(idxWL) {
         //debugger
         let sAccountId = gWatchlists[idxWL].accountId;
         let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
+        if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
+            alert("Please check Save or Place or check both.");
+            return;
+        }
 
         let sSymbolsThisWL = "";
         let sSep = "";
@@ -3110,6 +3131,7 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
     //if iSelectNum > 0 then buying a percentage of shares based on what is currently owned
     //if dSelectnum > 0 then buying dSelectNum's worth of shares for each stock in the watchlist
     //debugger
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     let sSymbolsThisWL = "";
     let sSep = "";
     for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
@@ -3141,6 +3163,7 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                         }
                         if (bAddOrdersForThisAccount) {
                             gTDOrders.length = 0;
+                            gOrdersToPlace.length = 0;
                             for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
                                 let oPosition = new Position();
                                 oPosition = oAccount.positions[idxPosition];
@@ -3164,6 +3187,21 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                                             oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
                                             oTDOrder.symbol = oPosition.symbol;
                                             gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                            if (document.getElementById("chkPlace" + sThisId).checked) {
+                                                let oTDSavedOrder = new TDSavedOrder();
+                                                oTDSavedOrder.orderType = "MARKET";
+                                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                                oTDSavedOrder.instruction = "BUY";
+                                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                                oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                            }
                                         }
                                     }
                                 }
@@ -3215,21 +3253,23 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                                 oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
                                 oTDOrder.symbol = sSymbol;
                                 gTDOrders[gTDOrders.length] = oTDOrder;
-                            }
-                            //if ((oWatchList.accountId == oWLItemDetail.accountId) || (!bExisting)) {
-                            //    let oTDOrder = new TDOrder();
-                            //    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
-                            //    oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-                            //    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
 
-                            //    let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-                            //    if (iNumToBuy > 0) {
-                            //        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
-                            //        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                            //        oTDOrder.symbol = sSymbol;
-                            //        gTDOrders[gTDOrders.length] = oTDOrder;
-                            //    }
-                            //}
+                                if (document.getElementById("chkPlace" + sThisId).checked) {
+                                    let oTDSavedOrder = new TDSavedOrder();
+                                    oTDSavedOrder.orderType = "MARKET";
+                                    oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                    oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                    oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                    oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                    oTDSavedOrder.instruction = "BUY";
+                                    oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                    oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                    oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                    gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                }
+
+                            }
                             break;
                         }
                     }
@@ -3240,6 +3280,7 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
             gTDOrders.sort(sortBySymbol);
             gbDoingCreateOrders = true;
             SetWait();
+            SetWaitWL(idxWL);
             window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
         } else {
             alert("No orders were generated for this watchlist.");
@@ -3252,6 +3293,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
     //if iSelectNum > 0 then buying a percentage of shares based on what is currently owned
     //if dSelectnum > 0 then buying dSelectNum's worth of shares for each stock in the watchlist
     //debugger
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     let dtCancelTime = new Date(); //get todays date
     dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
     let sCancelTime = FormatDateForTD(dtCancelTime);
@@ -3266,6 +3308,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
     }
     sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
     gTDOrders.length = 0;
+    gOrdersToPlace.length = 0;
     if (iSelectNum > 0) {
         //buying a percentage of shares based on what is currently owned
         if (gAccounts.length > 0) {
@@ -3330,22 +3373,28 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                                                         oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
                                                                         oTDOrder.symbol = sSymbol;
                                                                         gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                                                        if (document.getElementById("chkPlace" + sThisId).checked) {
+                                                                            let oTDSavedOrder = new TDSavedOrder();
+                                                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                                                            oTDSavedOrder.orderType = "LIMIT";
+                                                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                                                            oTDSavedOrder.instruction = "BUY";
+                                                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                                                        }
+
                                                                     } else {
                                                                         alert("No price for " + sSymbol);
                                                                     }
                                                                     break;
-                                                                    //if ((oWatchList.accountId == oWLItemDetail.accountId) || (!bExisting)) {
-                                                                    //    let dPrice = oWLItemDetail.regularMarketLastPrice;
-                                                                    //    let sPrice = FormatMoney(dPrice);
-                                                                    //    if (parseFloat(sPrice) > 0) {
-                                                                    //        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                                                    //        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
-                                                                    //        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                                                                    //        oTDOrder.symbol = sSymbol;
-                                                                    //        gTDOrders[gTDOrders.length] = oTDOrder;
-                                                                    //    }
-                                                                    //    break;
-                                                                    //}
                                                                 }
                                                                 break;
                                                             }
@@ -3363,6 +3412,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                 gTDOrders.sort(sortBySymbol);
                                 gbDoingCreateOrders = true;
                                 SetWait();
+                                SetWaitWL(idxWL);
                                 window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
                             } else {
                                 alert("No orders were generated for this watchlist.");
@@ -3410,29 +3460,27 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                     oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
                                     oTDOrder.symbol = sSymbol;
                                     gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                    if (document.getElementById("chkPlace" + sThisId).checked) {
+                                        let oTDSavedOrder = new TDSavedOrder();
+                                        //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                        oTDSavedOrder.orderType = "LIMIT";
+                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                        oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                        oTDSavedOrder.instruction = "BUY";
+                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                        oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                    }
+
                                 }
                             }
 
-                            //if ((oWatchList.accountId == oWLItemDetail.accountId) || (!bExisting)) {
-                            //    let oTDOrder = new TDOrder();
-
-                            //    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
-                            //    oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
-                            //    oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-                            //    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
-
-                            //    let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-                            //    if (iNumToBuy > 0) {
-                            //        let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
-                            //        if (parseFloat(sPrice) > 0) {
-                            //            oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                            //            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
-                            //            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                            //            oTDOrder.symbol = sSymbol;
-                            //            gTDOrders[gTDOrders.length] = oTDOrder;
-                            //        }
-                            //    }
-                            //}
                             break;
                         }
                     }
@@ -3443,6 +3491,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
             gTDOrders.sort(sortBySymbol);
             gbDoingCreateOrders = true;
             SetWait();
+            SetWaitWL(idxWL);
             window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
         } else {
             alert("No orders were generated for this watchlist.");
@@ -3634,9 +3683,9 @@ function GenerateWLOpenSymbolOrders(sAccountId, idxWL, sSymbolsToLookup, sPurcha
 }
 
 function GenerateWLSellOrders(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
-    //let sSummary = "";
-    //let sSummarySep = "";
-    //let aTDOrderSummary = new Array();
+
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
     //have percentage to sell so now get all of the symbols for this account
     if (gAccounts.length > 0) {
         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
@@ -3657,6 +3706,7 @@ function GenerateWLSellOrders(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
                     }
                     if (bAddOrdersForThisAccount) {
                         gTDOrders.length = 0;
+                        gOrdersToPlace.length = 0;
                         for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
                             let oPosition = new Position();
                             oPosition = oAccount.positions[idxPosition];
@@ -3687,39 +3737,35 @@ function GenerateWLSellOrders(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
                                         oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToSell.toString() + ", ";
                                         oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
                                         oTDOrder.symbol = oPosition.symbol;
-                                        //let oTDOrderSummary = new TDOrderSummary();
-                                        //oTDOrderSummary.shares = iNumToSell;
-                                        //oTDOrderSummary.symbol = oPosition.symbol;
-                                        //aTDOrderSummary[aTDOrderSummary.length] = oTDOrderSummary;
                                         gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                        if (document.getElementById("chkPlace" + sThisId).checked) {
+                                            let oTDSavedOrder = new TDSavedOrder();
+                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                            oTDSavedOrder.orderType = "MARKET";
+                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                            oTDSavedOrder.instruction = "SELL";
+                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                        }
+
                                     }
                                 }
                             }
                         }
-                        //aTDOrderSummary.sort(sortBySymbol);
-                        //sSummary = "Your have selected to sell:"
-                        //sSummarySep = gsCRLF;
-                        //let idxOrder = 0;
-                        //while (idxOrder < aTDOrderSummary.length) {
-                        //    sSummary = sSummary + sSummarySep + aTDOrderSummary[idxOrder].shares + " shares of " + aTDOrderSummary[idxOrder].symbol;
-                        //    idxOrder++;
-                        //    if (idxOrder < aTDOrderSummary.length) {
-                        //        sSummary = sSummary + "     " + aTDOrderSummary[idxOrder].shares + " shares of " + aTDOrderSummary[idxOrder].symbol;
-                        //    }
-                        //    idxOrder++;
-                        //    if (idxOrder < aTDOrderSummary.length) {
-                        //        sSummary = sSummary + "     " + aTDOrderSummary[idxOrder].shares + " shares of " + aTDOrderSummary[idxOrder].symbol;
-                        //    }
-                        //    idxOrder++;
-                        //}
-                        //alert(sSummary);
-
 
                         //create orders here
                         if (gTDOrders.length > 0) {
                             gTDOrders.sort(sortBySymbol);
                             gbDoingCreateOrders = true;
                             SetWait();
+                            SetWaitWL(idxWL);
                             window.setTimeout("PostWLSellOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
                         } else {
                             alert("No orders were generated for this watchlist.");
@@ -3738,6 +3784,9 @@ function GenerateWLSellOrders(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
 }
 
 function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
+
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
     //have percentage to sell so now get all of the symbols for this account
     let dtCancelTime = new Date(); //get todays date
     dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
@@ -3762,6 +3811,7 @@ function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL
                     }
                     if (bAddOrdersForThisAccount) {
                         gTDOrders.length = 0;
+                        gOrdersToPlace.length = 0;
                         for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
                             let oPosition = new Position();
                             oPosition = oAccount.positions[idxPosition];
@@ -3815,6 +3865,26 @@ function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL
                                                                         oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
                                                                         oTDOrder.symbol = oPosition.symbol;
                                                                         gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                                                        if (document.getElementById("chkPlace" + sThisId).checked) {
+                                                                            let oTDSavedOrder = new TDSavedOrder();
+                                                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                                                            oTDSavedOrder.orderType = "LIMIT";
+                                                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                                                            oTDSavedOrder.instruction = "SELL";
+                                                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                                                        }
+
+
+
                                                                     }
                                                                     break;
                                                                 }
@@ -3836,6 +3906,7 @@ function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL
                             gTDOrders.sort(sortBySymbol);
                             gbDoingCreateOrders = true;
                             SetWait();
+                            SetWaitWL(idxWL);
                             window.setTimeout("PostWLSellOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
                         } else {
                             alert("No orders were generated for this watchlist.");
@@ -3854,6 +3925,9 @@ function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL
 }
 
 function GenerateWLTrailingStopOrders(sAccountId, dSelectNum, sSymbolsThisWL, idxWL) {
+
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
     //get cancel time
     let dtCancelTime = new Date(); //get todays date
     dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
@@ -3879,6 +3953,7 @@ function GenerateWLTrailingStopOrders(sAccountId, dSelectNum, sSymbolsThisWL, id
                     }
                     if (bAddOrdersForThisAccount) {
                         gTDOrders.length = 0;
+                        gOrdersToPlace.length = 0;
                         for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
                             let oPosition = new Position();
                             oPosition = oAccount.positions[idxPosition];
@@ -3894,6 +3969,23 @@ function GenerateWLTrailingStopOrders(sAccountId, dSelectNum, sSymbolsThisWL, id
                                     oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
                                     oTDOrder.symbol = oPosition.symbol;
                                     gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                    if (document.getElementById("chkPlace" + sThisId).checked) {
+                                        let oTDSavedOrder = new TDSavedOrder();
+                                        oTDSavedOrder.orderType = "TRAILING_STOP";
+                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                        oTDSavedOrder.a03DstopPriceOffset = oTDOrder.a03DstopPriceOffset;
+                                        oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                        oTDSavedOrder.instruction = "SELL";
+                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                        oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                    }
                                 }
                             }
                         }
@@ -3902,6 +3994,7 @@ function GenerateWLTrailingStopOrders(sAccountId, dSelectNum, sSymbolsThisWL, id
                             gTDOrders.sort(sortBySymbol);
                             gbDoingCreateOrders = true;
                             SetWait();
+                            SetWaitWL(idxWL);
                             window.setTimeout("PostWLTrailingStopOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
                         } else {
                             alert("No orders were generated for this watchlist.");
@@ -7912,8 +8005,8 @@ function GetWatchlistPrices() {
                 let sTitle = {
                     "Symbol": "<b><I><U>Symbol</U>&nbsp;</I></b>",
                     "PurchaseDate": "<b><I><U>Acquired</U></I></b>",
-                    "Qty": "<b><I>Qty</I></b>",
-                    "Price": "<b><I>Price</I></b>",
+                    "Qty": "<b><I><U>Qty</U></I></b>",
+                    "Price": "<b><I><U>Price</U></I></b>",
                     "ChgPercent": "<b><I><U>Chg(%)</U></I></b>",
                     "ChgDollar": "<b><I><U>Chg($)</U></I></b>",
                     "Bid": "<b><I>Bid</I></b>",
@@ -7929,7 +8022,7 @@ function GetWatchlistPrices() {
                 let sTitleWithArrow = {
                     "Symbol": "<b><I><U>Symbol</U>&nbsp;</I>xxx</b>",
                     "PurchaseDate": "<b><I><U>Acquired</U></I>xxx</b>",
-                    "Qty": "<b><I><U>Qty</I></U>xxx</b>",
+                    "Qty": "<b><I><U>Qty</U></I>xxx</b>",
                     "Price": "<b><I><U>Price</U></I>xxx</b>",
                     "ChgPercent": "<b><I><U>Chg(%)</U></I>xxx</b>",
                     "ChgDollar": "<b><I><U>Chg($)</U></I>xxx</b>",
@@ -7950,13 +8043,13 @@ function GetWatchlistPrices() {
                     "Amt": "<b><I>&nbsp;&nbsp;<U>Amt</U>&nbsp;&nbsp;</I></b>",
                     "DivDate": "<b><I><U>Div&nbsp;Date</U></I></b>",
                     "PE": "<b><I>P/E</I></b>",
-                    "Price": "<b><I>Price</I></b>",
+                    "Price": "<b><I><U>Price</U></I></b>",
                     "ChgPercent": "<b><I><U>Chg(%)</U></I></b>",
                     "ChgDollar": "<b><I><U>Chg($)</U></I></b>",
                     "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I></b>",
                     "GainDollar": "<b><I><U>Gain($)</U></I></b>",
                     "GainPercent": "<b><I><U>Gain(%)</U></I></b>",
-                    "Qty": "<b><I>Qty</I></b>",
+                    "Qty": "<b><I><U>Qty</U></I></b>",
                     "CostPerShare": "<b><I>Cost</I></b>",
                     "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I></b>",
                     "OldGL": "<b><I><U>Old&nbsp;G/L</U></I></b>",
@@ -8044,8 +8137,8 @@ function GetWatchlistPrices() {
                     if (gbUsingCell) {
                         //                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
                         if (bDoingAccountWL) {
-                            sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                            sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                             sThisDiv = sThisDiv + "<tr>";
 
                             sThisDiv = sThisDiv + "<th colspan=\"3\" style=\"height:30px;vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
@@ -8065,8 +8158,8 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<div style=\"width:1040px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                                 sThisDiv = sThisDiv + "<table style=\"width:1040px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                             } else {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                             }
                             sThisDiv = sThisDiv + "<tr>";
                             //style=\"vertical-align:bottom\">
@@ -8097,29 +8190,27 @@ function GetWatchlistPrices() {
                         }
 
                         sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:50px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
-
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
                         sThisDiv = sThisDiv + "</th>";
-
-
-                        sThisDiv = sThisDiv + "<th style=\"text-align:center; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
-                        sThisDiv = sThisDiv + "</th>";
-
 
                         sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
                         sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
                             "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                             "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                             "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkbuyLimit" + sThisId + "\" name=\"chkbuyLimit" + sThisId + "\" value=\"\" > Limit";
-                        sThisDiv = sThisDiv + "</th > ";
 
-                        sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
+                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:50px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
+
+                        sThisDiv = sThisDiv + "</th>";
+
+
+                        sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
+                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
+                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
+                        sThisDiv = sThisDiv + "</th>";
 
                         sThisDiv = sThisDiv + "</th > ";
 
@@ -8132,8 +8223,8 @@ function GetWatchlistPrices() {
                     } else { //not using cell
                         //                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
                         if (bDoingAccountWL) {
-                            sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                            sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                             sThisDiv = sThisDiv + "<tr>";
 
                             sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
@@ -8153,8 +8244,8 @@ function GetWatchlistPrices() {
                                 sThisDiv = sThisDiv + "<div style=\"width:1040px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                                 sThisDiv = sThisDiv + "<table style=\"width:1040px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                             } else {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                             }
                             sThisDiv = sThisDiv + "<tr>";
 
@@ -8185,23 +8276,23 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "<th colspan=\"4\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
                         }
 
-                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
 
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chksellLimit" + sThisId + "\" name=\"chksellLimit" + sThisId + "\" value=\"\" > Limit";
-
-
-                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
-
-
-                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
+                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
                             "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
                             "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%" +
                             "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                             "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:45px\" value=\"\">";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkbuyLimit" + sThisId + "\" name=\"chkbuyLimit" + sThisId + "\" value=\"\" > Limit";
+
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
+                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:30px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
+
+
+                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
+                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
+                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
 
                         sThisDiv = sThisDiv + "</th > ";
 
@@ -8248,7 +8339,7 @@ function GetWatchlistPrices() {
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDate + "</td>";
                         sonClickChangeOrder = "";
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.PE + "</td>";
-                        sonClickChangeOrder = "";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Price + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgPercent);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.ChgPercent + "</td>";
@@ -8260,7 +8351,7 @@ function GetWatchlistPrices() {
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainDollar + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainPercent);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainPercent + "</td>";
-                        sonClickChangeOrder = "";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Qty + "</td>";
                         sonClickChangeOrder = "";
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.CostPerShare + "</td>";
@@ -8283,9 +8374,9 @@ function GetWatchlistPrices() {
                         //not doing dividend WL
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.PurchaseDate + "</td>";
-                        sonClickChangeOrder = "";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Qty + "</td>";
-                        sonClickChangeOrder = "";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Price + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgPercent);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.ChgPercent + "</td>";
@@ -8307,20 +8398,6 @@ function GetWatchlistPrices() {
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.OldGL + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.MktValue);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.MktValue + "</td>";
-
-                        //sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Acquired</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Qty</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Price</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg(%)</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Chg($)</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Bid</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Ask</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Day&nbsp;gain($)</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain($)</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Gain(%)</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Cost</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Old&nbsp;G/L</I></b></td>";
-                        //sThisTable = sThisTable + "<td style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>Mkt&nbsp;Value</I></b></td>";
                     }
                     sThisTable = sThisTable + "</tr>";
 
@@ -8352,15 +8429,15 @@ function GetWatchlistPrices() {
                                     let sOldGLOnclick = "onclick=\"ShowAutoUpdateDates('" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ") \" ";
 
                                     iLineCnt++;
-                                    let sCurrentPurchasedDate = "";
-                                    let dCurrentAveragePrice = 0.0;
-                                    for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                                        if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                                            sCurrentPurchasedDate = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
-                                            dCurrentAveragePrice = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-                                            break;
-                                        }
-                                    }
+                                    //let sCurrentPurchasedDate = "";
+                                    //let dCurrentAveragePrice = 0.0;
+                                    //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                    //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                    //        sCurrentPurchasedDate = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
+                                    //        dCurrentAveragePrice = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
+                                    //        break;
+                                    //    }
+                                    //}
 
                                     let sChecked = "";
                                     let sThisidxWLItem = "";
@@ -9150,6 +9227,7 @@ function GetWatchlists(bDoingReset) {
                             if (oOldWL[idxWLCur].bSelected) {
                                 oWL.bSelected = true;
                                 oWL.bSelectedTemp = true;
+                                oWL.sSortOrderFields = oOldWL[idxWLCur].sSortOrderFields; //6/23/21
 
                                 // now reset the selected for order flag
                                 if (oWL.WLItems.length > 0) {
@@ -10155,8 +10233,8 @@ function GetWatchlistSummary() {
                                     sLastWLAccountId = gWatchlists[idxWLSummaryMain].accountId;
                                     sThisId = gWatchlists[idxWLSummaryMain].watchlistId + sLastWLAccountId;
 
-                                    sThisDiv = sThisDiv + "<div style=\"width:" + gsWLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                    sThisDiv = sThisDiv + "<table style=\"width:" + gsWLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                                    sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                                    sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                                     sThisDiv = sThisDiv + "<tr>";
 
                                     sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol1Width.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
@@ -11638,7 +11716,6 @@ function PageLoad() {
         gsRefreshToken = "";
         gsTDAPIKey = "";
     }
-
     document.getElementById("TheBody").style.backgroundColor = gsBodyBackgroundColor;
     let sTmp = ""
     if (gbUsingCell) {
@@ -12473,97 +12550,115 @@ function PostWLBuyOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncre
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
     let iTryCount = iTryCountIn;
-    if (bFirstTime) {
-        giProgress = 0;
-        iProgressIncrement = 100 / gTDOrders.length;
-        gsLastErrors.length = 0;
-        giTDPostOrderRetryCnt = 0;
-        ShowProgress(true, false);
-    }
-    for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
-        if (giProgress < 100) {
-            giProgress = giProgress + iProgressIncrement;
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    gsSaveOrdersSummaryMsg = "";
+    if (document.getElementById("chkSave" + sThisId).checked) {
+        if (bFirstTime) {
+            giProgress = 0;
+            iProgressIncrement = 100 / gTDOrders.length;
+            gsLastErrors.length = 0;
+            giTDPostOrderRetryCnt = 0;
+            ShowProgress(true, false);
         }
-        let oTDOrder = new TDOrder();
-        oTDOrder = gTDOrders[idxOrder];
-        if (!oTDOrder.bProcessed) {
-            let sOrder = "";
-            sOrder = oTDOrder.a00complexOrderStrategyTypeStart +
-                oTDOrder.a02orderType +
-                oTDOrder.a03Asession +
-                oTDOrder.a04duration +
-                oTDOrder.a05orderStrategyType +
-                oTDOrder.a06orderLegCollectionStart +
-                oTDOrder.a07instructionStart +
-                oTDOrder.a08quantity +
-                oTDOrder.a09instrumentStart +
-                oTDOrder.a10symbol +
-                oTDOrder.a11assetType +
-                oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
-            if (PostTDOrder(sAccountId, sOrder) == 0) {
-                //success
-                iNumSuccess++;
-                gTDOrders[idxOrder].bProcessed = true;
-                if (gTDOrders[idxOrder].sError != "") {
-                    iNumErrors--;
-                }
-                gTDOrders[idxOrder].sError = "";
-            } else {
-                if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
-                    if (iTryCount < 3) {
-                        iTryCount++;
-                        giProgress = giProgress - 1;
-                        window.setTimeout("PostWLBuyOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
-                        return;
+        for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
+            if (giProgress < 100) {
+                giProgress = giProgress + iProgressIncrement;
+            }
+            let oTDOrder = new TDOrder();
+            oTDOrder = gTDOrders[idxOrder];
+            if (!oTDOrder.bProcessed) {
+                let sOrder = "";
+                sOrder = oTDOrder.a00complexOrderStrategyTypeStart +
+                    oTDOrder.a02orderType +
+                    oTDOrder.a03Asession +
+                    oTDOrder.a04duration +
+                    oTDOrder.a05orderStrategyType +
+                    oTDOrder.a06orderLegCollectionStart +
+                    oTDOrder.a07instructionStart +
+                    oTDOrder.a08quantity +
+                    oTDOrder.a09instrumentStart +
+                    oTDOrder.a10symbol +
+                    oTDOrder.a11assetType +
+                    oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                if (PostTDOrder(sAccountId, sOrder) == 0) {
+                    //success
+                    iNumSuccess++;
+                    gTDOrders[idxOrder].bProcessed = true;
+                    if (gTDOrders[idxOrder].sError != "") {
+                        iNumErrors--;
+                    }
+                    gTDOrders[idxOrder].sError = "";
+                } else {
+                    if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                        if (iTryCount < 3) {
+                            iTryCount++;
+                            giProgress = giProgress - 1;
+                            window.setTimeout("PostWLBuyOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                            return;
+                        } else {
+                            // an error occurred
+                            iNumErrors++;
+                            gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                        }
                     } else {
                         // an error occurred
                         iNumErrors++;
                         gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                     }
-                } else {
-                    // an error occurred
-                    iNumErrors++;
-                    gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                 }
             }
+            window.setTimeout("PostWLBuyOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
+            return;
         }
-        window.setTimeout("PostWLBuyOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
-        return;
-    }
-    let sMsg = iNumSuccess.toString() + " BUY ";
-    if (iNumSuccess > 1) {
-        sMsg = sMsg + "orders created";
-    } else {
-        sMsg = sMsg + "order created";
-    }
-    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
-        giTDPostOrderRetryCnt++;
-        giProgress = 0;
-        window.setTimeout("PostWLBuyOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
-        return;
-    } else {
-        if (iNumErrors > 0) {
-            sMsg = sMsg + " with the following errors:";
-            for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
-                if (!gTDOrders[idxOrder].bProcessed) {
-                    sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
-                }
-            }
-            sMsg = sMsg + gsCRLF + "Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+        let sMsg = iNumSuccess.toString() + " BUY ";
+        if (iNumSuccess > 1) {
+            sMsg = sMsg + "orders created";
         } else {
-            sMsg = sMsg + ". Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+            sMsg = sMsg + "order created";
         }
-    }
+        if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+            giTDPostOrderRetryCnt++;
+            giProgress = 0;
+            window.setTimeout("PostWLBuyOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+            return;
+        } else {
+            if (iNumErrors > 0) {
+                sMsg = sMsg + " with the following errors:";
+                for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
+                    if (!gTDOrders[idxOrder].bProcessed) {
+                        sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
+                    }
+                }
+                sMsg = sMsg + gsCRLF + "Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            } else {
+                sMsg = sMsg + ". Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            }
+        }
 
-    if (iNumErrors == 0) {
-        ClearAllWLInputFields(idxWL);
+        if (document.getElementById("chkPlace" + sThisId).checked) {
+            window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+        } else {
+            if (iNumErrors == 0) {
+                ClearAllWLInputFields(idxWL);
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
+            SetDefaultWL(idxWL);
+        }
+    } else { //only doing place orders
+        window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
     }
-    ShowProgress(false, true);
-    gbDoingCreateOrders = false;
-    SetDefault();
-
 }
 
 function PostWLBuyOrdersLimit(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
@@ -12571,98 +12666,117 @@ function PostWLBuyOrdersLimit(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgress
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
     let iTryCount = iTryCountIn;
-    if (bFirstTime) {
-        giProgress = 0;
-        iProgressIncrement = 100 / gTDOrders.length;
-        gsLastErrors.length = 0;
-        giTDPostOrderRetryCnt = 0;
-        ShowProgress(true, false);
-    }
-    for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
-        if (giProgress < 100) {
-            giProgress = giProgress + iProgressIncrement;
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    gsSaveOrdersSummaryMsg = "";
+    if (document.getElementById("chkSave" + sThisId).checked) {
+        if (bFirstTime) {
+            giProgress = 0;
+            iProgressIncrement = 100 / gTDOrders.length;
+            gsLastErrors.length = 0;
+            giTDPostOrderRetryCnt = 0;
+            ShowProgress(true, false);
         }
-        let oTDOrder = new TDOrder();
-        oTDOrder = gTDOrders[idxOrder];
-        if (!oTDOrder.bProcessed) {
-            let sOrder = "";
-            sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
-                oTDOrder.a02orderType +
-                oTDOrder.a03AsessionSeamless +
-                oTDOrder.a04duration +
-                oTDOrder.a03FcancelTime +
-                oTDOrder.a02Aprice +
-                oTDOrder.a05orderStrategyType +
-                oTDOrder.a06orderLegCollectionStart +
-                oTDOrder.a07instructionStart +
-                oTDOrder.a08quantity +
-                oTDOrder.a09instrumentStart +
-                oTDOrder.a10symbol +
-                oTDOrder.a11assetType +
-                oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
-            if (PostTDOrder(sAccountId, sOrder) == 0) {
-                //success
-                iNumSuccess++;
-                gTDOrders[idxOrder].bProcessed = true;
-                if (gTDOrders[idxOrder].sError != "") {
-                    iNumErrors--;
-                }
-                gTDOrders[idxOrder].sError = "";
-            } else {
-                if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
-                    if (iTryCount < 3) {
-                        iTryCount++;
-                        giProgress = giProgress - 1;
-                        window.setTimeout("PostWLBuyOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
-                        return;
+        for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
+            if (giProgress < 100) {
+                giProgress = giProgress + iProgressIncrement;
+            }
+            let oTDOrder = new TDOrder();
+            oTDOrder = gTDOrders[idxOrder];
+            if (!oTDOrder.bProcessed) {
+                let sOrder = "";
+                sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
+                    oTDOrder.a02orderType +
+                    oTDOrder.a03AsessionSeamless +
+                    oTDOrder.a04duration +
+                    oTDOrder.a03FcancelTime +
+                    oTDOrder.a02Aprice +
+                    oTDOrder.a05orderStrategyType +
+                    oTDOrder.a06orderLegCollectionStart +
+                    oTDOrder.a07instructionStart +
+                    oTDOrder.a08quantity +
+                    oTDOrder.a09instrumentStart +
+                    oTDOrder.a10symbol +
+                    oTDOrder.a11assetType +
+                    oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                if (PostTDOrder(sAccountId, sOrder) == 0) {
+                    //success
+                    iNumSuccess++;
+                    gTDOrders[idxOrder].bProcessed = true;
+                    if (gTDOrders[idxOrder].sError != "") {
+                        iNumErrors--;
+                    }
+                    gTDOrders[idxOrder].sError = "";
+                } else {
+                    if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                        if (iTryCount < 3) {
+                            iTryCount++;
+                            giProgress = giProgress - 1;
+                            window.setTimeout("PostWLBuyOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                            return;
+                        } else {
+                            // an error occurred
+                            iNumErrors++;
+                            gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                        }
                     } else {
                         // an error occurred
                         iNumErrors++;
                         gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                     }
-                } else {
-                    // an error occurred
-                    iNumErrors++;
-                    gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                 }
             }
+            window.setTimeout("PostWLBuyOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
+            return;
         }
-        window.setTimeout("PostWLBuyOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
-        return;
-    }
-    let sMsg = iNumSuccess.toString() + " BUY LIMIT ";
-    if (iNumSuccess > 1) {
-        sMsg = sMsg + "orders created";
-    } else {
-        sMsg = sMsg + "order created";
-    }
-    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
-        giTDPostOrderRetryCnt++;
-        giProgress = 0;
-        window.setTimeout("PostWLBuyOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
-        return;
-    } else {
-        if (iNumErrors > 0) {
-            sMsg = sMsg + " with the following errors:";
-            for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
-                if (!gTDOrders[idxOrder].bProcessed) {
-                    sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
-                }
-            }
-            sMsg = sMsg + gsCRLF + "Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+        let sMsg = iNumSuccess.toString() + " BUY LIMIT ";
+        if (iNumSuccess > 1) {
+            sMsg = sMsg + "orders created";
         } else {
-            sMsg = sMsg + ". Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+            sMsg = sMsg + "order created";
         }
-    }
+        if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+            giTDPostOrderRetryCnt++;
+            giProgress = 0;
+            window.setTimeout("PostWLBuyOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+            return;
+        } else {
+            if (iNumErrors > 0) {
+                sMsg = sMsg + " with the following errors:";
+                for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
+                    if (!gTDOrders[idxOrder].bProcessed) {
+                        sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
+                    }
+                }
+                sMsg = sMsg + gsCRLF + "Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            } else {
+                sMsg = sMsg + ". Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            }
+        }
 
-    if (iNumErrors == 0) {
-        ClearAllWLInputFields(idxWL);
+        if (document.getElementById("chkPlace" + sThisId).checked) {
+            window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+        } else {
+            if (iNumErrors == 0) {
+                ClearAllWLInputFields(idxWL);
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
+            SetDefaultWL(idxWL);
+        }
+    } else { //only doing place orders
+        window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
     }
-    ShowProgress(false, true);
-    gbDoingCreateOrders = false;
-    SetDefault();
 }
 
 function PostWLCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, sWatchlistId, iTryCountIn, idxWL) {
@@ -13072,6 +13186,7 @@ function PostWLPlaceOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressInc
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
     let iTryCount = iTryCountIn;
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     if (bFirstTime) {
         giProgress = 0;
         iProgressIncrement = 100 / gOrdersToPlace.length;
@@ -13192,16 +13307,33 @@ function PostWLPlaceOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressInc
                 }
             }
             sMsg = sMsg + gsCRLF + "Log in your TD account. Click Trade/Orders to view the status of these orders.";
-            alert(sMsg);
+            if ((document.getElementById("chkSave" + sThisId) != null) && (!isUndefined(document.getElementById("chkSave" + sThisId)))) {
+                if (document.getElementById("chkSave" + sThisId)) {
+                    alert(sMsg + "\n\n" + gsSaveOrdersSummaryMsg);
+                } else {
+                    alert(sMsg);
+                }
+            } else {
+                alert(sMsg);
+            }
         } else {
             sMsg = sMsg + ". Log in your TD account. Click Trade/Orders to view the status of these orders.";
-            alert(sMsg);
+            if ((document.getElementById("chkSave" + sThisId) != null) && (!isUndefined(document.getElementById("chkSave" + sThisId)))) {
+                if (document.getElementById("chkSave" + sThisId)) {
+                    alert(sMsg + "\n\n" + gsSaveOrdersSummaryMsg);
+                } else {
+                    alert(sMsg);
+                }
+            } else {
+                alert(sMsg);
+            }
         }
     }
 
     ShowProgress(false, true);
     gbDoingCreateOrders = false;
     SetDefault();
+    SetDefaultWL(idxWL);
 }
 
 function PostWLSellOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
@@ -13209,96 +13341,116 @@ function PostWLSellOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncr
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
     let iTryCount = iTryCountIn;
-    if (bFirstTime) {
-        giProgress = 0;
-        iProgressIncrement = 100 / gTDOrders.length;
-        gsLastErrors.length = 0;
-        giTDPostOrderRetryCnt = 0;
-        ShowProgress(true, false);
-    }
-    for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
-        if (giProgress < 100) {
-            giProgress = giProgress + iProgressIncrement;
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    gsSaveOrdersSummaryMsg = "";
+    if (document.getElementById("chkSave" + sThisId).checked) {
+        if (bFirstTime) {
+            giProgress = 0;
+            iProgressIncrement = 100 / gTDOrders.length;
+            gsLastErrors.length = 0;
+            giTDPostOrderRetryCnt = 0;
+            ShowProgress(true, false);
         }
-        let oTDOrder = new TDOrder();
-        oTDOrder = gTDOrders[idxOrder];
-        if (!oTDOrder.bProcessed) {
-            let sOrder = "";
-            sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
-                oTDOrder.a02orderType +
-                oTDOrder.a03Asession +
-                oTDOrder.a04duration +
-                oTDOrder.a05orderStrategyType +
-                oTDOrder.a06orderLegCollectionStart +
-                oTDOrder.a07instructionStart +
-                oTDOrder.a08quantity +
-                oTDOrder.a09instrumentStart +
-                oTDOrder.a10symbol +
-                oTDOrder.a11assetType +
-                oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
-            if (PostTDOrder(sAccountId, sOrder) == 0) {
-                //success
-                iNumSuccess++;
-                gTDOrders[idxOrder].bProcessed = true;
-                if (gTDOrders[idxOrder].sError != "") {
-                    iNumErrors--;
-                }
-                gTDOrders[idxOrder].sError = "";
-            } else {
-                if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
-                    if (iTryCount < 3) {
-                        iTryCount++;
-                        giProgress = giProgress - 1;
-                        window.setTimeout("PostWLSellOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
-                        return;
+        for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
+            if (giProgress < 100) {
+                giProgress = giProgress + iProgressIncrement;
+            }
+            let oTDOrder = new TDOrder();
+            oTDOrder = gTDOrders[idxOrder];
+            if (!oTDOrder.bProcessed) {
+                let sOrder = "";
+                sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
+                    oTDOrder.a02orderType +
+                    oTDOrder.a03Asession +
+                    oTDOrder.a04duration +
+                    oTDOrder.a05orderStrategyType +
+                    oTDOrder.a06orderLegCollectionStart +
+                    oTDOrder.a07instructionStart +
+                    oTDOrder.a08quantity +
+                    oTDOrder.a09instrumentStart +
+                    oTDOrder.a10symbol +
+                    oTDOrder.a11assetType +
+                    oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                if (PostTDOrder(sAccountId, sOrder) == 0) {
+                    //success
+                    iNumSuccess++;
+                    gTDOrders[idxOrder].bProcessed = true;
+                    if (gTDOrders[idxOrder].sError != "") {
+                        iNumErrors--;
+                    }
+                    gTDOrders[idxOrder].sError = "";
+                } else {
+                    if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                        if (iTryCount < 3) {
+                            iTryCount++;
+                            giProgress = giProgress - 1;
+                            window.setTimeout("PostWLSellOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                            return;
+                        } else {
+                            // an error occurred
+                            iNumErrors++;
+                            gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                        }
                     } else {
                         // an error occurred
                         iNumErrors++;
                         gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                     }
-                } else {
-                    // an error occurred
-                    iNumErrors++;
-                    gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                 }
             }
+            window.setTimeout("PostWLSellOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
+            return;
         }
-        window.setTimeout("PostWLSellOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
-        return;
-    }
-    let sMsg = iNumSuccess.toString() + " SELL ";
-    if (iNumSuccess > 1) {
-        sMsg = sMsg + "orders created";
-    } else {
-        sMsg = sMsg + "order created";
-    }
-    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
-        giTDPostOrderRetryCnt++;
-        giProgress = 0;
-        window.setTimeout("PostWLSellOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
-        return;
-    } else {
-        if (iNumErrors > 0) {
-            sMsg = sMsg + " with the following errors:";
-            for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
-                if (!gTDOrders[idxOrder].bProcessed) {
-                    sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
-                }
-            }
-            sMsg = sMsg + gsCRLF + "Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+        let sMsg = iNumSuccess.toString() + " SELL ";
+        if (iNumSuccess > 1) {
+            sMsg = sMsg + "orders created";
         } else {
-            sMsg = sMsg + ". Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+            sMsg = sMsg + "order created";
         }
+        if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+            giTDPostOrderRetryCnt++;
+            giProgress = 0;
+            window.setTimeout("PostWLSellOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+            return;
+        } else {
+            if (iNumErrors > 0) {
+                sMsg = sMsg + " with the following errors:";
+                for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
+                    if (!gTDOrders[idxOrder].bProcessed) {
+                        sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
+                    }
+                }
+                sMsg = sMsg + gsCRLF + "Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            } else {
+                sMsg = sMsg + ". Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            }
+        }
+
+        if (document.getElementById("chkPlace" + sThisId).checked) {
+            window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+        } else {
+            if (iNumErrors == 0) {
+                ClearAllWLInputFields(idxWL);
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
+            SetDefaultWL(idxWL);
+        }
+    } else { //only doing place orders
+        window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
     }
 
-    if (iNumErrors == 0) {
-        ClearAllWLInputFields(idxWL);
-    }
-    ShowProgress(false, true);
-    gbDoingCreateOrders = false;
-    SetDefault();
 }
 
 function PostWLSellOrdersLimit(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
@@ -13306,97 +13458,118 @@ function PostWLSellOrdersLimit(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgres
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
     let iTryCount = iTryCountIn;
-    if (bFirstTime) {
-        giProgress = 0;
-        iProgressIncrement = 100 / gTDOrders.length;
-        gsLastErrors.length = 0;
-        giTDPostOrderRetryCnt = 0;
-        ShowProgress(true, false);
-    }
-    for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
-        if (giProgress < 100) {
-            giProgress = giProgress + iProgressIncrement;
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    gsSaveOrdersSummaryMsg = "";
+    if (document.getElementById("chkSave" + sThisId).checked) {
+        if (bFirstTime) {
+            giProgress = 0;
+            iProgressIncrement = 100 / gTDOrders.length;
+            gsLastErrors.length = 0;
+            giTDPostOrderRetryCnt = 0;
+            ShowProgress(true, false);
         }
-        let oTDOrder = new TDOrder();
-        oTDOrder = gTDOrders[idxOrder];
-        if (!oTDOrder.bProcessed) {
-            let sOrder = "";
-            sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
-                oTDOrder.a02orderType +
-                oTDOrder.a03AsessionSeamless +
-                oTDOrder.a04duration +
-                oTDOrder.a03FcancelTime +
-                oTDOrder.a02Aprice +
-                oTDOrder.a05orderStrategyType +
-                oTDOrder.a06orderLegCollectionStart +
-                oTDOrder.a07instructionStart +
-                oTDOrder.a08quantity +
-                oTDOrder.a09instrumentStart +
-                oTDOrder.a10symbol +
-                oTDOrder.a11assetType +
-                oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
-            if (PostTDOrder(sAccountId, sOrder) == 0) {
-                //success
-                iNumSuccess++;
-                gTDOrders[idxOrder].bProcessed = true;
-                if (gTDOrders[idxOrder].sError != "") {
-                    iNumErrors--;
-                }
-                gTDOrders[idxOrder].sError = "";
-            } else {
-                if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
-                    if (iTryCount < 3) {
-                        iTryCount++;
-                        giProgress = giProgress - 1;
-                        window.setTimeout("PostWLSellOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
-                        return;
+        for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
+            if (giProgress < 100) {
+                giProgress = giProgress + iProgressIncrement;
+            }
+            let oTDOrder = new TDOrder();
+            oTDOrder = gTDOrders[idxOrder];
+            if (!oTDOrder.bProcessed) {
+                let sOrder = "";
+                sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
+                    oTDOrder.a02orderType +
+                    oTDOrder.a03AsessionSeamless +
+                    oTDOrder.a04duration +
+                    oTDOrder.a03FcancelTime +
+                    oTDOrder.a02Aprice +
+                    oTDOrder.a05orderStrategyType +
+                    oTDOrder.a06orderLegCollectionStart +
+                    oTDOrder.a07instructionStart +
+                    oTDOrder.a08quantity +
+                    oTDOrder.a09instrumentStart +
+                    oTDOrder.a10symbol +
+                    oTDOrder.a11assetType +
+                    oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                if (PostTDOrder(sAccountId, sOrder) == 0) {
+                    //success
+                    iNumSuccess++;
+                    gTDOrders[idxOrder].bProcessed = true;
+                    if (gTDOrders[idxOrder].sError != "") {
+                        iNumErrors--;
+                    }
+                    gTDOrders[idxOrder].sError = "";
+                } else {
+                    if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                        if (iTryCount < 3) {
+                            iTryCount++;
+                            giProgress = giProgress - 1;
+                            window.setTimeout("PostWLSellOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                            return;
+                        } else {
+                            // an error occurred
+                            iNumErrors++;
+                            gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                        }
                     } else {
                         // an error occurred
                         iNumErrors++;
                         gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                     }
-                } else {
-                    // an error occurred
-                    iNumErrors++;
-                    gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                 }
             }
+            window.setTimeout("PostWLSellOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
+            return;
         }
-        window.setTimeout("PostWLSellOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
-        return;
-    }
-    let sMsg = iNumSuccess.toString() + " SELL LIMIT ";
-    if (iNumSuccess > 1) {
-        sMsg = sMsg + "orders created";
-    } else {
-        sMsg = sMsg + "order created";
-    }
-    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
-        giTDPostOrderRetryCnt++;
-        giProgress = 0;
-        window.setTimeout("PostWLSellOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
-        return;
-    } else {
-        if (iNumErrors > 0) {
-            sMsg = sMsg + " with the following errors:";
-            for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
-                if (!gTDOrders[idxOrder].bProcessed) {
-                    sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
-                }
-            }
-            alert(sMsg);
+        let sMsg = iNumSuccess.toString() + " SELL LIMIT ";
+        if (iNumSuccess > 1) {
+            sMsg = sMsg + "orders created";
         } else {
-            sMsg = sMsg + ". Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+            sMsg = sMsg + "order created";
         }
+        if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+            giTDPostOrderRetryCnt++;
+            giProgress = 0;
+            window.setTimeout("PostWLSellOrdersLimit(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+            return;
+        } else {
+            if (iNumErrors > 0) {
+                sMsg = sMsg + " with the following errors:";
+                for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
+                    if (!gTDOrders[idxOrder].bProcessed) {
+                        sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
+                    }
+                }
+                sMsg = sMsg + gsCRLF + "Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            } else {
+                sMsg = sMsg + ". Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            }
+        }
+
+        if (document.getElementById("chkPlace" + sThisId).checked) {
+            window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+        } else {
+            if (iNumErrors == 0) {
+                ClearAllWLInputFields(idxWL);
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
+            SetDefaultWL(idxWL);
+        }
+    } else { //only doing place orders
+        window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
     }
 
-    if (iNumErrors == 0) {
-        ClearAllWLInputFields(idxWL);
-    }
-    ShowProgress(false, true);
-    gbDoingCreateOrders = false;
-    SetDefault();
 }
 
 function PostWLTrailingStopOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
@@ -13404,96 +13577,116 @@ function PostWLTrailingStopOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProg
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
     let iTryCount = iTryCountIn;
-    if (bFirstTime) {
-        giProgress = 0;
-        iProgressIncrement = 100 / gTDOrders.length;
-        gsLastErrors.length = 0;
-        giTDPostOrderRetryCnt = 0;
-        ShowProgress(true, false);
-    }
-    for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
-        if (giProgress < 100) {
-            giProgress = giProgress + iProgressIncrement;
+
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    gsSaveOrdersSummaryMsg = "";
+    if (document.getElementById("chkSave" + sThisId).checked) {
+        if (bFirstTime) {
+            giProgress = 0;
+            iProgressIncrement = 100 / gTDOrders.length;
+            gsLastErrors.length = 0;
+            giTDPostOrderRetryCnt = 0;
+            ShowProgress(true, false);
         }
-        let oTDOrder = new TDOrder();
-        oTDOrder = gTDOrders[idxOrder];
-        if (!oTDOrder.bProcessed) {
-            let sOrder = "";
-            sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
-                oTDOrder.a02orderType + oTDOrder.a03FcancelTime +
-                oTDOrder.a03Asession + oTDOrder.a03BstopPriceLinkBasis + oTDOrder.a03CstopPriceLinkType + oTDOrder.a03DstopPriceOffset + oTDOrder.a03EstopType +
-                oTDOrder.a04duration +
-                oTDOrder.a05orderStrategyType +
-                oTDOrder.a06orderLegCollectionStart +
-                oTDOrder.a07instructionStart +
-                oTDOrder.a08quantity +
-                oTDOrder.a09instrumentStart +
-                oTDOrder.a10symbol +
-                oTDOrder.a11assetType +
-                oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
-            if (PostTDOrder(sAccountId, sOrder) == 0) {
-                //success
-                iNumSuccess++;
-                gTDOrders[idxOrder].bProcessed = true;
-                if (gTDOrders[idxOrder].sError != "") {
-                    iNumErrors--;
-                }
-                gTDOrders[idxOrder].sError = "";
-            } else {
-                if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
-                    if (iTryCount < 3) {
-                        iTryCount++;
-                        giProgress = giProgress - 1;
-                        window.setTimeout("PostWLTrailingStopOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
-                        return;
+        for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
+            if (giProgress < 100) {
+                giProgress = giProgress + iProgressIncrement;
+            }
+            let oTDOrder = new TDOrder();
+            oTDOrder = gTDOrders[idxOrder];
+            if (!oTDOrder.bProcessed) {
+                let sOrder = "";
+                sOrder = oTDOrder.a00complexOrderStrategyTypeStart + oTDOrder.a01complexOrderStrategyType +
+                    oTDOrder.a02orderType + oTDOrder.a03FcancelTime +
+                    oTDOrder.a03Asession + oTDOrder.a03BstopPriceLinkBasis + oTDOrder.a03CstopPriceLinkType + oTDOrder.a03DstopPriceOffset + oTDOrder.a03EstopType +
+                    oTDOrder.a04duration +
+                    oTDOrder.a05orderStrategyType +
+                    oTDOrder.a06orderLegCollectionStart +
+                    oTDOrder.a07instructionStart +
+                    oTDOrder.a08quantity +
+                    oTDOrder.a09instrumentStart +
+                    oTDOrder.a10symbol +
+                    oTDOrder.a11assetType +
+                    oTDOrder.a12instrumentEnd + oTDOrder.a13instructionEnd + oTDOrder.a14orderLegCollectionEnd + oTDOrder.a15complexOrderStrategyTypeEnd;
+                if (PostTDOrder(sAccountId, sOrder) == 0) {
+                    //success
+                    iNumSuccess++;
+                    gTDOrders[idxOrder].bProcessed = true;
+                    if (gTDOrders[idxOrder].sError != "") {
+                        iNumErrors--;
+                    }
+                    gTDOrders[idxOrder].sError = "";
+                } else {
+                    if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                        if (iTryCount < 3) {
+                            iTryCount++;
+                            giProgress = giProgress - 1;
+                            window.setTimeout("PostWLTrailingStopOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                            return;
+                        } else {
+                            // an error occurred
+                            iNumErrors++;
+                            gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                        }
                     } else {
                         // an error occurred
                         iNumErrors++;
                         gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                     }
-                } else {
-                    // an error occurred
-                    iNumErrors++;
-                    gTDOrders[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
                 }
             }
+            window.setTimeout("PostWLTrailingStopOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
+            return;
         }
-        window.setTimeout("PostWLTrailingStopOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
-        return;
-    }
-    let sMsg = iNumSuccess.toString() + " TRAILING STOP ";
-    if (iNumSuccess > 1) {
-        sMsg = sMsg + "orders created";
-    } else {
-        sMsg = sMsg + "order created";
-    }
-    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
-        giTDPostOrderRetryCnt++;
-        giProgress = 0;
-        window.setTimeout("PostWLTrailingStopOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
-        return;
-    } else {
-        if (iNumErrors > 0) {
-            sMsg = sMsg + " with the following errors:";
-            for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
-                if (!gTDOrders[idxOrder].bProcessed) {
-                    sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
-                }
-            }
-            sMsg = sMsg + gsCRLF + "Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+        let sMsg = iNumSuccess.toString() + " TRAILING STOP ";
+        if (iNumSuccess > 1) {
+            sMsg = sMsg + "orders created";
         } else {
-            sMsg = sMsg + ". Log in your TD account. Click Trade/Saved Orders to execute these orders.";
-            alert(sMsg);
+            sMsg = sMsg + "order created";
         }
-    }
+        if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+            giTDPostOrderRetryCnt++;
+            giProgress = 0;
+            window.setTimeout("PostWLTrailingStopOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+            return;
+        } else {
+            if (iNumErrors > 0) {
+                sMsg = sMsg + " with the following errors:";
+                for (let idxOrder = 0; idxOrder < gTDOrders.length; idxOrder++) {
+                    if (!gTDOrders[idxOrder].bProcessed) {
+                        sMsg = sMsg + gsCRLF + gTDOrders[idxOrder].sError;
+                    }
+                }
+                sMsg = sMsg + gsCRLF + "Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            } else {
+                sMsg = sMsg + ". Use the Account Saved Orders watchlist to place these orders.";
+                if (document.getElementById("chkPlace" + sThisId).checked) {
+                    gsSaveOrdersSummaryMsg = sMsg;
+                } else {
+                    alert(sMsg);
+                }
+            }
+        }
 
-    if (iNumErrors == 0) {
-        ClearAllWLInputFields(idxWL);
+        if (document.getElementById("chkPlace" + sThisId).checked) {
+            window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+        } else {
+            if (iNumErrors == 0) {
+                ClearAllWLInputFields(idxWL);
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
+            SetDefaultWL(idxWL);
+        }
+    } else { //only doing place orders
+        window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
     }
-    ShowProgress(false, true);
-    gbDoingCreateOrders = false;
-    SetDefault();
 }
 
 function printdiv(printdivname) {
@@ -13866,6 +14059,16 @@ function SetDefault() {
     }
 }
 
+function SetDefaultWL(idxWL) {
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    if ((document.getElementById("chkPlace" + sThisId) != null) && (!isUndefined(document.getElementById("chkPlace" + sThisId)))) {
+        document.getElementById("chkPlace" + sThisId).disabled = false;
+    }
+    if ((document.getElementById("chkSave" + sThisId) != null) && (!isUndefined(document.getElementById("chkSave" + sThisId)))) {
+        document.getElementById("chkSave" + sThisId).disabled = false;
+    }
+}
+
 function ShowProgress(bStart, bStop) {
     let elem = document.getElementById("myBar");
     if (giProgress >= 100) {
@@ -14198,6 +14401,16 @@ function SetWait() {
         document.getElementById("spanRunning").style.backgroundColor = "green";
         document.getElementById("spanRunning").style.Color = "white";
         document.getElementById("spanRunning").style.visibility = "hidden";
+    }
+}
+
+function SetWaitWL(idxWL) {
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    if ((document.getElementById("chkPlace" + sThisId) != null) && (!isUndefined(document.getElementById("chkPlace" + sThisId)))) {
+        document.getElementById("chkPlace" + sThisId).disabled = true;
+    }
+    if ((document.getElementById("chkSave" + sThisId) != null) && (!isUndefined(document.getElementById("chkSave" + sThisId)))) {
+        document.getElementById("chkSave" + sThisId).disabled = true;
     }
 }
 
