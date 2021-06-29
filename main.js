@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.4 2021-06-26 22:46"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.5 2021-06-29 00:30"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -38,6 +38,19 @@ var gsSortOrderFields = {
     "PurchaseDate": "PurchaseDate",
     "OldGL": "OldGL",
     "MktValue": "MktValue"
+}
+
+var gsSortOrderFieldsO = {
+    "Status": "Status",
+    "Action": "Action",
+    "Quantity": "Quantity",
+    "Symbol": "Symbol",
+    "Type": "Type",
+    "Price": "Price",
+    "ActPrice": "ActPrice",
+    "TimeInForce": "TimeInForce",
+    "TimeEntered": "TimeEntered",
+    "Reported": "Reported"
 }
 
 function FixedPrice() {
@@ -306,6 +319,7 @@ function WLItem() {
     this.bSelected = true;
     this.bSelectedTemp = true;
     this.bSelectedForOrder = false;
+    this.bCheckboxEnabled = true;
     this.symbol = "";
     this.assetType = "";
     this.sequenceId = 0;
@@ -317,6 +331,7 @@ function WLItemSavedOrder() {
     this.bSelected = true;
     this.bSelectedTemp = true;
     this.bSelectedForOrder = false;
+    this.bCheckboxEnabled = true;
     this.savedOrderId = 0;
     this.savedTime = ""; //like "2021-03-04T20:30:01+0000"
     this.orderType = ""; //"MARKET", "LIMIT", or "TRAILING_STOP"
@@ -331,16 +346,62 @@ function WLItemSavedOrder() {
     this.symbol = ""; //like "XYZ"
 }
 
+function WLItemOrder() {
+    this.bSelected = true;
+    this.bSelectedTemp = true;
+    this.bSelectedForOrder = false;
+    this.bCheckboxEnabled = true;
+    this.sSortOrderFields = gsSortOrderFieldsO.Action; //look at gsSortOrderFieldsO
+    this.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending
+    this.orderId = 0; //int64
+    this.status = ""; /* "AWAITING_PARENT_ORDER", "AWAITING_CONDITION",
+                        "AWAITING_MANUAL_REVIEW", "ACCEPTED",
+                        "AWAITING_UR_OUT", "PENDING_ACTIVATION",
+                        "QUEUED", "WORKING",
+                        "REJECTED", "PENDING_CANCEL",
+                        "CANCELED", "PENDING_REPLACE",
+                        "REPLACED", "FILLED",
+                        "EXPIRED" 
+                      */
+    this.enteredTime = ""; //like "2021-06-27T02:32:24+0000"
+    this.closeTime = "" //like: "2021-06-27T02:42:06+0000"
+    this.orderType = ""; /* "MARKET", "LIMIT",
+                            "STOP", "STOP_LIMIT",
+                            "TRAILING_STOP", "MARKET_ON_CLOSE",
+                            "EXERCISE", "TRAILING_STOP_LIMIT",
+                            "NET_DEBIT", "NET_CREDIT",
+                            "NET_ZERO" 
+                         */
+    this.price = 0.0; //the price as a dollar amount
+    this.session = ""; // "NORMAL", "AM", "PM", "SEAMLESS"
+    this.stopPriceOffset = 0; //a number from 1 to 99  
+    this.stopPriceLinkType = ""; //'VALUE' or 'PERCENT' or 'TICK'
+    this.cancelTime = ""; //as yyyy-mm-dd
+    this.duration = ""; //either "DAY" or "GOOD_TILL_CANCEL or "FILL_OR_KILL""
+    this.instruction = ""; //"BUY", "SELL", "BUY_TO_COVER", "SELL_SHORT", "BUY_TO_OPEN", "BUY_TO_CLOSE", "SELL_TO_OPEN", "SELL_TO_CLOSE", "EXCHANGE"
+    this.quantity = 0; //a number
+    this.filledQuantity = 0; //a number
+    this.remainingQuantity = 0; //a number
+    this.symbol = ""; //like "XYZ"
+    this.activationPrice = 0.0; //a number
+}
+
+
+
 var gsAccountWLSummary = "Watchlist Performance";
 var gsAccountSavedOrders = "Account Saved Orders";
+var gsAccountOrders = "Account Orders";
 var gOrdersToDelete = new Array();
 var gOrdersToPlace = new Array();
+var gOrdersToCancel = new Array();
 
 function WLWatchList() {
     this.bSelected = false;
     this.bSelectedSymbols = false;
     this.bSelectedTemp = false;
     this.bSelectedTempSymbols = false;
+    this.bSelectedO = false;
+    this.bSelectedOTemp = false;
     this.bSelectedSO = false;
     this.bSelectedSOTemp = false;
     this.bSelectedWLSummary = false;
@@ -353,7 +414,7 @@ function WLWatchList() {
     this.watchlistId = ""; //if name is "Account" this is accountId, if name is "Account Saved Orders" this is accountId + "AccountSavedOrders"
     this.accountId = "";
     this.accountName = "";
-    this.WLItems = new Array(); //array of WLItem objects or WLItemSavedOrder objects
+    this.WLItems = new Array(); //array of WLItem objects or WLItemSavedOrder or WLItemOrder objects
 }
 var gWatchlists = new Array(); //array of WLWatchList objects
 var gsWLWidth = "900px";
@@ -396,6 +457,21 @@ const lengthsWLSO = {
     WLCol2Width: 18
 }
 var lengthsWLSOWLCol1Width = lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth + lengthsWLSO.WLColTitleWidth + lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth + 40;
+
+const lengthsWLO = {
+    WLWidth: "900px",
+    WLColOpenLabelWidth: 80,
+    WLColOpenEntryWidth: 80,
+    WLColAcquiredDateEntryWidth: 80,
+    WLColTitleWidth: 460,
+    WLColCloseLabelWidth: 110,
+    WLColCloseEntryWidth: 60,
+    WLDragXoffsetLeft: 220,
+    WLDragXoffsetRight: 700,
+    WLCol2Width: 18
+}
+var lengthsWLOWLCol1Width = lengthsWLO.WLColOpenLabelWidth + lengthsWLO.WLColOpenEntryWidth + lengthsWLO.WLColAcquiredDateEntryWidth + lengthsWLO.WLColTitleWidth + lengthsWLO.WLColCloseLabelWidth + lengthsWLO.WLColCloseEntryWidth + 40;
+
 
 var gsBodyBackgroundColor = "#99CCFF";
 var gsWLTableHeadingBackgroundColor = "#99CCFF";
@@ -517,6 +593,15 @@ function TDSavedOrder() {
     this.a15complexOrderStrategyTypeEnd = " }";
     this.savedOrderId = 0;
 }
+
+function TDCancelOrder() {
+    this.bProcessed = false;
+    this.sError = "";
+    this.iRetryCnt = 0;
+    this.orderId = 0;
+}
+
+
 var gbDoingCreateOrders = false;
 
 function TDWLOrder() {
@@ -1401,6 +1486,7 @@ var oCMWL;
 
 var oCMTemp;
 
+var oCMOrders;
 var oCMSavedOrders;
 /*----------------------------------------------------------------------------------------
         [
@@ -1671,6 +1757,87 @@ function CancelKeyStroke(ev) {
     catch (e) {
         return (false)
     }
+}
+
+function CancelOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
+    let iNumSuccess = iNumSuccessIn;
+    let iNumErrors = iNumErrorsIn;
+    let iProgressIncrement = iProgressIncrementIn;
+    let iTryCount = iTryCountIn;
+    if (bFirstTime) {
+        giProgress = 0;
+        iProgressIncrement = 100 / gOrdersToCancel.length;
+        gsLastErrors.length = 0;
+        giTDPostOrderRetryCnt = 0;
+        ShowProgress(true, false);
+    }
+    for (let idxOrder = idxOrderStart; idxOrder < gOrdersToCancel.length; idxOrder++) {
+        if (giProgress < 100) {
+            giProgress = giProgress + iProgressIncrement;
+        }
+        let oTDOrder = new TDCancelOrder();
+        oTDOrder = gOrdersToCancel[idxOrder];
+        if (!oTDOrder.bProcessed) {
+            let sOrder = "";
+            sOrder = oTDOrder.orderId;
+            if (PostOCancel(sAccountId, sOrder) == 0) {
+                //success
+                iNumSuccess++;
+                gOrdersToCancel[idxOrder].bProcessed = true;
+                if (gOrdersToCancel[idxOrder].sError != "") {
+                    iNumErrors--;
+                }
+                gOrdersToCancel[idxOrder].sError = "";
+            } else {
+                if (gsLastError.indexOf("Individual App's transactions per seconds restriction reached.") != -1) {
+                    if (iTryCount < 3) {
+                        iTryCount++;
+                        giProgress = giProgress - 1;
+                        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                        return;
+                    } else {
+                        // an error occurred
+                        iNumErrors++;
+                        gOrdersToCancel[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                    }
+                } else {
+                    // an error occurred
+                    iNumErrors++;
+                    gOrdersToCancel[idxOrder].sError = oTDOrder.symbol + "(" + iTryCount.toString() + ") -- " + gsLastError;
+                }
+            }
+        }
+        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder + 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
+        return;
+    }
+    let sMsg = iNumSuccess.toString() + " ";
+    if ((iNumSuccess > 1) || (iNumSuccess == 0)){
+        sMsg = sMsg + "orders canceled";
+    } else {
+        sMsg = sMsg + "order canceled";
+    }
+    if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
+        giTDPostOrderRetryCnt++;
+        giProgress = 0;
+        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", 0, '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+        return;
+    } else {
+        if (iNumErrors > 0) {
+            sMsg = sMsg + " with the following errors:";
+            for (let idxOrder = 0; idxOrder < gOrdersToCancel.length; idxOrder++) {
+                if (!gOrdersToDelete[idxOrder].bProcessed) {
+                    sMsg = sMsg + gsCRLF + gOrdersToCancel[idxOrder].sError;
+                }
+            }
+            alert(sMsg);
+        } else {
+            alert(sMsg);
+        }
+    }
+
+    ShowProgress(false, true);
+    gbDoingCreateOrders = false;
+    SetDefault();
 }
 
 function CheckHTTPOpen(xhttp, sWhereTo, sErrorMsg, bAsync) {
@@ -2162,6 +2329,40 @@ function DoHideDiv(sDiv) {
 
 function DoGetWatchlistPrices() {
     window.setTimeout("GetWatchlistPrices()", 50);
+}
+
+function DoOCancelOrders(idxWL) {
+    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+
+        let sAccountId = gWatchlists[idxWL].accountId;
+        let iNumSelected = 0;
+
+        gOrdersToCancel.length = 0;
+
+        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                iNumSelected++;
+                let oWLItem = new WLItemOrder();
+                oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
+                let oTDOrder = new TDCancelOrder();
+                oTDOrder.orderId = oWLItem.orderId;
+                gOrdersToCancel[gOrdersToCancel.length] = oTDOrder;
+            }
+        }
+        if (iNumSelected == 0) {
+            alert("Please select at least one order to cancel.")
+            return;
+        }
+        let sConfirmMsg = "";
+        sConfirmMsg = "Canceling  " + iNumSelected.toString() + " orders. ";
+        if (AreYouSure(sConfirmMsg)) {
+            gbDoingCreateOrders = true;
+            SetWait();
+            window.setTimeout("CancelOrders(true, 0, 0, 0, 0, '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+        }
+
+        return;
+    }
 }
 
 function DoResetWatchlists() {
@@ -5738,6 +5939,7 @@ function GetTDData(bFirstTime) {
                             }
                             GetWatchlistPrices();
                             GetIndexValues();
+                            GetWatchlistO();
                             GetWatchlistSO();
                             GetWatchlistSummary();
                         }
@@ -5785,6 +5987,7 @@ function GetTDData(bFirstTime) {
                             if (bOkToContinue) {
                                 GetWatchlistPrices();
                                 GetIndexValues();
+                                GetWatchlistO();
                                 GetWatchlistSO();
                                 GetWatchlistSummary();
                             }
@@ -5914,6 +6117,17 @@ function GetTDDataHTTP(sServerURL, oCMindex) {
                                         }
                                     } else {
                                         oMDQ = extendMDQ(oMDQ, oMDQ2);
+                                    }
+                                    break;
+                                }
+                            case 7: //orders
+                                {
+                                    oCMOrders = myJSON.parse(xhttp.responseText);
+                                    iCheckTDAPIReturn = checkTDAPIError(oCMOrders);
+                                    if (iCheckTDAPIReturn != 0) {
+                                        if (!(isUndefined(oCMOrders.error))) {
+                                            sAPIError = oCMOrders.error;
+                                        }
                                     }
                                     break;
                                 }
@@ -7827,6 +8041,492 @@ function GetUniqueListOfSymbols(sInSymbols) {
 
 }
 
+function GetWatchlistO() {
+    let dt = new Date();
+    let sDate = FormatDateWithTime(dt, true, false);
+    let sStatusSpacesP = "";
+    let sStatusSpacesT = "";
+    let sActionSpacesP = "";
+    let sActionSpacesT = "";
+    let sQuantitySpacesP = "";
+    let sQuantitySpacesT = "&nbsp;&nbsp;&nbsp;";
+    let sSymbolSpacesP = "";
+    let sSymbolSpacesT = "";
+    let sOrderTypeSpacesP = "";
+    let sOrderTypeSpacesT = "";
+    let sPriceSpacesP = "";
+    let sPriceSpacesT = "";
+    let sActivationPriceSpacesP = "";
+    let sActivationPriceSpacesT = "";
+    let sTimeEnteredSpacesP = "";
+    let sTimeEnteredSpacesT = "";
+    let sTimeInForceSpacesP = "";
+    let sTimeInForceSpacesT = "";
+    let sReportedSpacesP = "";
+    let sReportedSpacesT = "";
+
+    if (gWatchlists.length > 0) {
+        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+            if (gWatchlists[idxWL].bSelectedO) {
+                let sThisDiv = "";
+                let sThisTable = "";
+                let sLastWLName = "";
+                let sLastWLAccountName = "";
+                let sLastWLAccountId = "";
+                let sThisId = "";
+                let sTableRowVerticalAlignment = "middle";
+                let sTmp = "";
+                let bEverythingIsChecked = true;
+                let iNumChecked = 0;
+
+
+                //get list of currently selected orders
+                let oCurrentOIDs = [];
+                if (gWatchlists[idxWL].WLItems.length > 0) {
+                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                        let oWLOItem = new WLItemOrder();
+                        oWLOItem = gWatchlists[idxWL].WLItems[idxWLItem];
+                        if (oWLOItem.bSelectedForOrder) {
+                            oCurrentOIDs[oWLOItem.orderId] = oWLOItem.bSelectedForOrder;
+                        }
+                    }
+                }
+
+                let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/accounts/" + gWatchlists[idxWL].accountId + "/orders", 7);
+                if (iReturn == 0) {
+                    gWatchlists[idxWL].WLItems.length = 0;
+                    if (!isUndefined(oCMOrders.length)) {
+                        for (let idxO = oCMOrders.length - 1; idxO > -1; idxO--) {
+                            if (!isUndefined(oCMOrders[idxO].orderId)) {
+                                let oWLOItem = new WLItemOrder();
+                                if (!isUndefined(oCMOrders[idxO].activationPrice)) {
+                                    oWLOItem.activationPrice = oCMOrders[idxO].activationPrice;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].cancelTime)) {
+                                    oWLOItem.cancelTime = oCMOrders[idxO].cancelTime;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].closeTime)) {
+                                    oWLOItem.closeTime = oCMOrders[idxO].closeTime;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].duration)) {
+                                    oWLOItem.duration = oCMOrders[idxO].duration;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].enteredTime)) {
+                                    oWLOItem.enteredTime = oCMOrders[idxO].enteredTime;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].filledQuantity)) {
+                                    oWLOItem.filledQuantity = oCMOrders[idxO].filledQuantity;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].instruction)) {
+                                    oWLOItem.instruction = oCMOrders[idxO].orderLegCollection[0].instruction;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].orderId)) {
+                                    oWLOItem.orderId = oCMOrders[idxO].orderId;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].orderType)) {
+                                    oWLOItem.orderType = oCMOrders[idxO].orderType;
+                                }
+
+                                oWLOItem.price = 0;
+                                if (!isUndefined(oCMOrders[idxO].price)) {
+                                    oWLOItem.price = oCMOrders[idxO].price;
+                                } else {
+                                    if (!isUndefined(oCMOrders[idxO].orderActivityCollection)) {
+                                        if (oCMOrders[idxO].orderActivityCollection.length > 0) {
+                                            if (!isUndefined(oCMOrders[idxO].orderActivityCollection[0].executionLegs)) {
+                                                if (oCMOrders[idxO].orderActivityCollection[0].executionLegs.length > 0) {
+                                                    if (!isUndefined(oCMOrders[idxO].orderActivityCollection[0].executionLegs[0].price)) {
+                                                        oWLOItem.price = oCMOrders[idxO].orderActivityCollection[0].executionLegs[0].price;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].quantity)) {
+                                    oWLOItem.quantity = oCMOrders[idxO].orderLegCollection[0].quantity;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].remainingQuantity)) {
+                                    oWLOItem.remainingQuantity = oCMOrders[idxO].remainingQuantity;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].session)) {
+                                    oWLOItem.session = oCMOrders[idxO].session;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].status)) {
+                                    oWLOItem.status = oCMOrders[idxO].status;
+                                    oWLOItem.bCheckboxEnabled = false;
+                                    switch (oWLOItem.status.toUpperCase()) {
+                                        case "AWAITING_PARENT_ORDER":
+                                        case "AWAITING_CONDITION":
+                                        case "AWAITING_MANUAL_REVIEW":
+                                        case "ACCEPTED":
+                                        case "AWAITING_UR_OUT":
+                                        case "PENDING_ACTIVATION":
+                                        case "QUEUED":
+                                        case "WORKING": {
+                                            sTmp = "Open";
+                                            oWLOItem.bCheckboxEnabled = true;
+                                            break;
+                                        }
+                                        case "REJECTED": {
+                                            sTmp = "Rejected";
+                                            break;
+                                        }
+                                        case "PENDING_CANCEL": {
+                                            sTmp = "Pend Cncl";
+                                            break;
+                                        }
+                                        case "CANCELED": {
+                                            sTmp = "Canceled";
+                                            break;
+                                        }
+                                        case "PENDING_REPLACE": {
+                                            sTmp = "Pend Rplc";
+                                            break;
+                                        }
+                                        case "REPLACED": {
+                                            sTmp = "Replaced";
+                                            break;
+                                        }
+                                        case "FILLED": {
+                                            sTmp = "Filled";
+                                            break;
+                                        }
+                                        case "EXPIRED": {
+                                            sTmp = "Expired";
+                                            break;
+                                        }
+                                    }
+                                    oWLOItem.status = sTmp;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].stopPriceOffset)) {
+                                    oWLOItem.stopPriceOffset = oCMOrders[idxO].stopPriceOffset;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].stopPriceLinkType)) {
+                                    oWLOItem.stopPriceLinkType = oCMOrders[idxO].stopPriceLinkType;
+                                }
+                                if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].instrument.symbol)) {
+                                    oWLOItem.symbol = oCMOrders[idxO].orderLegCollection[0].instrument.symbol;
+                                }
+                                if ((!isUndefined(oCurrentOIDs[oCMOrders[idxO].orderId])) && (oWLOItem.bCheckboxEnabled)) {
+                                    //already displayed so reset the selectfororder flag
+                                    oWLOItem.bSelectedForOrder = oCurrentOIDs[oCMOrders[idxO].orderId];
+                                }
+                                oWLOItem.iSortOrderAscDesc = gWatchlists[idxWL].iSortOrderAscDesc;
+                                oWLOItem.sSortOrderFields = gWatchlists[idxWL].sSortOrderFields;
+                                gWatchlists[idxWL].WLItems[gWatchlists[idxWL].WLItems.length] = oWLOItem;
+                            }
+                        }
+                    }
+                    //now display the watchlist
+
+                    sThisDiv = "";
+                    sLastWLName = gWatchlists[idxWL].name;
+                    sLastWLAccountName = gWatchlists[idxWL].accountName;
+                    sLastWLAccountId = gWatchlists[idxWL].accountId;
+                    sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+
+                    if (gbUsingCell) {
+                        sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisDiv = sThisDiv + "<table style=\"width:800px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                        sThisDiv = sThisDiv + "<tr>";
+
+                        sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>";
+
+                        sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                            "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
+
+                        sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders(" + idxWL.toString() + ")\" value=\"Cancel\" ></th>";
+
+                        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                        sThisDiv = sThisDiv + "</tr>";
+
+                        sThisDiv = sThisDiv + "<tr>";
+                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+                    } else { //not using cell
+
+                        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                        sThisDiv = sThisDiv + "<tr>";
+
+                        sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColOpenLabelWidth + lengthsWLO.WLColOpenEntryWidth + lengthsWLO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>";
+
+                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                            "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+
+                        sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColCloseLabelWidth + lengthsWLO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders(" + idxWL.toString() + ")\" value=\"Cancel\" ></th>";
+
+                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                        sThisDiv = sThisDiv + "</tr>";
+
+                        sThisDiv = sThisDiv + "<tr>";
+                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+
+                    }
+                    sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisTable = "";
+                    sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisTable = sThisTable + "<tr>";
+
+                    if (gWatchlists[idxWL].WLItems.length == 0) {
+                        //no orders
+                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">No orders for this account.</td>";
+                        sThisTable = sThisTable + "</tr>";
+                        if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
+                            if (document.getElementById("spanWLNumChecked" + sThisId) != null) {
+                                document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                            }
+                        }
+
+                    } else {
+                        //Status 	Action 	Quantity  Symbol 	Type 	Price  Act.Price  Time-in-Force  Open Closed
+                        let sTitle = {
+                            "Status": "<b><I><U>Status</U>&nbsp;</I></b>",
+                            "Action": "<b><I><U>Action</U></I></b>",
+                            "Quantity": "<b><I><U>Quantity</U></I></b>",
+                            "Price": "<b><I><U>Price</U></I></b>",
+                            "Symbol": "<b><I><U>Symbol</U></I></b>",
+                            "Type": "<b><I><U>Type</U></I></b>",
+                            "Price": "<b><I><U>Price</U></I></b>",
+                            "ActPrice": "<b><I><U>Act.Price</U></I></b>",
+                            "TimeInForce": "<b><I><U>Time-in-Force</U></I></b>",
+                            "TimeEntered": "<b><I><U>Opened</U></I></b>",
+                            "Reported": "<b><I><U>Closed</U></I></b>"
+                        };
+
+                        let sTitleWithArrow = {
+                            "Status": "<b><I><U>Status</U>&nbsp;</I>xxx</b>",
+                            "Action": "<b><I><U>Action</U></I>xxx</b>",
+                            "Quantity": "<b><I><U>Quantity</U></I>xxx</b>",
+                            "Price": "<b><I><U>Price</U></I>xxx</b>",
+                            "Symbol": "<b><I><U>Symbol</U></I>xxx</b>",
+                            "Type": "<b><I><U>Type</U></I>xxx</b>",
+                            "Price": "<b><I><U>Price</U></I>xxx</b>",
+                            "ActPrice": "<b><I><U>Act.Price</U></I>xxx</b>",
+                            "TimeInForce": "<b><I><U>Time-in-Force</U></I>xxx</b>",
+                            "TimeEntered": "<b><I><U>Opened</U></I>xxx</b>",
+                            "Reported": "<b><I><U>Closed</U></I>xxx</b>"
+                        };
+
+
+                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
+                        let sonClickChangeOrderBase = "onclick =\"wlChangeOrderO(" + idxWL.toString() + ", 'xxx')\"";
+                        let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Status);
+
+                        let sDownArrow = "&darr;";
+                        let sUpArrow = "&uarr;";
+                        let sArrow = "";
+                        if (gWatchlists[idxWL].iSortOrderAscDesc == 0) {
+                            sArrow = sDownArrow;
+                        } else {
+                            sArrow = sUpArrow;
+                        }
+                        sTitle[gWatchlists[idxWL].sSortOrderFields] = sTitleWithArrow[gWatchlists[idxWL].sSortOrderFields].replace("xxx", sArrow);
+                        gWatchlists[idxWL].WLItems.sort(sortWLO);
+
+
+                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
+                            "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + "-1" + ")\">" +
+                            "<span " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                            sTitle.Status + "</span></td > ";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Action);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Action + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Quantity);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Quantity + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Symbol);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Symbol + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Type);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Type + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Price);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Price + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.ActPrice);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.ActPrice + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.TimeInForce);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeInForce + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.TimeEntered);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeEntered + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Reported);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Reported + "</td>";
+
+                        sThisTable = sThisTable + "</tr>";
+
+                        let iLineCnt = 0;
+                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+
+                            let oWLOItem = new WLItemOrder();
+                            oWLOItem = gWatchlists[idxWL].WLItems[idxWLItem];
+                            iLineCnt++;
+                            let sChecked = "";
+                            if (oWLOItem.bCheckboxEnabled) {
+                                if (oWLOItem.bSelectedForOrder) {
+                                    sChecked = "checked";
+                                    iNumChecked++;
+                                } else {
+                                    bEverythingIsChecked = false;
+                                }
+                            }
+
+                            let sThisTRId = "TR" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(idxWLItem, 3, "0");
+                            if (sChecked == "checked") {
+                                sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableSelectedRowBackgroundColor + ";\">";
+                            } else {
+                                if ((iLineCnt % 2) == 0) {
+                                    sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableEvenRowBackgroundColor + ";\">";
+                                } else {
+                                    sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableOddRowBackgroundColor + ";\">";
+                                }
+                            }
+
+                            //check box and Status - status
+                            let sEnableCheckbox = "disabled";
+                            if (oWLOItem.bCheckboxEnabled) {
+                                sEnableCheckbox = "";
+                            }
+                            sTmp = oWLOItem.status;
+                            let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(idxWLItem, 3, "0");
+                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
+                                "<input " + sEnableCheckbox + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + idxWLItem.toString() + ")\">" +
+                                "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                                sStatusSpacesP + sTmp + sStatusSpacesT + "</span></td>";
+
+                            //Action - instruction
+                            sTmp = oWLOItem.instruction;
+                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sActionSpacesP + sTmp + sActionSpacesT + "</td>";
+
+                            //Quantity - quantity
+                            sTmp = FormatDecimalNumber(oWLOItem.quantity, 5, 0, "");
+                            let dQty = parseFloat(sTmp);
+                            if (dQty == 0.0) {
+                                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                            } else {
+                                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sQuantitySpacesP + sTmp + sQuantitySpacesT + "</td>";
+                            }
+
+                            //Symbol - symbol
+                            sTmp = oWLOItem.symbol;
+                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sSymbolSpacesP + sTmp + sSymbolSpacesT + "</td>";
+
+                            //Order Type - orderType and maybe stopPriceLinkType
+                            sTmp = oWLOItem.orderType;
+                            if (sTmp == "TRAILING_STOP") {
+                                sTmp = "Trailing&nbsp;Stop";
+                            } else {
+                                sTmp = sTmp.toProperCase(true);
+                            }
+                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sOrderTypeSpacesP + sTmp + sOrderTypeSpacesT + "</td>";
+
+                            //Price - price
+                            if (oWLOItem.orderType == "TRAILING_STOP") {
+                                sTmp = FormatDecimalNumberRightTrim(oWLOItem.stopPriceOffset, 5, 2, "", false) + "%";
+                            } else {
+                                sTmp = FormatDecimalNumberRightTrim(oWLOItem.price, 5, 4, "", true);
+                            }
+                            let dPrice = parseFloat(sTmp);
+                            if (dPrice == 0.0) {
+                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                            } else {
+                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sPriceSpacesP + sTmp + sPriceSpacesT + "</td>";
+                            }
+
+                            //Activation - activationPrice
+                            sTmp = FormatDecimalNumber(oWLOItem.activationPrice, 5, 2, "");
+                            let activationPrice = parseFloat(sTmp);
+                            if (activationPrice == 0.0) {
+                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                            } else {
+                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sActivationPriceSpacesP + sTmp + "%" + sActivationPriceSpacesT + "</td>";
+                            }
+
+                            //Time-in-Force - cancelTime
+                            if (oWLOItem.cancelTime == "") {
+                                sTmp = "&nbsp;";
+                            } else {
+                                let d2 = new Date(oWLOItem.cancelTime);
+                                sTmp = FormatDate(d2);
+                                //sTmp = oWLOItem.cancelTime;
+                            }
+                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTimeInForceSpacesP + sTmp + sTimeInForceSpacesT + "</td>";
+
+                            //Entered - enteredTime
+                            if (oWLOItem.enteredTime == "") {
+                                sTmp = "&nbsp;";
+                            } else {
+                                let d2 = new Date(oWLOItem.enteredTime.split("+")[0] + "+00:00");
+                                sTmp = FormatTDTradeDate(d2);
+                            }
+                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTimeEnteredSpacesP + sTmp + sTimeEnteredSpacesT + "</td>";
+
+                            //Closed - closeTime
+                            if (oWLOItem.closeTime == "") {
+                                sTmp = "&nbsp;";
+                            } else {
+                                let d2 = new Date(oWLOItem.closeTime.split("+")[0] + "+00:00");
+                                sTmp = FormatTDTradeDate(d2);
+                            }
+                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sReportedSpacesP + sTmp + sReportedSpacesT + "</td>";
+
+                            sThisTable = sThisTable + "</tr>";
+
+                        }
+
+                    }
+
+                } else {
+                    //an error occurred, so don't update anything
+                    return;
+                }
+
+                if (sThisTable != "") {
+                    sThisTable = sThisTable + "</table>";
+                    if ((bEverythingIsChecked) && (iNumChecked > 0)) {
+                        sThisTable = sThisTable.replace("xxthisWillBeReplacedxx", "checked");
+                    }
+
+                    sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
+                }
+                if (gWatchlists[idxWL].spanName == "") {
+                    gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+                    sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWL].spanName);
+                    wlAddDiv(gWatchlists[idxWL].spanName, sThisDiv);
+                } else {
+                    if (document.getElementById(gWatchlists[idxWL].spanName).innerHTML == "") {
+                        sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWL].spanName);
+                        document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
+                    } else {
+                        document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
+                        if (!isUndefined(document.getElementById("spanODate" + sThisId))) {
+                            document.getElementById("spanODate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+}
+
 function GetWatchlistPrices() {
 
     let oWLItemDetail = new WLItemDetail();
@@ -8090,7 +8790,7 @@ function GetWatchlistPrices() {
                     if (gWatchlists[idxWLMain].iSortOrderAscDesc == 0) {
                         sArrow = sDownArrow;
                     } else {
-                        sArrow = sUpArrow;;
+                        sArrow = sUpArrow;
                     }
                     if (bDoingDividendWL) {
                         gWLDisplayed.sort(sortWL);
@@ -9237,6 +9937,7 @@ function GetWatchlists(bDoingReset) {
                                                 if ((oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol == oWL.WLItems[idxWLItem].symbol) &&
                                                     (oOldWL[idxWLCur].WLItems[idxWLItemOld].accountId == oWL.WLItems[idxWLItem].accountId)) {
                                                     oWL.WLItems[idxWLItem].bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                                    oWL.WLItems[idxWLItem].bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
                                                     break;
                                                 }
                                             }
@@ -9380,6 +10081,7 @@ function GetWatchlists(bDoingReset) {
                                                         if ((oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol == oWL.WLItems[idxWLItem].symbol) &&
                                                             (oOldWL[idxWLCur].WLItems[idxWLItemOld].accountId == oWL.WLItems[idxWLItem].accountId)) {
                                                             oWL.WLItems[idxWLItem].bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                                            oWL.WLItems[idxWLItem].bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
                                                             break;
                                                         }
                                                     }
@@ -9397,7 +10099,75 @@ function GetWatchlists(bDoingReset) {
             }
         }
 
-        //add an Account Saved Orders watchlist for each account 
+        //add an Account Orders watchlist for each account 
+        if (gbShowSavedOrders) {
+            if (gAccounts.length > 0) {
+                for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+                    oAccount = new Account();
+                    oAccount = gAccounts[idxAccounts];
+
+                    let oWL = new WLWatchList();
+                    oWL.accountId = oAccount.accountId;
+                    oWL.accountName = oAccount.accountName;
+                    oWL.watchlistId = oAccount.accountId + "AccountOrders";
+                    oWL.sSortOrderFields = gsSortOrderFieldsO.Reported; //default to the Reported field
+                    oWL.iSortOrderAscDesc = 1; //default to descending
+                    oWL.name = gsAccountOrders;
+
+                    if (bDoingReset) {
+                        //check to see if the Account Saved Orders watchlist has been selected
+                        for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                            if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                                (oWL.name == oOldWL[idxWLCur].name)) {
+                                oWL.spanName = oOldWL[idxWLCur].spanName;
+                                if (oOldWL[idxWLCur].bSelectedO) {
+                                    oWL.bSelectedO = true;
+                                    oWL.bSelectedOTemp = true;
+
+                                    // now copy all existing items
+                                    if (oOldWL[idxWLCur].WLItems.length > 0) {
+                                        for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
+                                            let oWLItem = new WLItemOrder();
+                                            oWLItem.bSelected = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelected;
+                                            oWLItem.bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                            oWLItem.bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
+                                            oWLItem.bSelectedTemp = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedTemp;
+                                            oWLItem.activationPrice = oOldWL[idxWLCur].WLItems[idxWLItemOld].activationPrice;
+                                            oWLItem.cancelTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].cancelTime;
+                                            oWLItem.closeTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].closeTime;
+                                            oWLItem.duration = oOldWL[idxWLCur].WLItems[idxWLItemOld].duration;
+                                            oWLItem.enteredTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].enteredTime;
+                                            oWLItem.filledQuantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].filledQuantity;
+                                            oWLItem.instruction = oOldWL[idxWLCur].WLItems[idxWLItemOld].instruction;
+                                            oWLItem.orderId = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderId;
+                                            oWLItem.orderType = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderType;
+                                            oWLItem.price = oOldWL[idxWLCur].WLItems[idxWLItemOld].price;
+                                            oWLItem.quantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].quantity;
+                                            oWLItem.remainingQuantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].remainingQuantity;
+                                            oWLItem.session = oOldWL[idxWLCur].WLItems[idxWLItemOld].session;
+                                            oWLItem.status = oOldWL[idxWLCur].WLItems[idxWLItemOld].status;
+                                            oWLItem.stopPriceLinkType = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceLinkType;
+                                            oWLItem.stopPriceOffset = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceOffset;
+                                            oWLItem.symbol = oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol;
+                                            oWLItem.iSortOrderAscDesc = oOldWL[idxWLCur].WLItems[idxWLItemOld].iSortOrderAscDesc;
+                                            oWLItem.sSortOrderFields = oOldWL[idxWLCur].WLItems[idxWLItemOld].sSortOrderFields;
+
+                                            oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+
+                    gWatchlists[gWatchlists.length] = oWL;
+                }
+            }
+        }
+
+        //add an Account Saved Orders watchlist for each account
         if (gbShowSavedOrders) {
             if (gAccounts.length > 0) {
                 for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
@@ -9426,6 +10196,7 @@ function GetWatchlists(bDoingReset) {
                                             let oWLItem = new WLItemSavedOrder();
                                             oWLItem.bSelected = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelected;
                                             oWLItem.bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                            oWLItem.bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
                                             oWLItem.bSelectedTemp = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedTemp;
                                             oWLItem.cancelTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].cancelTime;
                                             oWLItem.duration = oOldWL[idxWLCur].WLItems[idxWLItemOld].duration;
@@ -12018,6 +12789,108 @@ function PageLoad() {
     drag_divPH("tblDetail");
 }
 
+function PostOCancel(sAccountId, sData) {
+    let iTryCount = 0;
+    let iReturn = 0;
+
+    iTryCount = 0;
+    while (iTryCount < 2) {
+        //-------------------------------------------------------------------------------------------------
+
+        let xhttp = null;
+        let iInnerTryCount = 0;
+
+        let sServerURL = "https://api.tdameritrade.com/v1/accounts/" + sAccountId + "/orders/" + sData;
+
+        xhttp = oHTTP();
+        while ((xhttp == null) && (iInnerTryCount < 5)) {
+            xhttp = oHTTP();
+            iInnerTryCount = iInnerTryCount + 1;
+        }
+        iInnerTryCount = 0;
+        if (CheckHTTPOpenDelete(xhttp, sServerURL, "Error during xhttp.open to " + sServerURL, false, false, "", "")) {
+            // set the request header
+            xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+
+            // send the request
+            try {
+                //debugger
+                xhttp.send();
+                if (xhttp.responseText != null) {
+                    if (xhttp.responseText != "") {
+                        let oCM = myJSON.parse(xhttp.responseText);
+                        switch (checkTDAPIErrorNoErrorDisplayed(oCM)) {
+                            case 0: //no error
+                                {
+                                    break;
+                                }
+                            case 1: //acces code expired
+                                {
+                                    xhttp = null;
+                                    if (GetAccessCodeUsingRefreshToken()) {
+                                        iTryCount++;
+                                    } else {
+                                        alert("An error occurred attempting to refresh the access code. Please reload the app.");
+                                        iReturn = 1;
+                                        iTryCount = 2;
+                                    }
+                                    break;
+                                }
+                            case 2: //other error
+                                {
+                                    iReturn = 2;
+                                    iTryCount = 2;
+                                    gsLastError = oCM.error;
+                                    break;
+                                }
+                            default:
+                                {
+                                    iReturn = 3;
+                                    iTryCount = 2;
+                                    break;
+                                }
+                        }
+                    }
+                    else {
+                        iReturn = 0; //success
+                        iTryCount = 2;
+                    }
+                }
+                else {
+                    iTryCount++;
+                    if (iTryCount < 2) {
+                        xhttp = null;
+                    }
+                    else {
+                        iReturn = 5;
+                        gsLastError = "HTTP response is null.";
+                    }
+                }
+            }
+            catch (e1) {
+                //debugger
+                iTryCount++;
+                if (iTryCount < 2) {
+                    xhttp = null;
+                }
+                else {
+                    //alert("PostTDOrder Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                    iReturn = 6;
+                    gsLastError = e1.message;
+                }
+            }
+        }
+        else {
+            iReturn = 7; //error during HTTP open request
+            gsLastError = "Error during HTTP open request";
+            iTryCount = 2;
+            break;
+        }
+    }
+
+    return iReturn;
+}
+
 function PostSODelete(sAccountId, sData) {
     let iTryCount = 0;
     let iReturn = 0;
@@ -14239,6 +15112,8 @@ function SetupWatchlists(bDoingSymbols) {
                     let bSelected = false;
                     if (bDoingSymbols) {
                         bSelected = gWatchlists[idxWL].bSelectedSymbols;
+                    } else if (gWatchlists[idxWL].name == gsAccountOrders) {
+                        bSelected = gWatchlists[idxWL].bSelectedO
                     } else if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
                         bSelected = gWatchlists[idxWL].bSelectedSO
                     } else {
@@ -14744,6 +15619,160 @@ function sortWL(a, b) {
     return iReturn;
 }
 
+function sortWLO(a, b) {
+    let iReturn = 0;
+    let aAmt = 0;
+    let bAmt = 0;
+    let aStr = "";
+    let bStr = "";
+    let bString = false;
+
+    //let oWLItemDetail = new WLItemOrder();
+    switch (a.sSortOrderFields) {
+        case gsSortOrderFieldsO.Action:
+            {
+                let sX = "                                                  ";
+                if (a.instruction.length < 20) {
+                    aStr = a.instruction + sX.substr(0, 20 - a.instruction.length);
+                }
+                if (b.instruction.length < 20) {
+                    bStr = b.instruction + sX.substr(0, 20 - b.instruction.length);
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsO.ActPrice:
+            {
+                aAmt = a.activationPrice;
+                bAmt = b.activationPrice;
+                break;
+            }
+        case gsSortOrderFieldsO.Price:
+            {
+                aAmt = a.price;
+                bAmt = b.price;
+                break;
+            }
+        case gsSortOrderFieldsO.Quantity:
+            {
+                aAmt = a.quantity;
+                bAmt = b.quantity;
+                break;
+            }
+        case gsSortOrderFieldsO.Reported:
+            {
+                let sX = "                                                  ";
+                if (a.closeTime.length < 20) {
+                    aStr = a.closeTime + sX.substr(0, 20 - a.closeTime.length);
+                } else {
+                    aStr = a.closeTime;
+                }
+                if (b.closeTime.length < 20) {
+                    bStr = b.closeTime + sX.substr(0, 20 - b.closeTime.length);
+                } else {
+                    bStr = b.closeTime;
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsO.Status:
+            {
+                let sX = "                                                  ";
+                if (a.status.length < 20) {
+                    aStr = a.status + sX.substr(0, 20 - a.status.length);
+                }
+                if (b.status.length < 20) {
+                    bStr = b.status + sX.substr(0, 20 - b.status.length);
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsO.Symbol:
+            {
+                let sX = "                                                  ";
+                if (a.symbol.length < 20) {
+                    aStr = a.symbol + sX.substr(0, 20 - a.symbol.length);
+                }
+                if (b.symbol.length < 20) {
+                    bStr = b.symbol + sX.substr(0, 20 - b.symbol.length);
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsO.TimeEntered:
+            {
+                let sX = "                                                  ";
+                if (a.enteredTime.length < 20) {
+                    aStr = a.enteredTime + sX.substr(0, 20 - a.enteredTime.length);
+                } else {
+                    aStr = a.enteredTime;
+                }
+                if (b.enteredTime.length < 20) {
+                    bStr = b.enteredTime + sX.substr(0, 20 - b.enteredTime.length);
+                } else {
+                    bStr = b.enteredTime;
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsO.TimeInForce:
+            {
+                let sX = "                                                  ";
+                if (a.cancelTime.length < 20) {
+                    aStr = a.cancelTime + sX.substr(0, 20 - a.cancelTime.length);
+                } else {
+                    aStr = a.cancelTime;
+                }
+                if (b.cancelTime.length < 20) {
+                    bStr = b.cancelTime + sX.substr(0, 20 - b.cancelTime.length);
+                } else {
+                    bStr = b.cancelTime;
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsO.Type:
+            {
+                let sX = "                                                  ";
+                if (a.orderType.length < 20) {
+                    aStr = a.orderType + sX.substr(0, 20 - a.orderType.length);
+                } else {
+                    aStr = a.orderType;
+                }
+                if (b.orderType.length < 20) {
+                    bStr = b.orderType + sX.substr(0, 20 - b.orderType.length);
+                } else {
+                    bStr = b.orderType;
+                }
+                bString = true;
+                break;
+            }
+        default:
+            {
+                break;
+            }
+    }
+    if (bString) {
+        if (aStr < bStr) {
+            iReturn = -1;
+        }
+        if (aStr > bStr) {
+            iReturn = 1;
+        }
+    } else {
+        if (aAmt < bAmt) {
+            iReturn = -1;
+        }
+        if (aAmt > bAmt) {
+            iReturn = 1;
+        }
+    }
+    if (a.iSortOrderAscDesc != 0) {
+        iReturn = iReturn * -1;
+    }
+    return iReturn;
+}
+
 function UseEnterToTogglePriceHistory(ev) {
     if (ev.srcElement.checked) {
         gbUseEnterToTogglePriceHistory = true;
@@ -14956,6 +15985,59 @@ function wlChangeOrder(idxWL, sSortOrder) {
     }
 }
 
+function wlChangeOrderO(idxWL, sSortOrder) {
+    if (!gbDoingGetTDData) {
+        if (giGetTDDataTimeoutId != 0) {
+            window.clearTimeout(giGetTDDataTimeoutId);
+            giGetTDDataTimeoutId = 0;
+
+            if (gWatchlists[idxWL].sSortOrderFields == sSortOrder) {
+                if (gWatchlists[idxWL].iSortOrderAscDesc == 0) {
+                    gWatchlists[idxWL].iSortOrderAscDesc = 1;
+                } else {
+                    gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                }
+            } else {
+                switch (sSortOrder) {
+                    case gsSortOrderFieldsO.ActPrice:
+                    case gsSortOrderFieldsO.Price:
+                    case gsSortOrderFieldsO.Quantity:
+                    case gsSortOrderFieldsO.Reported:
+                    case gsSortOrderFieldsO.TimeInForce:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 1;
+                            break;
+                        }
+                    case gsSortOrderFieldsO.Action:
+                    case gsSortOrderFieldsO.Status:
+                    case gsSortOrderFieldsO.Symbol:
+                    case gsSortOrderFieldsO.Type:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                            break;
+                        }
+                    default:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                            break;
+                        }
+                }
+                gWatchlists[idxWL].sSortOrderFields = sSortOrder;
+            }
+            if (gWatchlists[idxWL].WLItems.length > 0) {
+                for (let idx = 0; idx < gWatchlists[idxWL].WLItems.length; idx++) {
+                    gWatchlists[idxWL].WLItems[idx].sSortOrderFields = gWatchlists[idxWL].sSortOrderFields;
+                    gWatchlists[idxWL].WLItems[idx].iSortOrderAscDesc = gWatchlists[idxWL].iSortOrderAscDesc;
+                }
+            }
+
+            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
+        }
+    } else {
+        window.setTimeout("wlChangeOrder(" + idxWL.toString() + ",'" + sSortOrder + "')", 100);
+    }
+}
+
 function wlDoCancelPopup() {
     document.getElementById("optWL").value = "";
     wlWatchlistSelected();
@@ -14967,6 +16049,8 @@ function wlDoRemoveDiv(idxWL) {
         gWatchlists[idxWL].spanName = "";
         gWatchlists[idxWL].bSelected = false;
         gWatchlists[idxWL].bSelectedTemp = false;
+        gWatchlists[idxWL].bSelectedO = false;
+        gWatchlists[idxWL].bSelectedOTemp = false;
         gWatchlists[idxWL].bSelectedSO = false;
         gWatchlists[idxWL].bSelectedSOTemp = false;
         gWatchlists[idxWL].bSelectedWLSummary = false;
@@ -14974,6 +16058,7 @@ function wlDoRemoveDiv(idxWL) {
 
         for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
             gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = false;
+            gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled = true;
         }
 
     }
@@ -15002,6 +16087,8 @@ function wlMarkSelected(idxWL) {
     } else {
         if (gWatchlists[idxWL].name == gsAccountWLSummary) {
             gWatchlists[idxWL].bSelectedWLSummaryTemp = !gWatchlists[idxWL].bSelectedWLSummaryTemp;
+        } else if (gWatchlists[idxWL].name == gsAccountOrders) {
+            gWatchlists[idxWL].bSelectedOTemp = !gWatchlists[idxWL].bSelectedOTemp;
         } else if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
             gWatchlists[idxWL].bSelectedSOTemp = !gWatchlists[idxWL].bSelectedSOTemp;
         } else {
@@ -15011,7 +16098,7 @@ function wlMarkSelected(idxWL) {
 }
 
 function wlMarkSelectedItem(idxWL, idxWLItem) {
-    if (idxWLItem == -1) {
+    if (idxWLItem == -1) { //top of column checked to select or deselect everything
         if (!gbDoingGetTDData) {
             if (giGetTDDataTimeoutId != 0) {
                 window.clearTimeout(giGetTDDataTimeoutId);
@@ -15024,9 +16111,11 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
 
                 let iNumSelected = 0;
                 for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                    gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = bChecked;
-                    if (bChecked) {
-                        iNumSelected++;
+                    if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
+                        gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = bChecked;
+                        if (bChecked) {
+                            iNumSelected++;
+                        }
                     }
                 }
                 if (iNumSelected == 0) {
@@ -15062,13 +16151,15 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     let bAllChecked = true;
                     let iNumSelected = 0;
                     for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                        if (!gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
-                            bAllChecked = false;
-                        } else {
-                            iNumSelected++;
+                        if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
+                            if (!gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
+                                bAllChecked = false;
+                            } else {
+                                iNumSelected++;
+                            }
                         }
                     }
-                    if (bAllChecked) {
+                    if ((bAllChecked) && (iNumSelected != 0)) {
                         document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = true;
                     }
                     if (iNumSelected == 0) {
@@ -15090,8 +16181,10 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = false;
                     let iNumSelected = 0;
                     for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                        if (gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
-                            iNumSelected++;
+                        if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
+                            if (gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
+                                iNumSelected++;
+                            }
                         }
                     }
                     if (iNumSelected == 0) {
@@ -15135,6 +16228,21 @@ function wlOKClicked() {
                         gWatchlists[idx].spanName = "";
                     }
                 }
+            } else if (gWatchlists[idx].name == gsAccountOrders) {
+                gWatchlists[idx].bSelectedO = gWatchlists[idx].bSelectedOTemp;
+                gWatchlists[idx].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
+                if (gWatchlists[idx].bSelectedO) {
+                    if (gWatchlists[idx].spanName == "") {
+                        gWatchlists[idx].spanName = gWatchlists[idx].watchlistId + gWatchlists[idx].accountId;
+                        wlAddDiv(gWatchlists[idx].spanName, "");
+                    }
+                } else {
+                    if (gWatchlists[idx].spanName != "") {
+                        wlRemoveDiv(gWatchlists[idx].spanName);
+                        gWatchlists[idx].spanName = "";
+                    }
+                }
+
             } else if (gWatchlists[idx].name == gsAccountSavedOrders) {
                 gWatchlists[idx].bSelectedSO = gWatchlists[idx].bSelectedSOTemp;
                 gWatchlists[idx].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
@@ -15219,7 +16327,7 @@ function wlResetDragAllWatchlists() {
     if (gWatchlists.length > 0) {
         for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
             if (gWatchlists[idxWL].spanName != "") {
-                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary)) {
+                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary)) {
                     if (!isUndefined(document.getElementById(gWatchlists[idxWL].spanName))) {
                         let x = document.getElementById(gWatchlists[idxWL].spanName);
                         let sSpanId = gWatchlists[idxWL].spanName;
@@ -15249,7 +16357,7 @@ function wlShowAllWatchlists() {
     if (gWatchlists.length > 0) {
         for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
             if (gWatchlists[idxWL].spanName != "") {
-                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedSO)) {
+                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO)) {
                     document.getElementById(gWatchlists[idxWL].spanName).style.display = "block";
                 }
             }
@@ -15277,6 +16385,10 @@ function wlWatchlistSelected() {
                 if (gWatchlists[idxWL].name == gsAccountWLSummary) {
                     gWatchlists[idxWL].bSelectedWLSummary = true;
                     gWatchlists[idxWL].bSelectedWLSummaryTemp = true;
+                    gWatchlists[idxWL].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
+                } else if (gWatchlists[idxWL].name == gsAccountOrders) {
+                    gWatchlists[idxWL].bSelectedO = true;
+                    gWatchlists[idxWL].bSelectedTempO = true;
                     gWatchlists[idxWL].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
                 } else if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
                     gWatchlists[idxWL].bSelectedSO = true;

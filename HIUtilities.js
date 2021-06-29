@@ -71,7 +71,11 @@ var numArgs = arguments.length;
 	return (sReturn)
 }
 
-function FormatDecimalNumber(dNum, iDecimalDigitsLeft, iDecimalDigitsRight, sLeftFill)
+function FormatDecimalNumber(dNum, iDecimalDigitsLeft, iDecimalDigitsRight, sLeftFill) {
+	return FormatDecimalNumberRightTrim(dNum, iDecimalDigitsLeft, iDecimalDigitsRight, sLeftFill, false);
+}
+
+function FormatDecimalNumberRightTrim(dNum, iDecimalDigitsLeft, iDecimalDigitsRight, sLeftFill, bRightTrim)
 {
 	let dTmp = 0;
 	let vTmp;
@@ -120,12 +124,24 @@ function FormatDecimalNumber(dNum, iDecimalDigitsLeft, iDecimalDigitsRight, sLef
 			}
 		}
 		sRight = vTmp[1];
-		if (vTmp[1].length < iDecimalDigitsRight)
-		{
-			for (idx = 0; idx < iDecimalDigitsRight - vTmp[1].length; idx++)
-			{
+		if (vTmp[1].length < iDecimalDigitsRight) {
+			for (idx = 0; idx < iDecimalDigitsRight - vTmp[1].length; idx++) {
 				sRight = sRight + "0";
 			}
+		}
+		if (bRightTrim) 
+		{
+			for (idx = sRight.length - 1; idx > -1; idx--)
+			{
+				if (sRight.substr(idx, 1) != 0) {
+					break;
+                }
+			}
+			if (idx > -1) {
+				sRight = sRight.substr(0, idx + 1);
+			} else {
+				sRight = "0";
+            }
 		}
 	}
 	if (sRight == "") {
