@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.5 2021-06-29 00:30"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.5 2021-06-29 09:21"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -8057,7 +8057,7 @@ function GetWatchlistO() {
     let sPriceSpacesP = "";
     let sPriceSpacesT = "";
     let sActivationPriceSpacesP = "";
-    let sActivationPriceSpacesT = "";
+    let sActivationPriceSpacesT = "&nbsp;&nbsp;&nbsp;";
     let sTimeEnteredSpacesP = "";
     let sTimeEnteredSpacesT = "";
     let sTimeInForceSpacesP = "";
@@ -8456,7 +8456,7 @@ function GetWatchlistO() {
                             if (activationPrice == 0.0) {
                                 sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                             } else {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sActivationPriceSpacesP + sTmp + "%" + sActivationPriceSpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sActivationPriceSpacesP + sTmp + sActivationPriceSpacesT + "</td>";
                             }
 
                             //Time-in-Force - cancelTime
