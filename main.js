@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.5 2021-06-29 09:21"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.5 2021-06-29 17:32"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -461,10 +461,10 @@ var lengthsWLSOWLCol1Width = lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLCol
 const lengthsWLO = {
     WLWidth: "900px",
     WLColOpenLabelWidth: 80,
-    WLColOpenEntryWidth: 80,
+    WLColOpenEntryWidth: 110,
     WLColAcquiredDateEntryWidth: 80,
     WLColTitleWidth: 460,
-    WLColCloseLabelWidth: 110,
+    WLColCloseLabelWidth: 80,
     WLColCloseEntryWidth: 60,
     WLDragXoffsetLeft: 220,
     WLDragXoffsetRight: 700,
@@ -8092,7 +8092,32 @@ function GetWatchlistO() {
                     }
                 }
 
-                let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/accounts/" + gWatchlists[idxWL].accountId + "/orders", 7);
+                sThisDiv = "";
+                sLastWLName = gWatchlists[idxWL].name;
+                sLastWLAccountName = gWatchlists[idxWL].accountName;
+                sLastWLAccountId = gWatchlists[idxWL].accountId;
+                sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+
+                //?fromEnteredTime=2021-06-28&toEnteredTime=2021-06-29
+                let sFromTo = "";
+                if (gWatchlists[idxWL].spanName != "") {
+                    if (document.getElementById(gWatchlists[idxWL].spanName).innerHTML != "") {
+                        if ((document.getElementById("txtOStart" + sThisId) != null) && (!isUndefined(document.getElementById("txtOStart" + sThisId)))) {
+                            if (document.getElementById("chkUseDates" + sThisId).checked) {
+                                let sStart = TrimLikeVB(document.getElementById("txtOStart" + sThisId).value);
+                                if (sStart != "") {
+                                    if (ValidateTDDate(sStart, false)) {
+                                        let sEnd = TrimLikeVB(document.getElementById("txtOEnd" + sThisId).value);
+                                        if (ValidateTDDate(sEnd, false)) {
+                                            sFromTo = "?fromEnteredTime=" + sStart + "&toEnteredTime=" + sEnd;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/accounts/" + gWatchlists[idxWL].accountId + "/orders" + sFromTo, 7);
                 if (iReturn == 0) {
                     gWatchlists[idxWL].WLItems.length = 0;
                     if (!isUndefined(oCMOrders.length)) {
@@ -8221,11 +8246,11 @@ function GetWatchlistO() {
                     }
                     //now display the watchlist
 
-                    sThisDiv = "";
-                    sLastWLName = gWatchlists[idxWL].name;
-                    sLastWLAccountName = gWatchlists[idxWL].accountName;
-                    sLastWLAccountId = gWatchlists[idxWL].accountId;
-                    sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+                    //sThisDiv = "";
+                    //sLastWLName = gWatchlists[idxWL].name;
+                    //sLastWLAccountName = gWatchlists[idxWL].accountName;
+                    //sLastWLAccountId = gWatchlists[idxWL].accountId;
+                    //sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
 
                     if (gbUsingCell) {
                         sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
@@ -8233,7 +8258,9 @@ function GetWatchlistO() {
                         sThisDiv = sThisDiv + "<tr>";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>";
+                            "&nbsp;From:&nbsp;<input id=\"txtOStart" + sThisId + "\" name=\"txtOStart" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
+                            "&nbsp;To:&nbsp;<input id=\"txtOEnd" + sThisId + "\" name=\"txtOEnd" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
+                            "&nbsp;<input id=\"chkUseDates" + sThisId + "\" name=\"chkUseDates" + sThisId + "\"  style=\"text-align:left;vertical-align:middle; \" type=\"checkbox\" value=\"\" ></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
@@ -8257,7 +8284,10 @@ function GetWatchlistO() {
                         sThisDiv = sThisDiv + "<tr>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColOpenLabelWidth + lengthsWLO.WLColOpenEntryWidth + lengthsWLO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>";
+                            "&nbsp;From:&nbsp;<input id=\"txtOStart" + sThisId + "\" name=\"txtOStart" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
+                            "&nbsp;To:&nbsp;<input id=\"txtOEnd" + sThisId + "\" name=\"txtOEnd" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
+                            "&nbsp;<input id=\"chkUseDates" + sThisId + "\" name=\"chkUseDates" + sThisId + "\"  style=\"text-align:left;vertical-align:middle; \" type=\"checkbox\" value=\"\" ></th>";
+
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
@@ -8268,7 +8298,7 @@ function GetWatchlistO() {
                         sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColCloseLabelWidth + lengthsWLO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders(" + idxWL.toString() + ")\" value=\"Cancel\" ></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -10110,7 +10140,7 @@ function GetWatchlists(bDoingReset) {
                     oWL.accountId = oAccount.accountId;
                     oWL.accountName = oAccount.accountName;
                     oWL.watchlistId = oAccount.accountId + "AccountOrders";
-                    oWL.sSortOrderFields = gsSortOrderFieldsO.Reported; //default to the Reported field
+                    oWL.sSortOrderFields = gsSortOrderFieldsO.TimeEntered; //default to the Opened field
                     oWL.iSortOrderAscDesc = 1; //default to descending
                     oWL.name = gsAccountOrders;
 
@@ -12487,6 +12517,7 @@ function PageLoad() {
         gsRefreshToken = "";
         gsTDAPIKey = "";
     }
+//    gbUsingCell = true;
     document.getElementById("TheBody").style.backgroundColor = gsBodyBackgroundColor;
     let sTmp = ""
     if (gbUsingCell) {
