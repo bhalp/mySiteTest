@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.5 2021-06-29 17:32"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.5 2021-07-05 00:15"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -1974,10 +1974,10 @@ function chkIndexChanged(ev) {
 
 function ClearAllWLInputFields(idxWL) {
     let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-    document.getElementById("txtbuypercent" + sThisId).value = "";
-    document.getElementById("txtbuydollars" + sThisId).value = "";
+    document.getElementById("txtWLpercent" + sThisId).value = "";
+    document.getElementById("txtWLdollars" + sThisId).value = "";
     //        document.getElementById("optbuyexisting" + sThisId).checked = true;
-    document.getElementById("txtsellpercent" + sThisId).value = "";
+    //document.getElementById("txtsellpercent" + sThisId).value = "";
 
     document.getElementById("chkLimit" + sThisId).checked = false;
     document.getElementById("chkSave" + sThisId).checked = false;
@@ -1985,7 +1985,7 @@ function ClearAllWLInputFields(idxWL) {
 
     //document.getElementById("chksellLimit" + sThisId).checked = false;
     //document.getElementById("chkbuyLimit" + sThisId).checked = false;
-    document.getElementById("txttrailingstoppercent" + sThisId).value = "";
+    //document.getElementById("txttrailingstoppercent" + sThisId).value = "";
     if (!(document.getElementById("txtwlopen" + sThisId) == null)) {
         document.getElementById("txtwlopen" + sThisId).value = "";
         document.getElementById("txtwlclose" + sThisId).value = "";
@@ -2511,6 +2511,101 @@ function DoURLEncode(sData) {
 }
 
 function DoWLBuy(idxWL) {
+    DoWLBuySell(idxWL, 1);
+//    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+//        let sSelectNum = "";
+//        let iSelectNum = 0;
+//        let dSelectNum = 0.0;
+//        let bDoingLimit = false;
+
+//        let sAccountId = gWatchlists[idxWL].accountId;
+//        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
+//        let sPercent = TrimLikeVB(document.getElementById("txtWLpercent" + sThisId).value);
+//        let sDollars = TrimLikeVB(document.getElementById("txtWLdollars" + sThisId).value);
+
+//        //let bExisting = document.getElementById("optbuyexisting" + sThisId).checked;
+//        let bExisting = false;
+
+//        if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
+//            alert("Please check Save or Place or check both.");
+//            return;
+//        }
+
+//        if ((sPercent == "") && (sDollars == "")) {
+//            alert("Missing a percentage value OR a dollar amount.");
+//            return;
+//        }
+//        if ((sPercent != "") && (sDollars != "")) {
+//            alert("Please enter a percentage value OR a dollar amount.");
+//            return;
+//        }
+//        if (sPercent != "") {
+//            //using percent
+//            try {
+//                iSelectNum = parseInt(sPercent);
+//                if (iSelectNum < 1) {
+//                    alert("Invalid percentage. Must be greater than or equal to 1.");
+//                    return;
+//                } else {
+//                    sSelectNum = iSelectNum.toString();
+//                }
+//            } catch (e) {
+//                alert("Please enter a percentage between greater than or equal to 1.");
+//                return;
+//            }
+//        } else {
+//            //using dollar amount
+//            dSelectNum = parseFloat(sDollars);
+//            if (isNaN(dSelectNum)) {
+//                alert("Invalid dollar amount.");
+//                return;
+//            }
+//            if (dSelectNum < 0) {
+//                alert("Invalid dollar amount. Must be greater than 0.");
+//                return;
+//            } else {
+//                sSelectNum = FormatDecimalNumber(dSelectNum, 5, 2, "");
+//                dSelectNum = parseFloat(sSelectNum);
+//            }
+//        }
+
+//        let sConfirmMsg = "";
+
+//        if (document.getElementById("chkLimit" + sThisId).checked) {
+//            bDoingLimit = true;
+//        }
+
+//        //if (!gbRegularMarketHours) {
+//        //    if (document.getElementById("chkLimit" + sThisId).checked) {
+//        //        bDoingLimit = true;
+//        //    }
+//        //}
+//        if (bDoingLimit) {
+//            if (iSelectNum != 0) {
+//                sConfirmMsg = "LIMIT orders to BUY " + sSelectNum + "% of selected symbols. ";
+//            } else {
+//                sConfirmMsg = "LIMIT orders to BUY $" + sSelectNum + " worth of selected symbols. ";
+//            }
+//            if (AreYouSure(sConfirmMsg)) {
+//                window.setTimeout("GenerateWLBuyOrdersLimit('" + sAccountId + "', " + iSelectNum + ", " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+//            }
+//        } else {
+//            if (iSelectNum != 0) {
+//                sConfirmMsg = "BUY " + sSelectNum + "% of selected symbols. ";
+//            } else {
+//                sConfirmMsg = "BUY $" + sSelectNum + " worth of selected symbols. ";
+//            }
+//            if (AreYouSure(sConfirmMsg)) {
+//                window.setTimeout("GenerateWLBuyOrders('" + sAccountId + "', " + iSelectNum + ", " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+//            }
+//        }
+//        return;
+//    }
+}
+
+function DoWLBuySell(idxWL, iBuySell) {
+    //iBuySell = 1 for Buy, 2 for Sell
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
         let sSelectNum = "";
         let iSelectNum = 0;
@@ -2520,11 +2615,28 @@ function DoWLBuy(idxWL) {
         let sAccountId = gWatchlists[idxWL].accountId;
         let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
-        let sPercent = TrimLikeVB(document.getElementById("txtbuypercent" + sThisId).value);
-        let sDollars = TrimLikeVB(document.getElementById("txtbuydollars" + sThisId).value);
+        let sPercent = TrimLikeVB(document.getElementById("txtWLpercent" + sThisId).value);
+        let sDollars = TrimLikeVB(document.getElementById("txtWLdollars" + sThisId).value);
 
         //let bExisting = document.getElementById("optbuyexisting" + sThisId).checked;
         let bExisting = false;
+
+        let sBuySell = "";
+
+        switch (iBuySell) {
+            case 1: {
+                sBuySell = "Buy";
+                break;
+            }
+            case 2: {
+                sBuySell = "Sell";
+                break;
+            }
+            default: {
+                sBuySell = "Buy";
+                break;
+            }
+        }
 
         if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
             alert("Please check Save or Place or check both.");
@@ -2532,36 +2644,45 @@ function DoWLBuy(idxWL) {
         }
 
         if ((sPercent == "") && (sDollars == "")) {
-            alert("Missing a Buy percentage value OR a Buy dollar amount.");
+            alert("Missing a percentage value OR a dollar amount.");
             return;
         }
         if ((sPercent != "") && (sDollars != "")) {
-            alert("Please enter a Buy percentage value OR a Buy dollar amount.");
+            alert("Please enter a percentage value OR a dollar amount.");
             return;
         }
         if (sPercent != "") {
             //using percent
+            sSelectNum = sPercent;
+            if (sSelectNum == "") {
+                alert("Please enter a percentage from 0.01 to 100.");
+                return;
+            }
             try {
-                iSelectNum = parseInt(sPercent);
-                if (iSelectNum < 1) {
-                    alert("Invalid Buy percentage. Must be greater than or equal to 1.");
+                dSelectNum = parseFloat(sSelectNum);
+                if ((dSelectNum < 0.01) || (dSelectNum > 100)) {
+                    alert("Invalid percentage. Must be from 0.01 to 100.");
                     return;
-                } else {
-                    sSelectNum = iSelectNum.toString();
                 }
-            } catch (e) {
-                alert("Please enter a Buy percentage between greater than or equal to 1.");
+                else {
+                    sSelectNum = FormatDecimalNumber(dSelectNum, 5, 2, "");
+                    dSelectNum = parseFloat(sSelectNum);
+                }
+            }
+            catch (e) {
+                alert("Invalid percentage. Must be from 0.01 to 100.");
+                sSelectNum = "";
                 return;
             }
         } else {
             //using dollar amount
             dSelectNum = parseFloat(sDollars);
             if (isNaN(dSelectNum)) {
-                alert("Invalid Buy dollar amount.");
+                alert("Invalid dollar amount.");
                 return;
             }
             if (dSelectNum < 0) {
-                alert("Invalid Buy dollar amount. Must be greater than 0.");
+                alert("Invalid dollar amount. Must be greater than 0.");
                 return;
             } else {
                 sSelectNum = FormatDecimalNumber(dSelectNum, 5, 2, "");
@@ -2575,33 +2696,55 @@ function DoWLBuy(idxWL) {
             bDoingLimit = true;
         }
 
-        //if (!gbRegularMarketHours) {
-        //    if (document.getElementById("chkLimit" + sThisId).checked) {
-        //        bDoingLimit = true;
-        //    }
-        //}
         if (bDoingLimit) {
-            if (iSelectNum != 0) {
-                sConfirmMsg = "LIMIT orders to BUY " + sSelectNum + "% of selected symbols. ";
+            if (sPercent != "") {
+                sConfirmMsg = "LIMIT orders to " + sBuySell + " " + sSelectNum + "% of selected symbols. ";
             } else {
-                sConfirmMsg = "LIMIT orders to BUY $" + sSelectNum + " worth of selected symbols. ";
+                sConfirmMsg = "LIMIT orders to " + sBuySell + " $" + sSelectNum + " worth of selected symbols. ";
             }
             if (AreYouSure(sConfirmMsg)) {
-                window.setTimeout("GenerateWLBuyOrdersLimit('" + sAccountId + "', " + iSelectNum + ", " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                switch (iBuySell) {
+                    case 1: {
+                        window.setTimeout("GenerateWLBuySellOrdersLimit('" + sAccountId + "', 'BUY', '" + sPercent + "', " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                        break;
+                    }
+                    case 2: {
+                        window.setTimeout("GenerateWLBuySellOrdersLimit('" + sAccountId + "', 'SELL', '" + sPercent + "', " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                        break;
+                    }
+                    default: {
+                        window.setTimeout("GenerateWLBuySellOrdersLimit('" + sAccountId + "', 'BUY', '" + sPercent + "', " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                        break;
+                    }
+                }
             }
         } else {
-            if (iSelectNum != 0) {
-                sConfirmMsg = "BUY " + sSelectNum + "% of selected symbols. ";
+            if (sPercent != "") {
+                sConfirmMsg = sBuySell + " " + sSelectNum + "% of selected symbols. ";
             } else {
-                sConfirmMsg = "BUY $" + sSelectNum + " worth of selected symbols. ";
+                sConfirmMsg = sBuySell + " $" + sSelectNum + " worth of selected symbols. ";
             }
             if (AreYouSure(sConfirmMsg)) {
-                window.setTimeout("GenerateWLBuyOrders('" + sAccountId + "', " + iSelectNum + ", " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                switch (iBuySell) {
+                    case 1: {
+                        window.setTimeout("GenerateWLBuySellOrders('" + sAccountId + "', 'BUY', '" + sPercent + "', " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                        break;
+                    }
+                    case 2: {
+                        window.setTimeout("GenerateWLBuySellOrders('" + sAccountId + "', 'SELL', '" + sPercent + "', " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                        break;
+                    }
+                    default: {
+                        window.setTimeout("GenerateWLBuySellOrders('" + sAccountId + "', 'BUY', '" + sPercent + "', " + dSelectNum + ", " + idxWL + ", " + bExisting + ")", 10);
+                        break;
+                    }
+                }
             }
         }
         return;
     }
 }
+
 
 function DoWLCloseSymbol(idxWL) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
@@ -2847,66 +2990,67 @@ function DoWLOpenSymbols(idxWL) {
 }
 
 function DoWLSell(idxWL) {
-    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
-        let sSelectNum = "";
-        let iSelectNum = 0;
-        let bDoingLimit = false;
-        //debugger
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    DoWLBuySell(idxWL, 2);
+//    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+//        let sSelectNum = "";
+//        let iSelectNum = 0;
+//        let bDoingLimit = false;
+//        //debugger
+//        let sAccountId = gWatchlists[idxWL].accountId;
+//        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
-        if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
-            alert("Please check Save or Place or check both.");
-            return;
-        }
+//        if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
+//            alert("Please check Save or Place or check both.");
+//            return;
+//        }
 
-        let sSymbolsThisWL = "";
-        let sSep = "";
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                sSep = ",";
-            }
-        }
-        sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
+//        let sSymbolsThisWL = "";
+//        let sSep = "";
+//        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+//            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+//                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+//                sSep = ",";
+//            }
+//        }
+//        sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
 
-        sSelectNum = document.getElementById("txtsellpercent" + sThisId).value;
-        sTmp = TrimLikeVB(sSelectNum);
-        if (sTmp == "") {
-            alert("Please enter a Sell percentage from 1 to 100.");
-            return;
-        }
-        try {
-            iSelectNum = parseInt(sSelectNum);
-            if ((iSelectNum < 1) || (iSelectNum > 100)) {
-                alert("Invalid Sell percentage. Must be from 1 to 100.");
-                return;
-            }
-            else {
-                if (document.getElementById("chkLimit" + sThisId).checked) {
-                    bDoingLimit = true;
-                }
-                //if (!gbRegularMarketHours) {
-                //    if (document.getElementById("chkLimit" + sThisId).checked) {
-                //        bDoingLimit = true;
-                //    }
-                //}
-                if (bDoingLimit) {
-                    if (AreYouSure(iSelectNum.toString() + "% LIMIT SELL orders for the selected symbols might be 1% lower than the current market price. ")) {
-                        window.setTimeout("GenerateWLSellOrdersLimit('" + sAccountId + "', " + iSelectNum + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
-                    }
-                } else {
-                    if (AreYouSure("SELL " + iSelectNum.toString() + "% of selected symbols. ")) {
-                        window.setTimeout("GenerateWLSellOrders('" + sAccountId + "', " + iSelectNum + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
-                    }
-                }
-            }
-        }
-        catch (e) {
-            alert("Invalid Sell percentage. Must be from 1 to 100.");
-            sSelectNum = "";
-        }
-    }
+//        sSelectNum = document.getElementById("txtWLpercent" + sThisId).value;
+//        sTmp = TrimLikeVB(sSelectNum);
+//        if (sTmp == "") {
+//            alert("Please enter a Sell percentage from 1 to 100.");
+//            return;
+//        }
+//        try {
+//            iSelectNum = parseInt(sSelectNum);
+//            if ((iSelectNum < 1) || (iSelectNum > 100)) {
+//                alert("Invalid Sell percentage. Must be from 1 to 100.");
+//                return;
+//            }
+//            else {
+//                if (document.getElementById("chkLimit" + sThisId).checked) {
+//                    bDoingLimit = true;
+//                }
+//                //if (!gbRegularMarketHours) {
+//                //    if (document.getElementById("chkLimit" + sThisId).checked) {
+//                //        bDoingLimit = true;
+//                //    }
+//                //}
+//                if (bDoingLimit) {
+//                    if (AreYouSure(iSelectNum.toString() + "% LIMIT SELL orders for the selected symbols might be 1% lower than the current market price. ")) {
+//                        window.setTimeout("GenerateWLSellOrdersLimit('" + sAccountId + "', " + iSelectNum + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
+//                    }
+//                } else {
+//                    if (AreYouSure("SELL " + iSelectNum.toString() + "% of selected symbols. ")) {
+//                        window.setTimeout("GenerateWLSellOrders('" + sAccountId + "', " + iSelectNum + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
+//                    }
+//                }
+//            }
+//        }
+//        catch (e) {
+//            alert("Invalid Sell percentage. Must be from 1 to 100.");
+//            sSelectNum = "";
+//        }
+//    }
 }
 
 function DoWLTrailingStop(idxWL) {
@@ -2932,16 +3076,16 @@ function DoWLTrailingStop(idxWL) {
         }
         sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
 
-        sSelectNum = document.getElementById("txttrailingstoppercent" + sThisId).value;
-        sTmp = TrimLikeVB(sSelectNum);
+        sSelectNum = document.getElementById("txtWLpercent" + sThisId).value;
+        let sTmp = TrimLikeVB(sSelectNum);
         if (sTmp == "") {
-            alert("Please enter a Trailing Stop percentage from 0.01 to 100.");
+            alert("Please enter a percentage from 0.01 to 100.");
             return;
         }
         try {
             dSelectNum = parseFloat(sSelectNum);
             if ((dSelectNum < 0.01) || (dSelectNum > 100)) {
-                alert("Invalid Trailing Stop percentage. Must be from 0.01 to 100.");
+                alert("Invalid percentage. Must be from 0.01 to 100.");
                 return;
             }
             else {
@@ -2951,7 +3095,7 @@ function DoWLTrailingStop(idxWL) {
             }
         }
         catch (e) {
-            alert("Invalid Trailing Stop percentage. Must be from 0.01 to 100.");
+            alert("Invalid percentage. Must be from 0.01 to 100.");
             sSelectNum = "";
         }
     }
@@ -3328,9 +3472,383 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, sStartDate, idxWL) {
     }
 }
 
-function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExisting) {
-    //if iSelectNum > 0 then buying a percentage of shares based on what is currently owned
-    //if dSelectnum > 0 then buying dSelectNum's worth of shares for each stock in the watchlist
+//function GenerateWLBuyOrders(sAccountId, sPercent, dSelectNum, idxWL, bExisting) {
+//    //if sPercent != "" then buying dSelectnum percentage of shares based on what is currently owned for the selected symbols
+//    //if sPercent == "" then buying dSelectnum worth of shares for the selected symbols
+//    //debugger
+//    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+//    let sSymbolsThisWL = "";
+//    let sSep = "";
+//    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+//        if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+//            sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+//            sSep = ",";
+//        }
+//    }
+//    sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
+//    gTDOrders.length = 0;
+//    if (sPercent != "") {
+//        //buying a percentage of shares based on what is currently owned
+//        if (gAccounts.length > 0) {
+//            for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+//                if (gAccounts[idxAccounts].accountId == sAccountId) {
+//                    let oAccount = new Account();
+//                    oAccount = gAccounts[idxAccounts];
+//                    let bAddOrdersForThisAccount = false;
+//                    if (oAccount.positions.length > 0) {
+//                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                            let oPosition = new Position();
+//                            oPosition = oAccount.positions[idxPosition];
+//                            if (oPosition.assetType == "EQUITY") {
+//                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                    bAddOrdersForThisAccount = true;
+//                                    break;
+//                                }
+//                            }
+//                        }
+//                        if (bAddOrdersForThisAccount) {
+//                            gTDOrders.length = 0;
+//                            gOrdersToPlace.length = 0;
+//                            for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                                let oPosition = new Position();
+//                                oPosition = oAccount.positions[idxPosition];
+//                                if (oPosition.assetType == "EQUITY") {
+//                                    if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                        let oTDOrder = new TDOrder();
+//                                        oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+//                                        oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+//                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
+
+//                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
+//                                        if (iNumToBuy >= 1.0) {
+//                                            iNumToBuy = Math.floor(iNumToBuy);
+//                                        } else if (iNumToBuy > 0.0) {
+//                                            iNumToBuy = 1;
+//                                        } else {
+//                                            iNumToBuy = 0;
+//                                        }
+//                                        if (iNumToBuy > 0) {
+//                                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+//                                            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
+//                                            oTDOrder.symbol = oPosition.symbol;
+//                                            gTDOrders[gTDOrders.length] = oTDOrder;
+
+//                                            if (document.getElementById("chkPlace" + sThisId).checked) {
+//                                                let oTDSavedOrder = new TDSavedOrder();
+//                                                oTDSavedOrder.orderType = "MARKET";
+//                                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+//                                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+//                                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
+//                                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+//                                                oTDSavedOrder.instruction = "BUY";
+//                                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+//                                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+//                                                oTDSavedOrder.symbol = oTDOrder.symbol;
+
+//                                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                            //create orders here
+//                            if (gTDOrders.length > 0) {
+//                                gTDOrders.sort(sortBySymbol);
+//                                gbDoingCreateOrders = true;
+//                                SetWait();
+//                                window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+//                            } else {
+//                                alert("No orders were generated for this watchlist.");
+//                            }
+//                        } else {
+//                            alert("No positions selected.");
+//                        }
+//                    } else {
+//                        alert("There are no positions in this watchlist.");
+//                    }
+//                    break;
+//                }
+//            }
+//        }
+//    } else {
+//        //then buying dSelectNum's worth of shares for each stock in the watchlist
+//        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+//            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+//                let oWatchList = new WLWatchList();
+//                let oWatchListItem = new WLItem();
+//                oWatchList = gWatchlists[idxWL];
+//                oWatchListItem = oWatchList.WLItems[idxWLItem];
+//                let sSymbol = oWatchListItem.symbol;
+//                for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+//                    let oWLDisplayed = new WLDisplayed();
+//                    oWLDisplayed = gWLDisplayed[idxDisplayed];
+//                    let oWLItemDetail = new WLItemDetail();
+//                    if (sSymbol == oWLDisplayed.symbol) {
+//                        for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+//                            oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+
+//                            let oTDOrder = new TDOrder();
+//                            oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+//                            oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+//                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
+
+//                            let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+//                            if (iNumToBuy > 0) {
+//                                oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+//                                oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+//                                oTDOrder.symbol = sSymbol;
+//                                gTDOrders[gTDOrders.length] = oTDOrder;
+
+//                                if (document.getElementById("chkPlace" + sThisId).checked) {
+//                                    let oTDSavedOrder = new TDSavedOrder();
+//                                    oTDSavedOrder.orderType = "MARKET";
+//                                    oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+//                                    oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+//                                    oTDSavedOrder.a04duration = oTDOrder.a04duration;
+//                                    oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+//                                    oTDSavedOrder.instruction = "BUY";
+//                                    oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+//                                    oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+//                                    oTDSavedOrder.symbol = oTDOrder.symbol;
+
+//                                    gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+//                                }
+
+//                            }
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        if (gTDOrders.length > 0) {
+//            gTDOrders.sort(sortBySymbol);
+//            gbDoingCreateOrders = true;
+//            SetWait();
+//            SetWaitWL(idxWL);
+//            window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+//        } else {
+//            alert("No orders were generated for this watchlist.");
+//        }
+//    }
+
+//}
+
+//function GenerateWLBuyOrdersLimit(sAccountId, sPercent, dSelectNum, idxWL, bExisting) {
+//    //if sPercent != "" then buying dSelectnum percentage of shares based on what is currently owned for the selected symbols
+//    //if sPercent == "" then buying dSelectnum worth of shares for the selected symbols
+//    //debugger
+//    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+//    let dtCancelTime = new Date(); //get todays date
+//    dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
+//    let sCancelTime = FormatDateForTD(dtCancelTime);
+
+//    let sSymbolsThisWL = "";
+//    let sSep = "";
+//    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+//        if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+//            sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+//            sSep = ",";
+//        }
+//    }
+//    sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
+//    gTDOrders.length = 0;
+//    gOrdersToPlace.length = 0;
+//    if (sPercent != "") {
+//        //buying a percentage of shares based on what is currently owned
+//        if (gAccounts.length > 0) {
+//            for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+//                if (gAccounts[idxAccounts].accountId == sAccountId) {
+//                    let oAccount = new Account();
+//                    oAccount = gAccounts[idxAccounts];
+//                    let bAddOrdersForThisAccount = false;
+//                    if (oAccount.positions.length > 0) {
+//                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                            let oPosition = new Position();
+//                            oPosition = oAccount.positions[idxPosition];
+//                            if (oPosition.assetType == "EQUITY") {
+//                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                    bAddOrdersForThisAccount = true;
+//                                    break;
+//                                }
+//                            }
+//                        }
+//                        if (bAddOrdersForThisAccount) {
+//                            gTDOrders.length = 0;
+//                            for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                                let oPosition = new Position();
+//                                oPosition = oAccount.positions[idxPosition];
+//                                if (oPosition.assetType == "EQUITY") {
+//                                    if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                        let oTDOrder = new TDOrder();
+//                                        oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+//                                        oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+//                                        oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+//                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
+//                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
+//                                        if (iNumToBuy >= 1.0) {
+//                                            iNumToBuy = Math.floor(iNumToBuy);
+//                                        } else if (iNumToBuy > 0.0) {
+//                                            iNumToBuy = 1;
+//                                        } else {
+//                                            iNumToBuy = 0;
+//                                        }
+//                                        if (iNumToBuy > 0) {
+//                                            //get the price to use
+//                                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+//                                                if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+//                                                    let oWatchList = new WLWatchList();
+//                                                    let oWatchListItem = new WLItem();
+//                                                    oWatchList = gWatchlists[idxWL];
+//                                                    oWatchListItem = oWatchList.WLItems[idxWLItem];
+//                                                    let sSymbol = oWatchListItem.symbol;
+//                                                    if (sSymbol == oPosition.symbol) {
+//                                                        for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+//                                                            let oWLDisplayed = new WLDisplayed();
+//                                                            oWLDisplayed = gWLDisplayed[idxDisplayed];
+//                                                            let oWLItemDetail = new WLItemDetail();
+//                                                            if (sSymbol == oWLDisplayed.symbol) {
+//                                                                for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+//                                                                    oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+//                                                                    let dPrice = oWLItemDetail.regularMarketLastPrice;
+//                                                                    let sPrice = FormatMoney(dPrice);
+//                                                                    if (parseFloat(sPrice) > 0) {
+//                                                                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+//                                                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+//                                                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+//                                                                        oTDOrder.symbol = sSymbol;
+//                                                                        gTDOrders[gTDOrders.length] = oTDOrder;
+
+//                                                                        if (document.getElementById("chkPlace" + sThisId).checked) {
+//                                                                            let oTDSavedOrder = new TDSavedOrder();
+//                                                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+//                                                                            oTDSavedOrder.orderType = "LIMIT";
+//                                                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+//                                                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+//                                                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+//                                                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+//                                                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+//                                                                            oTDSavedOrder.instruction = "BUY";
+//                                                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+//                                                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+//                                                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+//                                                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+//                                                                        }
+
+//                                                                    } else {
+//                                                                        alert("No price for " + sSymbol);
+//                                                                    }
+//                                                                    break;
+//                                                                }
+//                                                                break;
+//                                                            }
+//                                                        }
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                            //create orders here
+//                            if (gTDOrders.length > 0) {
+//                                gTDOrders.sort(sortBySymbol);
+//                                gbDoingCreateOrders = true;
+//                                SetWait();
+//                                SetWaitWL(idxWL);
+//                                window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+//                            } else {
+//                                alert("No orders were generated for this watchlist.");
+//                            }
+//                        } else {
+//                            alert("No positions selected.");
+//                        }
+//                    } else {
+//                        alert("There are no positions in this watchlist.");
+//                    }
+//                    break;
+//                }
+//            }
+//        }
+//    } else {
+//        //then buying dSelectNum's worth of shares for each stock in the watchlist
+//        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+//            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+//                let oWatchList = new WLWatchList();
+//                let oWatchListItem = new WLItem();
+//                oWatchList = gWatchlists[idxWL];
+//                oWatchListItem = oWatchList.WLItems[idxWLItem];
+//                let sSymbol = oWatchListItem.symbol;
+//                for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+//                    let oWLDisplayed = new WLDisplayed();
+//                    oWLDisplayed = gWLDisplayed[idxDisplayed];
+//                    let oWLItemDetail = new WLItemDetail();
+//                    if (sSymbol == oWLDisplayed.symbol) {
+//                        for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+//                            oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+
+//                            let oTDOrder = new TDOrder();
+
+//                            oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+//                            oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+//                            oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+//                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
+
+//                            let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+//                            if (iNumToBuy > 0) {
+//                                let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
+//                                if (parseFloat(sPrice) > 0) {
+//                                    oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+//                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+//                                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+//                                    oTDOrder.symbol = sSymbol;
+//                                    gTDOrders[gTDOrders.length] = oTDOrder;
+
+//                                    if (document.getElementById("chkPlace" + sThisId).checked) {
+//                                        let oTDSavedOrder = new TDSavedOrder();
+//                                        //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+//                                        oTDSavedOrder.orderType = "LIMIT";
+//                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+//                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+//                                        oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+//                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
+//                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+//                                        oTDSavedOrder.instruction = "BUY";
+//                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+//                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+//                                        oTDSavedOrder.symbol = oTDOrder.symbol;
+
+//                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+//                                    }
+
+//                                }
+//                            }
+
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        if (gTDOrders.length > 0) {
+//            gTDOrders.sort(sortBySymbol);
+//            gbDoingCreateOrders = true;
+//            SetWait();
+//            SetWaitWL(idxWL);
+//            window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+//        } else {
+//            alert("No orders were generated for this watchlist.");
+//        }
+//    }
+
+//}
+
+function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, idxWL, bExisting) {
+    //sBuySell = either "BUY" or "SELL"
+    //if sPercent != "" then buying dSelectnum percentage of shares based on what is currently owned for the selected symbols
+    //if sPercent == "" then buying dSelectnum worth of shares for the selected symbols
     //debugger
     let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     let sSymbolsThisWL = "";
@@ -3343,8 +3861,8 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
     }
     sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
     gTDOrders.length = 0;
-    if (iSelectNum > 0) {
-        //buying a percentage of shares based on what is currently owned
+    if (sPercent != "") {
+        //buying or selling a percentage of shares based on what is currently owned
         if (gAccounts.length > 0) {
             for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                 if (gAccounts[idxAccounts].accountId == sAccountId) {
@@ -3373,9 +3891,9 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                                         let oTDOrder = new TDOrder();
                                         oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
                                         oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
+                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
-                                        let iNumToBuy = oPosition.longQuantity * (iSelectNum / 100.0);
+                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
                                         if (iNumToBuy >= 1.0) {
                                             iNumToBuy = Math.floor(iNumToBuy);
                                         } else if (iNumToBuy > 0.0) {
@@ -3396,7 +3914,7 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                                                 oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
                                                 oTDSavedOrder.a04duration = oTDOrder.a04duration;
                                                 oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                                oTDSavedOrder.instruction = "BUY";
+                                                oTDSavedOrder.instruction = sBuySell;
                                                 oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
                                                 oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
                                                 oTDSavedOrder.symbol = oTDOrder.symbol;
@@ -3412,7 +3930,11 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                                 gTDOrders.sort(sortBySymbol);
                                 gbDoingCreateOrders = true;
                                 SetWait();
-                                window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+                                if (sBuySell == "BUY") {
+                                    window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+                                } else {
+                                    window.setTimeout("PostWLSellOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+                                }
                             } else {
                                 alert("No orders were generated for this watchlist.");
                             }
@@ -3427,7 +3949,7 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
             }
         }
     } else {
-        //then buying dSelectNum's worth of shares for each stock in the watchlist
+        //then buying or selling dSelectNum's worth of shares for each selected stock
         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
             if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
                 let oWatchList = new WLWatchList();
@@ -3443,12 +3965,23 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                         for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
                             oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
 
+
                             let oTDOrder = new TDOrder();
                             oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
                             oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
+                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
-                            let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                            let iNumToBuy = 0;
+                            if (sBuySell == "SELL") {
+                                if (oWLItemDetail.marketValue > 0) {
+                                    if (dSelectNum > oWLItemDetail.marketValue) {
+                                        dSelectNum = oWLItemDetail.marketValue;
+                                    }
+                                    iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                                }
+                            } else {
+                                iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                            }
                             if (iNumToBuy > 0) {
                                 oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
                                 oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
@@ -3462,15 +3995,16 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
                                     oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
                                     oTDSavedOrder.a04duration = oTDOrder.a04duration;
                                     oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                    oTDSavedOrder.instruction = "BUY";
+                                    oTDSavedOrder.instruction = sBuySell;
                                     oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
                                     oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
                                     oTDSavedOrder.symbol = oTDOrder.symbol;
 
                                     gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
                                 }
-
                             }
+
+
                             break;
                         }
                     }
@@ -3482,7 +4016,11 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
             gbDoingCreateOrders = true;
             SetWait();
             SetWaitWL(idxWL);
-            window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+            if (sBuySell == "BUY") {
+                window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+            } else {
+                window.setTimeout("PostWLSellOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+            }
         } else {
             alert("No orders were generated for this watchlist.");
         }
@@ -3490,9 +4028,10 @@ function GenerateWLBuyOrders(sAccountId, iSelectNum, dSelectNum, idxWL, bExistin
 
 }
 
-function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bExisting) {
-    //if iSelectNum > 0 then buying a percentage of shares based on what is currently owned
-    //if dSelectnum > 0 then buying dSelectNum's worth of shares for each stock in the watchlist
+function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum, idxWL, bExisting) {
+    //sBuySell = either "BUY" or "SELL"
+    //if sPercent != "" then buying dSelectnum percentage of shares based on what is currently owned for the selected symbols
+    //if sPercent == "" then buying dSelectnum worth of shares for the selected symbols
     //debugger
     let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     let dtCancelTime = new Date(); //get todays date
@@ -3510,7 +4049,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
     sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
     gTDOrders.length = 0;
     gOrdersToPlace.length = 0;
-    if (iSelectNum > 0) {
+    if (sPercent != "") {
         //buying a percentage of shares based on what is currently owned
         if (gAccounts.length > 0) {
             for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
@@ -3540,8 +4079,8 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                         oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
                                         oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
                                         oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
-                                        let iNumToBuy = oPosition.longQuantity * (iSelectNum / 100.0);
+                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
                                         if (iNumToBuy >= 1.0) {
                                             iNumToBuy = Math.floor(iNumToBuy);
                                         } else if (iNumToBuy > 0.0) {
@@ -3584,7 +4123,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                                                             oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
                                                                             oTDSavedOrder.a04duration = oTDOrder.a04duration;
                                                                             oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                                                            oTDSavedOrder.instruction = "BUY";
+                                                                            oTDSavedOrder.instruction = sBuySell;
                                                                             oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
                                                                             oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
                                                                             oTDSavedOrder.symbol = oTDOrder.symbol;
@@ -3614,7 +4153,11 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                 gbDoingCreateOrders = true;
                                 SetWait();
                                 SetWaitWL(idxWL);
-                                window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+                                if (sBuySell == "BUY") {
+                                    window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+                                } else {
+                                    window.setTimeout("PostWLSellOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+                                }
                             } else {
                                 alert("No orders were generated for this watchlist.");
                             }
@@ -3650,7 +4193,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                             oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
                             oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
                             oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
+                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
                             let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
                             if (iNumToBuy > 0) {
@@ -3671,7 +4214,7 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
                                         oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
                                         oTDSavedOrder.a04duration = oTDOrder.a04duration;
                                         oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                        oTDSavedOrder.instruction = "BUY";
+                                        oTDSavedOrder.instruction = sBuySell;
                                         oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
                                         oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
                                         oTDSavedOrder.symbol = oTDOrder.symbol;
@@ -3693,7 +4236,11 @@ function GenerateWLBuyOrdersLimit(sAccountId, iSelectNum, dSelectNum, idxWL, bEx
             gbDoingCreateOrders = true;
             SetWait();
             SetWaitWL(idxWL);
-            window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+            if (sBuySell == "BUY") {
+                window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+            } else {
+                window.setTimeout("PostWLSellOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+            }
         } else {
             alert("No orders were generated for this watchlist.");
         }
@@ -3883,247 +4430,247 @@ function GenerateWLOpenSymbolOrders(sAccountId, idxWL, sSymbolsToLookup, sPurcha
     }
 }
 
-function GenerateWLSellOrders(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
+//function GenerateWLSellOrders(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
 
-    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+//    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
-    //have percentage to sell so now get all of the symbols for this account
-    if (gAccounts.length > 0) {
-        for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
-            if (gAccounts[idxAccounts].accountId == sAccountId) {
-                let oAccount = new Account();
-                oAccount = gAccounts[idxAccounts];
-                let bAddOrdersForThisAccount = false;
-                if (oAccount.positions.length > 0) {
-                    for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-                        let oPosition = new Position();
-                        oPosition = oAccount.positions[idxPosition];
-                        if (oPosition.assetType == "EQUITY") {
-                            if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-                                bAddOrdersForThisAccount = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (bAddOrdersForThisAccount) {
-                        gTDOrders.length = 0;
-                        gOrdersToPlace.length = 0;
-                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-                            let oPosition = new Position();
-                            oPosition = oAccount.positions[idxPosition];
-                            if (oPosition.assetType == "EQUITY") {
-                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-                                    let oTDOrder = new TDOrder();
-                                    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
-                                    oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-                                    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"SELL\", ";
-                                    let iNumToSell = 0;
-                                    if (oPosition.longQuantity == 1) {
-                                        if (iSelectNum == 100) {
-                                            iNumToSell = 1;
-                                        } else {
-                                            iNumToSell = 0;
-                                        }
-                                    } else {
-                                        iNumToSell = oPosition.longQuantity * (iSelectNum / 100.0);
-                                        if (iNumToSell >= 1.0) {
-                                            iNumToSell = Math.floor(iNumToSell);
-                                        } else if (iNumToSell > 0.1) {
-                                            iNumToSell = 1;
-                                        } else {
-                                            iNumToSell = 0;
-                                        }
-                                    }
-                                    if (iNumToSell > 0) {
-                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToSell.toString() + ", ";
-                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
-                                        oTDOrder.symbol = oPosition.symbol;
-                                        gTDOrders[gTDOrders.length] = oTDOrder;
+//    //have percentage to sell so now get all of the symbols for this account
+//    if (gAccounts.length > 0) {
+//        for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+//            if (gAccounts[idxAccounts].accountId == sAccountId) {
+//                let oAccount = new Account();
+//                oAccount = gAccounts[idxAccounts];
+//                let bAddOrdersForThisAccount = false;
+//                if (oAccount.positions.length > 0) {
+//                    for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                        let oPosition = new Position();
+//                        oPosition = oAccount.positions[idxPosition];
+//                        if (oPosition.assetType == "EQUITY") {
+//                            if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                bAddOrdersForThisAccount = true;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    if (bAddOrdersForThisAccount) {
+//                        gTDOrders.length = 0;
+//                        gOrdersToPlace.length = 0;
+//                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                            let oPosition = new Position();
+//                            oPosition = oAccount.positions[idxPosition];
+//                            if (oPosition.assetType == "EQUITY") {
+//                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                    let oTDOrder = new TDOrder();
+//                                    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+//                                    oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+//                                    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"SELL\", ";
+//                                    let iNumToSell = 0;
+//                                    if (oPosition.longQuantity == 1) {
+//                                        if (iSelectNum == 100) {
+//                                            iNumToSell = 1;
+//                                        } else {
+//                                            iNumToSell = 0;
+//                                        }
+//                                    } else {
+//                                        iNumToSell = oPosition.longQuantity * (iSelectNum / 100.0);
+//                                        if (iNumToSell >= 1.0) {
+//                                            iNumToSell = Math.floor(iNumToSell);
+//                                        } else if (iNumToSell > 0.1) {
+//                                            iNumToSell = 1;
+//                                        } else {
+//                                            iNumToSell = 0;
+//                                        }
+//                                    }
+//                                    if (iNumToSell > 0) {
+//                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToSell.toString() + ", ";
+//                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
+//                                        oTDOrder.symbol = oPosition.symbol;
+//                                        gTDOrders[gTDOrders.length] = oTDOrder;
 
-                                        if (document.getElementById("chkPlace" + sThisId).checked) {
-                                            let oTDSavedOrder = new TDSavedOrder();
-                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                                            oTDSavedOrder.orderType = "MARKET";
-                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                            oTDSavedOrder.instruction = "SELL";
-                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+//                                        if (document.getElementById("chkPlace" + sThisId).checked) {
+//                                            let oTDSavedOrder = new TDSavedOrder();
+//                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+//                                            oTDSavedOrder.orderType = "MARKET";
+//                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+//                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+//                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+//                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+//                                            oTDSavedOrder.instruction = "SELL";
+//                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+//                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+//                                            oTDSavedOrder.symbol = oTDOrder.symbol;
 
-                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-                                        }
+//                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+//                                        }
 
-                                    }
-                                }
-                            }
-                        }
+//                                    }
+//                                }
+//                            }
+//                        }
 
-                        //create orders here
-                        if (gTDOrders.length > 0) {
-                            gTDOrders.sort(sortBySymbol);
-                            gbDoingCreateOrders = true;
-                            SetWait();
-                            SetWaitWL(idxWL);
-                            window.setTimeout("PostWLSellOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-                        } else {
-                            alert("No orders were generated for this watchlist.");
-                        }
-                    } else {
-                        alert("No positions selected.");
-                    }
-                } else {
-                    alert("There are no positions in this watchlist.");
-                }
-                break;
-            }
-        }
-    }
+//                        //create orders here
+//                        if (gTDOrders.length > 0) {
+//                            gTDOrders.sort(sortBySymbol);
+//                            gbDoingCreateOrders = true;
+//                            SetWait();
+//                            SetWaitWL(idxWL);
+//                            window.setTimeout("PostWLSellOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+//                        } else {
+//                            alert("No orders were generated for this watchlist.");
+//                        }
+//                    } else {
+//                        alert("No positions selected.");
+//                    }
+//                } else {
+//                    alert("There are no positions in this watchlist.");
+//                }
+//                break;
+//            }
+//        }
+//    }
 
-}
+//}
 
-function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
+//function GenerateWLSellOrdersLimit(sAccountId, iSelectNum, sSymbolsThisWL, idxWL) {
 
-    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+//    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
-    //have percentage to sell so now get all of the symbols for this account
-    let dtCancelTime = new Date(); //get todays date
-    dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
-    let sCancelTime = FormatDateForTD(dtCancelTime);
+//    //have percentage to sell so now get all of the symbols for this account
+//    let dtCancelTime = new Date(); //get todays date
+//    dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
+//    let sCancelTime = FormatDateForTD(dtCancelTime);
 
-    if (gAccounts.length > 0) {
-        for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
-            if (gAccounts[idxAccounts].accountId == sAccountId) {
-                let oAccount = new Account();
-                oAccount = gAccounts[idxAccounts];
-                let bAddOrdersForThisAccount = false;
-                if (oAccount.positions.length > 0) {
-                    for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-                        let oPosition = new Position();
-                        oPosition = oAccount.positions[idxPosition];
-                        if (oPosition.assetType == "EQUITY") {
-                            if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-                                bAddOrdersForThisAccount = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (bAddOrdersForThisAccount) {
-                        gTDOrders.length = 0;
-                        gOrdersToPlace.length = 0;
-                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-                            let oPosition = new Position();
-                            oPosition = oAccount.positions[idxPosition];
-                            if (oPosition.assetType == "EQUITY") {
-                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-                                    let oTDOrder = new TDOrder();
-                                    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
-                                    oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
-                                    oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-                                    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"SELL\", ";
-                                    let iNumToSell = 0;
-                                    if (oPosition.longQuantity == 1) {
-                                        if (iSelectNum == 100) {
-                                            iNumToSell = 1;
-                                        } else {
-                                            iNumToSell = 0;
-                                        }
-                                    } else {
-                                        iNumToSell = oPosition.longQuantity * (iSelectNum / 100.0);
-                                        if (iNumToSell >= 1.0) {
-                                            iNumToSell = Math.floor(iNumToSell);
-                                        } else if (iNumToSell > 0.1) {
-                                            iNumToSell = 1;
-                                        } else {
-                                            iNumToSell = 0;
-                                        }
-                                    }
-                                    if (iNumToSell > 0) {
-                                        //get the price to use
-                                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                                            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-                                                let oWatchList = new WLWatchList();
-                                                let oWatchListItem = new WLItem();
-                                                oWatchList = gWatchlists[idxWL];
-                                                oWatchListItem = oWatchList.WLItems[idxWLItem];
-                                                let sSymbol = oWatchListItem.symbol;
-                                                if (sSymbol == oPosition.symbol) {
-                                                    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-                                                        let oWLDisplayed = new WLDisplayed();
-                                                        oWLDisplayed = gWLDisplayed[idxDisplayed];
-                                                        let oWLItemDetail = new WLItemDetail();
-                                                        if (sSymbol == oWLDisplayed.symbol) {
-                                                            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                                                                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-                                                                if (oWatchList.accountId == oWLItemDetail.accountId) {
-                                                                    let dPrice = oWLItemDetail.regularMarketLastPrice - (oWLItemDetail.regularMarketLastPrice * .01);
-                                                                    let sPrice = FormatMoney(dPrice);
-                                                                    if (parseFloat(sPrice) > 0) {
-                                                                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToSell.toString() + ", ";
-                                                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
-                                                                        oTDOrder.symbol = oPosition.symbol;
-                                                                        gTDOrders[gTDOrders.length] = oTDOrder;
+//    if (gAccounts.length > 0) {
+//        for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+//            if (gAccounts[idxAccounts].accountId == sAccountId) {
+//                let oAccount = new Account();
+//                oAccount = gAccounts[idxAccounts];
+//                let bAddOrdersForThisAccount = false;
+//                if (oAccount.positions.length > 0) {
+//                    for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                        let oPosition = new Position();
+//                        oPosition = oAccount.positions[idxPosition];
+//                        if (oPosition.assetType == "EQUITY") {
+//                            if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                bAddOrdersForThisAccount = true;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    if (bAddOrdersForThisAccount) {
+//                        gTDOrders.length = 0;
+//                        gOrdersToPlace.length = 0;
+//                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+//                            let oPosition = new Position();
+//                            oPosition = oAccount.positions[idxPosition];
+//                            if (oPosition.assetType == "EQUITY") {
+//                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
+//                                    let oTDOrder = new TDOrder();
+//                                    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+//                                    oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+//                                    oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+//                                    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"SELL\", ";
+//                                    let iNumToSell = 0;
+//                                    if (oPosition.longQuantity == 1) {
+//                                        if (iSelectNum == 100) {
+//                                            iNumToSell = 1;
+//                                        } else {
+//                                            iNumToSell = 0;
+//                                        }
+//                                    } else {
+//                                        iNumToSell = oPosition.longQuantity * (iSelectNum / 100.0);
+//                                        if (iNumToSell >= 1.0) {
+//                                            iNumToSell = Math.floor(iNumToSell);
+//                                        } else if (iNumToSell > 0.1) {
+//                                            iNumToSell = 1;
+//                                        } else {
+//                                            iNumToSell = 0;
+//                                        }
+//                                    }
+//                                    if (iNumToSell > 0) {
+//                                        //get the price to use
+//                                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+//                                            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+//                                                let oWatchList = new WLWatchList();
+//                                                let oWatchListItem = new WLItem();
+//                                                oWatchList = gWatchlists[idxWL];
+//                                                oWatchListItem = oWatchList.WLItems[idxWLItem];
+//                                                let sSymbol = oWatchListItem.symbol;
+//                                                if (sSymbol == oPosition.symbol) {
+//                                                    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+//                                                        let oWLDisplayed = new WLDisplayed();
+//                                                        oWLDisplayed = gWLDisplayed[idxDisplayed];
+//                                                        let oWLItemDetail = new WLItemDetail();
+//                                                        if (sSymbol == oWLDisplayed.symbol) {
+//                                                            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+//                                                                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+//                                                                if (oWatchList.accountId == oWLItemDetail.accountId) {
+//                                                                    let dPrice = oWLItemDetail.regularMarketLastPrice - (oWLItemDetail.regularMarketLastPrice * .01);
+//                                                                    let sPrice = FormatMoney(dPrice);
+//                                                                    if (parseFloat(sPrice) > 0) {
+//                                                                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+//                                                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToSell.toString() + ", ";
+//                                                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
+//                                                                        oTDOrder.symbol = oPosition.symbol;
+//                                                                        gTDOrders[gTDOrders.length] = oTDOrder;
 
-                                                                        if (document.getElementById("chkPlace" + sThisId).checked) {
-                                                                            let oTDSavedOrder = new TDSavedOrder();
-                                                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                                                                            oTDSavedOrder.orderType = "LIMIT";
-                                                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
-                                                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                                                            oTDSavedOrder.instruction = "SELL";
-                                                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+//                                                                        if (document.getElementById("chkPlace" + sThisId).checked) {
+//                                                                            let oTDSavedOrder = new TDSavedOrder();
+//                                                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+//                                                                            oTDSavedOrder.orderType = "LIMIT";
+//                                                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+//                                                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+//                                                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+//                                                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+//                                                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+//                                                                            oTDSavedOrder.instruction = "SELL";
+//                                                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+//                                                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+//                                                                            oTDSavedOrder.symbol = oTDOrder.symbol;
 
-                                                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-                                                                        }
+//                                                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+//                                                                        }
 
 
 
-                                                                    }
-                                                                    break;
-                                                                }
-                                                            }
-                                                            break;
-                                                        }
-                                                    }
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+//                                                                    }
+//                                                                    break;
+//                                                                }
+//                                                            }
+//                                                            break;
+//                                                        }
+//                                                    }
+//                                                    break;
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
 
-                        //create orders here
-                        if (gTDOrders.length > 0) {
-                            gTDOrders.sort(sortBySymbol);
-                            gbDoingCreateOrders = true;
-                            SetWait();
-                            SetWaitWL(idxWL);
-                            window.setTimeout("PostWLSellOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-                        } else {
-                            alert("No orders were generated for this watchlist.");
-                        }
-                    } else {
-                        alert("No positions selected.");
-                    }
-                } else {
-                    alert("There are no positions in this watchlist.");
-                }
-                break;
-            }
-        }
-    }
+//                        //create orders here
+//                        if (gTDOrders.length > 0) {
+//                            gTDOrders.sort(sortBySymbol);
+//                            gbDoingCreateOrders = true;
+//                            SetWait();
+//                            SetWaitWL(idxWL);
+//                            window.setTimeout("PostWLSellOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+//                        } else {
+//                            alert("No orders were generated for this watchlist.");
+//                        }
+//                    } else {
+//                        alert("No positions selected.");
+//                    }
+//                } else {
+//                    alert("There are no positions in this watchlist.");
+//                }
+//                break;
+//            }
+//        }
+//    }
 
-}
+//}
 
 function GenerateWLTrailingStopOrders(sAccountId, dSelectNum, sSymbolsThisWL, idxWL) {
 
@@ -8925,27 +9472,19 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
                         sThisDiv = sThisDiv + "</th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                        sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                             "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                            "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+                            "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+                        sThisDiv = sThisDiv + "</th> ";
 
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:50px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
-
-                        sThisDiv = sThisDiv + "</th>";
-
-
-                        sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
-                        sThisDiv = sThisDiv + "</th>";
-
-                        sThisDiv = sThisDiv + "</th > ";
+                        sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
+                        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
+                                              "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
+                                              "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >";
+                        sThisDiv = sThisDiv + "</th> ";
 
                         sThisDiv = sThisDiv + "</tr>";
-
 
                         sThisDiv = sThisDiv + "<tr>";
 
@@ -9010,21 +9549,41 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
                         sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
 
-                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                            "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:45px\" value=\"\">";
 
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                            "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:30px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
+                        if (bDoingDividendWL) {
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                                "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >";
+                            sThisDiv = sThisDiv + "</th > ";
+
+                        } else {
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                                "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >";
+                            sThisDiv = sThisDiv + "</th > ";
+                        }
+
+                        //sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
+                        //    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
+                        //    "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%" +
+                        //    "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                        //    "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:45px\" value=\"\">";
+
+                        //sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
+                        //    "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:30px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
 
 
-                        sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
+                        //sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
+                        //    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
+                        //    "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
 
-                        sThisDiv = sThisDiv + "</th > ";
+                        //sThisDiv = sThisDiv + "</th > ";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -9709,7 +10268,7 @@ function GetWatchlistPrices() {
                         }
 
                         if (bDoingDividendWL) {
-                            sThisTable = sThisTable + "<tr><td colspan=\"16\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
+                            sThisTable = sThisTable + "<tr><td colspan=\"17\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
                         } else {
                             sThisTable = sThisTable + "<tr><td colspan=\"14\" style=\"height:30px; text-align:center;vertical-align:middle;border-top-width:1px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:Black\"><b>";
                         }
