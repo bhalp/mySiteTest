@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.5 2021-07-05 00:15"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.5 2021-07-06 17:20"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -10457,6 +10457,7 @@ function GetWatchlists(bDoingReset) {
 
     let oCMLength = oCMWL.length;
     let oOldWL = new Array();
+    let dAccountValueLimit = 2000.0;
     if (oCMLength > 0) {
         if (bDoingReset) {
             for (let idxWLCur = 0; idxWLCur < gWatchlists.length; idxWLCur++) {
@@ -10469,75 +10470,81 @@ function GetWatchlists(bDoingReset) {
                 oWL.watchlistId = oCMWL[idxWL].watchlistId
                 oWL.name = oCMWL[idxWL].name;
                 if (sWLExclusionList.indexOf("," + UnReplace_XMLChar(oWL.name).toUpperCase() + ",") == -1) {
+                    let bOKToUse = true;
                     if (gAccounts.length > 0) {
                         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                             if (oWL.accountId == gAccounts[idxAccounts].accountId) {
                                 oWL.accountName = gAccounts[idxAccounts].accountName;
+                                if (gAccounts[idxAccounts].CBliquidationValue < dAccountValueLimit) {
+                                    bOKToUse = false;
+                                }
                                 break;
                             }
                         }
                     }
-                    if (!isUndefined(oCMWL[idxWL].watchlistItems)) {
-                        if (oCMWL[idxWL].watchlistItems.length > 0) {
-                            let sSymbolsFound = ",";
-                            for (let idxWLItem = 0; idxWLItem < oCMWL[idxWL].watchlistItems.length; idxWLItem++) {
-                                if (sSymbolsFound.indexOf("," + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",") == -1) {
-                                    sSymbolsFound = sSymbolsFound + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",";
-                                    let oWLItem = new WLItem();
-                                    oWLItem.assetType = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.assetType;
-                                    oWLItem.symbol = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol;
-                                    oWLItem.sequenceId = oCMWL[idxWL].watchlistItems[idxWLItem].sequenceId;
-                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate)) {
-                                        oWLItem.purchasedDate = oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate;
-                                    }
-                                    oWLItem.priceInfo.averagePrice = oCMWL[idxWL].watchlistItems[idxWLItem].commission;
-                                    if (oWLItem.priceInfo.averagePrice > 1000000.0) {
-                                        oWLItem.priceInfo.averagePrice = -1 * (oWLItem.priceInfo.averagePrice - 1000000.0);
-                                    }
+                    if (bOKToUse) {
+                        if (!isUndefined(oCMWL[idxWL].watchlistItems)) {
+                            if (oCMWL[idxWL].watchlistItems.length > 0) {
+                                let sSymbolsFound = ",";
+                                for (let idxWLItem = 0; idxWLItem < oCMWL[idxWL].watchlistItems.length; idxWLItem++) {
+                                    if (sSymbolsFound.indexOf("," + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",") == -1) {
+                                        sSymbolsFound = sSymbolsFound + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",";
+                                        let oWLItem = new WLItem();
+                                        oWLItem.assetType = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.assetType;
+                                        oWLItem.symbol = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol;
+                                        oWLItem.sequenceId = oCMWL[idxWL].watchlistItems[idxWLItem].sequenceId;
+                                        if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate)) {
+                                            oWLItem.purchasedDate = oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate;
+                                        }
+                                        oWLItem.priceInfo.averagePrice = oCMWL[idxWL].watchlistItems[idxWLItem].commission;
+                                        if (oWLItem.priceInfo.averagePrice > 1000000.0) {
+                                            oWLItem.priceInfo.averagePrice = -1 * (oWLItem.priceInfo.averagePrice - 1000000.0);
+                                        }
 
-                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
-                                        oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
-                                    }
+                                        if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
+                                            oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
+                                        }
 
-                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
-                                        oWLItem.priceInfo.GLUpdateStartDate = oCMWL[idxWL].watchlistItems[idxWLItem].quantity * 100000;
-                                    }
+                                        if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
+                                            oWLItem.priceInfo.GLUpdateStartDate = oCMWL[idxWL].watchlistItems[idxWLItem].quantity * 100000;
+                                        }
 
-                                    oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                        oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                    }
                                 }
+                                oWL.WLItems.sort(sortBySymbol);
                             }
-                            oWL.WLItems.sort(sortBySymbol);
                         }
-                    }
-                    for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
-                        if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
-                            (oWL.name == oOldWL[idxWLCur].name)) {
-                            oWL.spanName = oOldWL[idxWLCur].spanName;
-                            if (oOldWL[idxWLCur].bSelected) {
-                                oWL.bSelected = true;
-                                oWL.bSelectedTemp = true;
-                                oWL.sSortOrderFields = oOldWL[idxWLCur].sSortOrderFields; //6/23/21
+                        for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                            if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                                (oWL.name == oOldWL[idxWLCur].name)) {
+                                oWL.spanName = oOldWL[idxWLCur].spanName;
+                                if (oOldWL[idxWLCur].bSelected) {
+                                    oWL.bSelected = true;
+                                    oWL.bSelectedTemp = true;
+                                    oWL.sSortOrderFields = oOldWL[idxWLCur].sSortOrderFields; //6/23/21
 
-                                // now reset the selected for order flag
-                                if (oWL.WLItems.length > 0) {
-                                    if (oOldWL[idxWLCur].WLItems.length > 0) {
-                                        for (let idxWLItem = 0; idxWLItem < oWL.WLItems.length; idxWLItem++) {
-                                            for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
-                                                if ((oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol == oWL.WLItems[idxWLItem].symbol) &&
-                                                    (oOldWL[idxWLCur].WLItems[idxWLItemOld].accountId == oWL.WLItems[idxWLItem].accountId)) {
-                                                    oWL.WLItems[idxWLItem].bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
-                                                    oWL.WLItems[idxWLItem].bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
-                                                    break;
+                                    // now reset the selected for order flag
+                                    if (oWL.WLItems.length > 0) {
+                                        if (oOldWL[idxWLCur].WLItems.length > 0) {
+                                            for (let idxWLItem = 0; idxWLItem < oWL.WLItems.length; idxWLItem++) {
+                                                for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
+                                                    if ((oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol == oWL.WLItems[idxWLItem].symbol) &&
+                                                        (oOldWL[idxWLCur].WLItems[idxWLItemOld].accountId == oWL.WLItems[idxWLItem].accountId)) {
+                                                        oWL.WLItems[idxWLItem].bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                                        oWL.WLItems[idxWLItem].bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
+                                                        break;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                                break;
                             }
-                            break;
                         }
+                        gWatchlists[gWatchlists.length] = oWL;
                     }
-                    gWatchlists[gWatchlists.length] = oWL;
                 }
             }
         } else {
@@ -10545,6 +10552,7 @@ function GetWatchlists(bDoingReset) {
                 oOldWL[oOldWL.length] = gWatchlists[idxWLCur]
             }
             gWatchlists.length = 0;
+            let bOKToUse = true;
             for (let idxWL = 0; idxWL < oCMLength; idxWL++) {
                 let oWL = new WLWatchList();
                 oWL.accountId = oCMWL[idxWL].accountId;
@@ -10555,42 +10563,47 @@ function GetWatchlists(bDoingReset) {
                         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                             if (oWL.accountId == gAccounts[idxAccounts].accountId) {
                                 oWL.accountName = gAccounts[idxAccounts].accountName;
+                                if (gAccounts[idxAccounts].CBliquidationValue < dAccountValueLimit) {
+                                    bOKToUse = false;
+                                }
                                 break;
                             }
                         }
                     }
-                    if (!isUndefined(oCMWL[idxWL].watchlistItems)) {
-                        if (oCMWL[idxWL].watchlistItems.length > 0) {
-                            let sSymbolsFound = ",";
-                            for (let idxWLItem = 0; idxWLItem < oCMWL[idxWL].watchlistItems.length; idxWLItem++) {
-                                if (sSymbolsFound.indexOf("," + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",") == -1) {
-                                    sSymbolsFound = sSymbolsFound + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",";
-                                    let oWLItem = new WLItem();
-                                    oWLItem.assetType = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.assetType;
-                                    oWLItem.symbol = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol;
-                                    oWLItem.sequenceId = oCMWL[idxWL].watchlistItems[idxWLItem].sequenceId;
-                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate)) {
-                                        oWLItem.purchasedDate = oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate;
-                                    }
-                                    oWLItem.priceInfo.averagePrice = oCMWL[idxWL].watchlistItems[idxWLItem].commission;
-                                    if (oWLItem.priceInfo.averagePrice > 1000000.0) {
-                                        oWLItem.priceInfo.averagePrice = -1 * (oWLItem.priceInfo.averagePrice - 1000000.0);
-                                    }
-                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
-                                        oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
-                                    }
+                    if (bOKToUse) {
+                        if (!isUndefined(oCMWL[idxWL].watchlistItems)) {
+                            if (oCMWL[idxWL].watchlistItems.length > 0) {
+                                let sSymbolsFound = ",";
+                                for (let idxWLItem = 0; idxWLItem < oCMWL[idxWL].watchlistItems.length; idxWLItem++) {
+                                    if (sSymbolsFound.indexOf("," + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",") == -1) {
+                                        sSymbolsFound = sSymbolsFound + oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol + ",";
+                                        let oWLItem = new WLItem();
+                                        oWLItem.assetType = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.assetType;
+                                        oWLItem.symbol = oCMWL[idxWL].watchlistItems[idxWLItem].instrument.symbol;
+                                        oWLItem.sequenceId = oCMWL[idxWL].watchlistItems[idxWLItem].sequenceId;
+                                        if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate)) {
+                                            oWLItem.purchasedDate = oCMWL[idxWL].watchlistItems[idxWLItem].purchasedDate;
+                                        }
+                                        oWLItem.priceInfo.averagePrice = oCMWL[idxWL].watchlistItems[idxWLItem].commission;
+                                        if (oWLItem.priceInfo.averagePrice > 1000000.0) {
+                                            oWLItem.priceInfo.averagePrice = -1 * (oWLItem.priceInfo.averagePrice - 1000000.0);
+                                        }
+                                        if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
+                                            oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
+                                        }
 
-                                    if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
-                                        oWLItem.priceInfo.GLUpdateStartDate = oCMWL[idxWL].watchlistItems[idxWLItem].quantity * 100000;
-                                    }
+                                        if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
+                                            oWLItem.priceInfo.GLUpdateStartDate = oCMWL[idxWL].watchlistItems[idxWLItem].quantity * 100000;
+                                        }
 
-                                    oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                        oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                    }
                                 }
+                                oWL.WLItems.sort(sortBySymbol);
                             }
-                            oWL.WLItems.sort(sortBySymbol);
                         }
+                        gWatchlists[gWatchlists.length] = oWL;
                     }
-                    gWatchlists[gWatchlists.length] = oWL;
                 }
             }
         }
@@ -10624,57 +10637,126 @@ function GetWatchlists(bDoingReset) {
                 let bAddWLForThisAccount = false;
                 oAccount = new Account();
                 oAccount = gAccounts[idxAccounts];
-                if (oAccount.positions.length > 0) {
-                    for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-                        let oPosition = new Position();
-                        oPosition = oAccount.positions[idxPosition];
-                        if (oPosition.assetType == "EQUITY") {
-                            bAddWLForThisAccount = true;
-                            break;
-                        }
-                    }
-                    if (bAddWLForThisAccount) {
-                        let oWL = new WLWatchList();
-                        oWL.accountId = oAccount.accountId;
-                        oWL.accountName = oAccount.accountName;
-                        oWL.watchlistId = oAccount.accountId;
-                        oWL.name = "Account";
+                if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                    if (oAccount.positions.length > 0) {
                         for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
                             let oPosition = new Position();
                             oPosition = oAccount.positions[idxPosition];
                             if (oPosition.assetType == "EQUITY") {
-                                let oWLItem = new WLItem();
-                                oWLItem.assetType = oPosition.assetType;
-                                oWLItem.symbol = oPosition.symbol;
-                                oWLItem.sequenceId = oWL.WLItems.length + 1;
-                                //oWLItem.priceInfo.averagePrice = oPosition.averagePrice;
-                                oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                bAddWLForThisAccount = true;
+                                break;
                             }
                         }
-                        oWL.WLItems.sort(sortBySymbol);
+                        if (bAddWLForThisAccount) {
+                            let oWL = new WLWatchList();
+                            oWL.accountId = oAccount.accountId;
+                            oWL.accountName = oAccount.accountName;
+                            oWL.watchlistId = oAccount.accountId;
+                            oWL.name = "Account";
+                            for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
+                                let oPosition = new Position();
+                                oPosition = oAccount.positions[idxPosition];
+                                if (oPosition.assetType == "EQUITY") {
+                                    let oWLItem = new WLItem();
+                                    oWLItem.assetType = oPosition.assetType;
+                                    oWLItem.symbol = oPosition.symbol;
+                                    oWLItem.sequenceId = oWL.WLItems.length + 1;
+                                    //oWLItem.priceInfo.averagePrice = oPosition.averagePrice;
+                                    oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                }
+                            }
+                            oWL.WLItems.sort(sortBySymbol);
+                            if (bDoingReset) {
+                                //check to see if the Account watchlist has been selected
+                                for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                                    if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                                        (oWL.name == oOldWL[idxWLCur].name)) {
+                                        oWL.spanName = oOldWL[idxWLCur].spanName;
+                                        if (oOldWL[idxWLCur].bSelected) {
+                                            oWL.bSelected = true;
+                                            oWL.bSelectedTemp = true;
+
+                                            // now reset the selected for order flag
+                                            if (oWL.WLItems.length > 0) {
+                                                if (oOldWL[idxWLCur].WLItems.length > 0) {
+                                                    for (let idxWLItem = 0; idxWLItem < oWL.WLItems.length; idxWLItem++) {
+                                                        for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
+                                                            if ((oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol == oWL.WLItems[idxWLItem].symbol) &&
+                                                                (oOldWL[idxWLCur].WLItems[idxWLItemOld].accountId == oWL.WLItems[idxWLItem].accountId)) {
+                                                                oWL.WLItems[idxWLItem].bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                                                oWL.WLItems[idxWLItem].bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            gWatchlists[gWatchlists.length] = oWL;
+                        }
+                    }
+                }
+            }
+        }
+
+        //add an Account Orders watchlist for each account 
+        if (gbShowSavedOrders) {
+            if (gAccounts.length > 0) {
+                for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+                    oAccount = new Account();
+                    oAccount = gAccounts[idxAccounts];
+                    if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                        let oWL = new WLWatchList();
+                        oWL.accountId = oAccount.accountId;
+                        oWL.accountName = oAccount.accountName;
+                        oWL.watchlistId = oAccount.accountId + "AccountOrders";
+                        oWL.sSortOrderFields = gsSortOrderFieldsO.TimeEntered; //default to the Opened field
+                        oWL.iSortOrderAscDesc = 1; //default to descending
+                        oWL.name = gsAccountOrders;
+
                         if (bDoingReset) {
-                            //check to see if the Account watchlist has been selected
+                            //check to see if the Account Saved Orders watchlist has been selected
                             for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
                                 if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
                                     (oWL.name == oOldWL[idxWLCur].name)) {
                                     oWL.spanName = oOldWL[idxWLCur].spanName;
-                                    if (oOldWL[idxWLCur].bSelected) {
-                                        oWL.bSelected = true;
-                                        oWL.bSelectedTemp = true;
+                                    if (oOldWL[idxWLCur].bSelectedO) {
+                                        oWL.bSelectedO = true;
+                                        oWL.bSelectedOTemp = true;
 
-                                        // now reset the selected for order flag
-                                        if (oWL.WLItems.length > 0) {
-                                            if (oOldWL[idxWLCur].WLItems.length > 0) {
-                                                for (let idxWLItem = 0; idxWLItem < oWL.WLItems.length; idxWLItem++) {
-                                                    for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
-                                                        if ((oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol == oWL.WLItems[idxWLItem].symbol) &&
-                                                            (oOldWL[idxWLCur].WLItems[idxWLItemOld].accountId == oWL.WLItems[idxWLItem].accountId)) {
-                                                            oWL.WLItems[idxWLItem].bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
-                                                            oWL.WLItems[idxWLItem].bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
+                                        // now copy all existing items
+                                        if (oOldWL[idxWLCur].WLItems.length > 0) {
+                                            for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
+                                                let oWLItem = new WLItemOrder();
+                                                oWLItem.bSelected = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelected;
+                                                oWLItem.bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                                oWLItem.bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
+                                                oWLItem.bSelectedTemp = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedTemp;
+                                                oWLItem.activationPrice = oOldWL[idxWLCur].WLItems[idxWLItemOld].activationPrice;
+                                                oWLItem.cancelTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].cancelTime;
+                                                oWLItem.closeTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].closeTime;
+                                                oWLItem.duration = oOldWL[idxWLCur].WLItems[idxWLItemOld].duration;
+                                                oWLItem.enteredTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].enteredTime;
+                                                oWLItem.filledQuantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].filledQuantity;
+                                                oWLItem.instruction = oOldWL[idxWLCur].WLItems[idxWLItemOld].instruction;
+                                                oWLItem.orderId = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderId;
+                                                oWLItem.orderType = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderType;
+                                                oWLItem.price = oOldWL[idxWLCur].WLItems[idxWLItemOld].price;
+                                                oWLItem.quantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].quantity;
+                                                oWLItem.remainingQuantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].remainingQuantity;
+                                                oWLItem.session = oOldWL[idxWLCur].WLItems[idxWLItemOld].session;
+                                                oWLItem.status = oOldWL[idxWLCur].WLItems[idxWLItemOld].status;
+                                                oWLItem.stopPriceLinkType = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceLinkType;
+                                                oWLItem.stopPriceOffset = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceOffset;
+                                                oWLItem.symbol = oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol;
+                                                oWLItem.iSortOrderAscDesc = oOldWL[idxWLCur].WLItems[idxWLItemOld].iSortOrderAscDesc;
+                                                oWLItem.sSortOrderFields = oOldWL[idxWLCur].WLItems[idxWLItemOld].sSortOrderFields;
+
+                                                oWL.WLItems[oWL.WLItems.length] = oWLItem;
                                             }
                                         }
                                     }
@@ -10688,128 +10770,59 @@ function GetWatchlists(bDoingReset) {
             }
         }
 
-        //add an Account Orders watchlist for each account 
-        if (gbShowSavedOrders) {
-            if (gAccounts.length > 0) {
-                for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
-                    oAccount = new Account();
-                    oAccount = gAccounts[idxAccounts];
-
-                    let oWL = new WLWatchList();
-                    oWL.accountId = oAccount.accountId;
-                    oWL.accountName = oAccount.accountName;
-                    oWL.watchlistId = oAccount.accountId + "AccountOrders";
-                    oWL.sSortOrderFields = gsSortOrderFieldsO.TimeEntered; //default to the Opened field
-                    oWL.iSortOrderAscDesc = 1; //default to descending
-                    oWL.name = gsAccountOrders;
-
-                    if (bDoingReset) {
-                        //check to see if the Account Saved Orders watchlist has been selected
-                        for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
-                            if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
-                                (oWL.name == oOldWL[idxWLCur].name)) {
-                                oWL.spanName = oOldWL[idxWLCur].spanName;
-                                if (oOldWL[idxWLCur].bSelectedO) {
-                                    oWL.bSelectedO = true;
-                                    oWL.bSelectedOTemp = true;
-
-                                    // now copy all existing items
-                                    if (oOldWL[idxWLCur].WLItems.length > 0) {
-                                        for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
-                                            let oWLItem = new WLItemOrder();
-                                            oWLItem.bSelected = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelected;
-                                            oWLItem.bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
-                                            oWLItem.bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
-                                            oWLItem.bSelectedTemp = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedTemp;
-                                            oWLItem.activationPrice = oOldWL[idxWLCur].WLItems[idxWLItemOld].activationPrice;
-                                            oWLItem.cancelTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].cancelTime;
-                                            oWLItem.closeTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].closeTime;
-                                            oWLItem.duration = oOldWL[idxWLCur].WLItems[idxWLItemOld].duration;
-                                            oWLItem.enteredTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].enteredTime;
-                                            oWLItem.filledQuantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].filledQuantity;
-                                            oWLItem.instruction = oOldWL[idxWLCur].WLItems[idxWLItemOld].instruction;
-                                            oWLItem.orderId = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderId;
-                                            oWLItem.orderType = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderType;
-                                            oWLItem.price = oOldWL[idxWLCur].WLItems[idxWLItemOld].price;
-                                            oWLItem.quantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].quantity;
-                                            oWLItem.remainingQuantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].remainingQuantity;
-                                            oWLItem.session = oOldWL[idxWLCur].WLItems[idxWLItemOld].session;
-                                            oWLItem.status = oOldWL[idxWLCur].WLItems[idxWLItemOld].status;
-                                            oWLItem.stopPriceLinkType = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceLinkType;
-                                            oWLItem.stopPriceOffset = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceOffset;
-                                            oWLItem.symbol = oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol;
-                                            oWLItem.iSortOrderAscDesc = oOldWL[idxWLCur].WLItems[idxWLItemOld].iSortOrderAscDesc;
-                                            oWLItem.sSortOrderFields = oOldWL[idxWLCur].WLItems[idxWLItemOld].sSortOrderFields;
-
-                                            oWL.WLItems[oWL.WLItems.length] = oWLItem;
-                                        }
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-
-
-                    gWatchlists[gWatchlists.length] = oWL;
-                }
-            }
-        }
-
         //add an Account Saved Orders watchlist for each account
         if (gbShowSavedOrders) {
             if (gAccounts.length > 0) {
                 for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                     oAccount = new Account();
                     oAccount = gAccounts[idxAccounts];
+                    if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                        let oWL = new WLWatchList();
+                        oWL.accountId = oAccount.accountId;
+                        oWL.accountName = oAccount.accountName;
+                        oWL.watchlistId = oAccount.accountId + "AccountSavedOrders";
+                        oWL.name = gsAccountSavedOrders;
 
-                    let oWL = new WLWatchList();
-                    oWL.accountId = oAccount.accountId;
-                    oWL.accountName = oAccount.accountName;
-                    oWL.watchlistId = oAccount.accountId + "AccountSavedOrders";
-                    oWL.name = gsAccountSavedOrders;
+                        if (bDoingReset) {
+                            //check to see if the Account Saved Orders watchlist has been selected
+                            for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                                if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                                    (oWL.name == oOldWL[idxWLCur].name)) {
+                                    oWL.spanName = oOldWL[idxWLCur].spanName;
+                                    if (oOldWL[idxWLCur].bSelectedSO) {
+                                        oWL.bSelectedSO = true;
+                                        oWL.bSelectedSOTemp = true;
 
-                    if (bDoingReset) {
-                        //check to see if the Account Saved Orders watchlist has been selected
-                        for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
-                            if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
-                                (oWL.name == oOldWL[idxWLCur].name)) {
-                                oWL.spanName = oOldWL[idxWLCur].spanName;
-                                if (oOldWL[idxWLCur].bSelectedSO) {
-                                    oWL.bSelectedSO = true;
-                                    oWL.bSelectedSOTemp = true;
-
-                                    // now copy all existing items
-                                    if (oOldWL[idxWLCur].WLItems.length > 0) {
-                                        for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
-                                            let oWLItem = new WLItemSavedOrder();
-                                            oWLItem.bSelected = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelected;
-                                            oWLItem.bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
-                                            oWLItem.bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
-                                            oWLItem.bSelectedTemp = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedTemp;
-                                            oWLItem.cancelTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].cancelTime;
-                                            oWLItem.duration = oOldWL[idxWLCur].WLItems[idxWLItemOld].duration;
-                                            oWLItem.instruction = oOldWL[idxWLCur].WLItems[idxWLItemOld].instruction;
-                                            oWLItem.orderType = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderType;
-                                            oWLItem.price = oOldWL[idxWLCur].WLItems[idxWLItemOld].price;
-                                            oWLItem.quantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].quantity;
-                                            oWLItem.savedOrderId = oOldWL[idxWLCur].WLItems[idxWLItemOld].savedOrderId;
-                                            oWLItem.savedTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].savedTime;
-                                            oWLItem.session = oOldWL[idxWLCur].WLItems[idxWLItemOld].session;
-                                            oWLItem.stopPriceLinkType = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceLinkType;
-                                            oWLItem.stopPriceOffset = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceOffset;
-                                            oWLItem.symbol = oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol;
-                                            oWL.WLItems[oWL.WLItems.length] = oWLItem;
-                                       }
+                                        // now copy all existing items
+                                        if (oOldWL[idxWLCur].WLItems.length > 0) {
+                                            for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
+                                                let oWLItem = new WLItemSavedOrder();
+                                                oWLItem.bSelected = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelected;
+                                                oWLItem.bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                                oWLItem.bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
+                                                oWLItem.bSelectedTemp = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedTemp;
+                                                oWLItem.cancelTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].cancelTime;
+                                                oWLItem.duration = oOldWL[idxWLCur].WLItems[idxWLItemOld].duration;
+                                                oWLItem.instruction = oOldWL[idxWLCur].WLItems[idxWLItemOld].instruction;
+                                                oWLItem.orderType = oOldWL[idxWLCur].WLItems[idxWLItemOld].orderType;
+                                                oWLItem.price = oOldWL[idxWLCur].WLItems[idxWLItemOld].price;
+                                                oWLItem.quantity = oOldWL[idxWLCur].WLItems[idxWLItemOld].quantity;
+                                                oWLItem.savedOrderId = oOldWL[idxWLCur].WLItems[idxWLItemOld].savedOrderId;
+                                                oWLItem.savedTime = oOldWL[idxWLCur].WLItems[idxWLItemOld].savedTime;
+                                                oWLItem.session = oOldWL[idxWLCur].WLItems[idxWLItemOld].session;
+                                                oWLItem.stopPriceLinkType = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceLinkType;
+                                                oWLItem.stopPriceOffset = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceOffset;
+                                                oWLItem.symbol = oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol;
+                                                oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                                            }
+                                        }
                                     }
+                                    break;
                                 }
-                                break;
                             }
                         }
+                        gWatchlists[gWatchlists.length] = oWL;
                     }
-
-
-                    gWatchlists[gWatchlists.length] = oWL;
                 }
             }
         }
@@ -16025,10 +16038,12 @@ function sortByWLAccountandWLName(a, b) {
         bAccountName = bAccountName + sX.substr(0, 40 - bAccountName.length);
     }
     if ((aAccountName + aName) < (bAccountName + bName)) {
-        return -1;
+        return 1;
+//        return -1;
     }
     if ((aAccountName + aName) > (bAccountName + bName)) {
-        return 1;
+        return -11;
+//        return 1;
     }
     return 0;
 }
