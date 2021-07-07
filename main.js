@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.5 2021-07-06 17:20"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.5 2021-07-07 12:12"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -3861,6 +3861,7 @@ function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, idx
     }
     sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
     gTDOrders.length = 0;
+    gOrdersToPlace.length = 0;
     if (sPercent != "") {
         //buying or selling a percentage of shares based on what is currently owned
         if (gAccounts.length > 0) {
