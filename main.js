@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.5 2021-07-07 12:12"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.5 2021-07-08 01:22"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2698,7 +2698,20 @@ function DoWLBuySell(idxWL, iBuySell) {
 
         if (bDoingLimit) {
             if (sPercent != "") {
-                sConfirmMsg = "LIMIT orders to " + sBuySell + " " + sSelectNum + "% of selected symbols. ";
+                switch (iBuySell) {
+                    case 1: {
+                        sConfirmMsg = "LIMIT orders to " + sBuySell + " " + sSelectNum + "% of selected symbols. ";
+                        break;
+                    }
+                    case 2: {
+                        sConfirmMsg = sSelectNum + "% LIMIT SELL orders for the selected symbols might be 2% lower than the current market price. ";
+                        break;
+                    }
+                    default: {
+                        sConfirmMsg = "LIMIT orders to " + sBuySell + " " + sSelectNum + "% of selected symbols. ";
+                        break;
+                    }
+                }
             } else {
                 sConfirmMsg = "LIMIT orders to " + sBuySell + " $" + sSelectNum + " worth of selected symbols. ";
             }
@@ -4106,7 +4119,13 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                                                             if (sSymbol == oWLDisplayed.symbol) {
                                                                 for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
                                                                     oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-                                                                    let dPrice = oWLItemDetail.regularMarketLastPrice;
+                                                                    let dPrice = 0.0;
+                                                                    if (sBuySell == "BUY") {
+                                                                        dPrice = oWLItemDetail.regularMarketLastPrice;
+                                                                    } else {
+                                                                        dPrice = oWLItemDetail.regularMarketLastPrice - (oWLItemDetail.regularMarketLastPrice * .02);
+                                                                    }
+
                                                                     let sPrice = FormatMoney(dPrice);
                                                                     if (parseFloat(sPrice) > 0) {
                                                                         oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
