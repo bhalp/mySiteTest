@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.6 2021-07-13 02:29"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.6 2021-07-13 12:22"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2842,21 +2842,21 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
                 sConfirmMsg = "Updating the G/L for all of the symbols in the watchlist. ";
                 if (AreYouSure(sConfirmMsg)) {
                     //get the lowest last update date
-                    let iLowestUpdateDate = 0;
+                    let iHighestUpdateDate = 0;
                     for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                        if (iLowestUpdateDate == 0) {
-                            iLowestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                        if (iHighestUpdateDate == 0) {
+                            iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
                         } else {
                             if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate == 0) {
                                 alert("New symbol encountered. Please enter a date to use to initialize the entire watchlist.")
                                 return;
-                            } else if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate < iLowestUpdateDate) {
-                                iLowestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                            } else if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iHighestUpdateDate) {
+                                iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
                             }
                         }
                     }
                     //get the trade info for the selected symbols
-                    window.setTimeout("GetTradesAuto(true, " + iLowestUpdateDate + ", " + idxWL + ", false)", 10);
+                    window.setTimeout("GetTradesAuto(true, " + iHighestUpdateDate + ", " + idxWL + ", false)", 10);
                 }
                 return;
             }
@@ -10302,7 +10302,7 @@ function GetWatchlistPrices() {
                     "GainDollar": "<b><I><U>Gain($)</U></I></b>",
                     "GainPercent": "<b><I><U>Gain(%)</U></I></b>",
                     "CostPerShare": "<b><I>Cost</I></b>",
-                    "OldGL": "<b><I><U>Old&nbsp;G/L</U></I></b>",
+                    "OldGL": "<b><I><U>&nbsp;&nbsp;G/L&nbsp;&nbsp;</U></I></b>",
                     "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I></b>"
                 };
 
@@ -10319,7 +10319,7 @@ function GetWatchlistPrices() {
                     "GainDollar": "<b><I><U>Gain($)</U></I>xxx</b>",
                     "GainPercent": "<b><I><U>Gain(%)</U></I>xxx</b>",
                     "CostPerShare": "<b><I><U>Cost</U></I>xxx</b>",
-                    "OldGL": "<b><I><U>Old&nbsp;G/L</U></I>xxx</b>",
+                    "OldGL": "<b><I><U>&nbsp;&nbsp;G/L&nbsp;&nbsp;</U></I>xxx</b>",
                     "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I>xxx</b>"
                 };
 
@@ -10339,7 +10339,7 @@ function GetWatchlistPrices() {
                     "Qty": "<b><I><U>Qty</U></I></b>",
                     "CostPerShare": "<b><I>Cost</I></b>",
                     "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I></b>",
-                    "OldGL": "<b><I><U>Old&nbsp;G/L</U></I></b>",
+                    "OldGL": "<b><I><U>&nbsp;&nbsp;G/L&nbsp;&nbsp;</U></I></b>",
                     "PurchaseDate": "<b><I><U>Acquired</U></I></b>"
                 };
 
@@ -10359,7 +10359,7 @@ function GetWatchlistPrices() {
                     "Qty": "<b><I><U>Qty</U></I>xxx</b>",
                     "CostPerShare": "<b><I><U>Cost</U></I>xxx</b>",
                     "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I>xxx</b>",
-                    "OldGL": "<b><I><U>Old&nbsp;G/L</U></I>xxx</b>",
+                    "OldGL": "<b><I><U>&nbsp;&nbsp;G/L&nbsp;&nbsp;</U></I>xxx</b>",
                     "PurchaseDate": "<b><I><U>Acquired</U></I>xxx</b>"
                 };
 
