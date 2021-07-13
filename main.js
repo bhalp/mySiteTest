@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.5 2021-07-08 01:22"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.6 2021-07-13 02:29"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -182,6 +182,7 @@ function Symbol() {
 }
 var gSymbols = new Array(); //collection of Symbol objects
 var gSymbolsAuto = new Array(); //collection of Symbol objects used to update the Old G/L in a watchlist
+var gSymbolsGL = []; //will contain all of the symbols that have an OldGL for all of the accounts -- key = accountId + symbol, value = {symbol, averagePrice}
 
 function SymbolPrice() {
     this.description = "";
@@ -269,6 +270,12 @@ function WLDisplayed() {
 }
 var gWLDisplayed = new Array(); //array of WLDisplayed objects
 var goWLDisplayed = []; //will contain the last WL item values to be used to determine if the display should be highlighted
+
+function WLOGLStats() {
+    this.WLId = "";
+    this.WLName = "";
+    this.NumItems = 0;
+}
 
 function WLSummaryRank() {
     this.watchlistName = "";
@@ -391,6 +398,10 @@ function WLItemOrder() {
 var gsAccountWLSummary = "Watchlist Performance";
 var gsAccountSavedOrders = "Account Saved Orders";
 var gsAccountOrders = "Account Orders";
+var gsAccountOldGL = "Account Old GL"; //will contain symbols from all of the OldGL watchlists for the account
+var gsAccountOldGLBase = "OldGL"; //the name of the watchlist in each account that contains all of the symbols that need additional values added to the calculated GL
+                                  //the actual watchlist name will be this value plus a single digit like "OldGL1"
+                                  //each watchlist will contain up to 200 symbols
 var gOrdersToDelete = new Array();
 var gOrdersToPlace = new Array();
 var gOrdersToCancel = new Array();
@@ -400,6 +411,8 @@ function WLWatchList() {
     this.bSelectedSymbols = false;
     this.bSelectedTemp = false;
     this.bSelectedTempSymbols = false;
+    this.bSelectedOGL = false;
+    this.bSelectedOGLTemp = false;
     this.bSelectedO = false;
     this.bSelectedOTemp = false;
     this.bSelectedSO = false;
@@ -510,6 +523,9 @@ function GetTradesContext() {
     this.sServerUrlBaseAllSymbols = "";
     this.sStartDate = "";
     this.sEndDate = "";
+    this.iLastUpdateDateTime = 0;
+    this.OldGLAccountId = "";
+    this.OldGLAccountName = "";
 
     this.sSymbolToLookup = "";
     this.sSymbolsToLookupTmp = "";
@@ -609,6 +625,11 @@ function TDWLOrder() {
     this.bDoingAddNewSymbols = false;
     this.bDoingPurchasedDateClear = false;
     this.bDoingPurchasedDateUpdate = false;
+    this.bDoingCreateWL = false;
+    this.bDoingDeleteWL = false;
+    this.sWLId = "";
+    this.sWLName = "";
+    this.sequenceId = "";
     this.sError = "";
     this.iRetryCnt = 0;
     this.symbol = "";
@@ -633,6 +654,7 @@ function TDWLOrder() {
     this.aWL13end = " }";
 }
 var gTDWLOrders = new Array();
+var gTDWLOrdersDeleteWL = new Array();
 var gsWLAutoGLUpdateNoAccountError = "No trades found.";
 
 function TDOrderSummary() {
@@ -1759,7 +1781,7 @@ function CancelKeyStroke(ev) {
     }
 }
 
-function CancelOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
+function CancelOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn) {
     let iNumSuccess = iNumSuccessIn;
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
@@ -1793,7 +1815,7 @@ function CancelOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncremen
                     if (iTryCount < 3) {
                         iTryCount++;
                         giProgress = giProgress - 1;
-                        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "'," + iTryCount.toString() + ")", 3000);
                         return;
                     } else {
                         // an error occurred
@@ -1807,7 +1829,7 @@ function CancelOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncremen
                 }
             }
         }
-        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder + 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 200);
+        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder + 1).toString() + ", '" + sAccountId + "', 0)", 200);
         return;
     }
     let sMsg = iNumSuccess.toString() + " ";
@@ -1819,7 +1841,7 @@ function CancelOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncremen
     if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
         giTDPostOrderRetryCnt++;
         giProgress = 0;
-        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", 0, '" + sAccountId + "', 0, " + idxWL.toString() + ")", 4000);
+        window.setTimeout("CancelOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", 0, '" + sAccountId + "', 0)", 4000);
         return;
     } else {
         if (iNumErrors > 0) {
@@ -1974,20 +1996,25 @@ function chkIndexChanged(ev) {
 
 function ClearAllWLInputFields(idxWL) {
     let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-    document.getElementById("txtWLpercent" + sThisId).value = "";
-    document.getElementById("txtWLdollars" + sThisId).value = "";
-    //        document.getElementById("optbuyexisting" + sThisId).checked = true;
-    //document.getElementById("txtsellpercent" + sThisId).value = "";
-
-    document.getElementById("chkLimit" + sThisId).checked = false;
-    document.getElementById("chkSave" + sThisId).checked = false;
-    document.getElementById("chkPlace" + sThisId).checked = false;
-
-    //document.getElementById("chksellLimit" + sThisId).checked = false;
-    //document.getElementById("chkbuyLimit" + sThisId).checked = false;
-    //document.getElementById("txttrailingstoppercent" + sThisId).value = "";
+    if (!(document.getElementById("txtWLpercent" + sThisId) == null)) {
+        document.getElementById("txtWLpercent" + sThisId).value = "";
+    }
+    if (!(document.getElementById("txtWLdollars" + sThisId) == null)) {
+        document.getElementById("txtWLdollars" + sThisId).value = "";
+    }
+    if (!(document.getElementById("chkLimit" + sThisId) == null)) {
+        document.getElementById("chkLimit" + sThisId).checked = false;
+    }
+    if (!(document.getElementById("chkSave" + sThisId) == null)) {
+        document.getElementById("chkSave" + sThisId).checked = false;
+    }
+    if (!(document.getElementById("chkPlace" + sThisId) == null)) {
+        document.getElementById("chkPlace" + sThisId).checked = false;
+    }
     if (!(document.getElementById("txtwlopen" + sThisId) == null)) {
         document.getElementById("txtwlopen" + sThisId).value = "";
+    }
+    if (!(document.getElementById("txtwlclose" + sThisId) == null)) {
         document.getElementById("txtwlclose" + sThisId).value = "";
     }
 }
@@ -2331,34 +2358,36 @@ function DoGetWatchlistPrices() {
     window.setTimeout("GetWatchlistPrices()", 50);
 }
 
-function DoOCancelOrders(idxWL) {
+function DoOCancelOrders(watchlistId, sLastWLAccountId) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+        if (idxWL != -1) {
+            let sAccountId = gWatchlists[idxWL].accountId;
+            let iNumSelected = 0;
 
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let iNumSelected = 0;
+            gOrdersToCancel.length = 0;
 
-        gOrdersToCancel.length = 0;
-
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                iNumSelected++;
-                let oWLItem = new WLItemOrder();
-                oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
-                let oTDOrder = new TDCancelOrder();
-                oTDOrder.orderId = oWLItem.orderId;
-                gOrdersToCancel[gOrdersToCancel.length] = oTDOrder;
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                    iNumSelected++;
+                    let oWLItem = new WLItemOrder();
+                    oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
+                    let oTDOrder = new TDCancelOrder();
+                    oTDOrder.orderId = oWLItem.orderId;
+                    gOrdersToCancel[gOrdersToCancel.length] = oTDOrder;
+                }
             }
-        }
-        if (iNumSelected == 0) {
-            alert("Please select at least one order to cancel.")
-            return;
-        }
-        let sConfirmMsg = "";
-        sConfirmMsg = "Canceling  " + iNumSelected.toString() + " orders. ";
-        if (AreYouSure(sConfirmMsg)) {
-            gbDoingCreateOrders = true;
-            SetWait();
-            window.setTimeout("CancelOrders(true, 0, 0, 0, 0, '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
+            if (iNumSelected == 0) {
+                alert("Please select at least one order to cancel.")
+                return;
+            }
+            let sConfirmMsg = "";
+            sConfirmMsg = "Canceling  " + iNumSelected.toString() + " orders. ";
+            if (AreYouSure(sConfirmMsg)) {
+                gbDoingCreateOrders = true;
+                SetWait();
+                window.setTimeout("CancelOrders(true, 0, 0, 0, 0, '" + sAccountId + "', 0)", 10);
+            }
         }
 
         return;
@@ -2415,89 +2444,90 @@ function DoShowPriceHistoryDetail(idxPriceInfo, idxPriceHistory, bClicked) {
     }
 }
 
-function DoSODeleteOrders(idxWL) {
+function DoSODeleteOrders(watchlistId, sLastWLAccountId) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+        if (idxWL != -1) {
+            let sAccountId = gWatchlists[idxWL].accountId;
+            let iNumSelected = 0;
 
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let iNumSelected = 0;
+            gOrdersToDelete.length = 0;
 
-        gOrdersToDelete.length = 0;
-
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                iNumSelected++;
-                let oWLItem = new WLItemSavedOrder();
-                oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
-                let oTDSavedOrder = new TDSavedOrder();
-                oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                let d = new Date(oWLItem.savedTime.split("+")[0] + "+00:00");
-                oTDSavedOrder.symbol = oWLItem.symbol + " -- " + FormatTDTradeDate(d);
-                gOrdersToDelete[gOrdersToDelete.length] = oTDSavedOrder;
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                    iNumSelected++;
+                    let oWLItem = new WLItemSavedOrder();
+                    oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
+                    let oTDSavedOrder = new TDSavedOrder();
+                    oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                    let d = new Date(oWLItem.savedTime.split("+")[0] + "+00:00");
+                    oTDSavedOrder.symbol = oWLItem.symbol + " -- " + FormatTDTradeDate(d);
+                    gOrdersToDelete[gOrdersToDelete.length] = oTDSavedOrder;
+                }
+            }
+            if (iNumSelected == 0) {
+                alert("Please select at least one saved order to delete.")
+                return;
+            }
+            let sConfirmMsg = "";
+            sConfirmMsg = "Deleting  " + iNumSelected.toString() + " saved orders. ";
+            if (AreYouSure(sConfirmMsg)) {
+                gbDoingCreateOrders = true;
+                SetWait();
+                window.setTimeout("DeleteSavedOrders(true, 0, 0, 0, 0, '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
             }
         }
-        if (iNumSelected == 0) {
-            alert("Please select at least one saved order to delete.")
-            return;
-        }
-        let sConfirmMsg = "";
-        sConfirmMsg = "Deleting  " + iNumSelected.toString() + " saved orders. ";
-        if (AreYouSure(sConfirmMsg)) {
-            gbDoingCreateOrders = true;
-            SetWait();
-            window.setTimeout("DeleteSavedOrders(true, 0, 0, 0, 0, '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-        }
-
         return;
     }
 }
 
-function DoSOPlaceOrders(idxWL) {
+function DoSOPlaceOrders(watchlistId, sLastWLAccountId) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+        if (idxWL != -1) {
+            let sAccountId = gWatchlists[idxWL].accountId;
+            let iNumSelected = 0;
 
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let iNumSelected = 0;
+            let dtCancelTime = new Date(); //get todays date
+            dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
+            let sCancelTime = FormatDateForTD(dtCancelTime);
 
-        let dtCancelTime = new Date(); //get todays date
-        dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
-        let sCancelTime = FormatDateForTD(dtCancelTime);
+            gOrdersToPlace.length = 0;
 
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                    iNumSelected++;
+                    let oWLItem = new WLItemSavedOrder();
+                    oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
+                    let oTDSavedOrder = new TDSavedOrder();
+                    oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                    oTDSavedOrder.orderType = oWLItem.orderType;
+                    oTDSavedOrder.a02orderType = oTDSavedOrder.a02orderType + "\"" + oWLItem.orderType + "\", ";
+                    oTDSavedOrder.a02Aprice = oTDSavedOrder.a02Aprice + "\"" + oWLItem.price.toString() + "\", ";
+                    oTDSavedOrder.a03DstopPriceOffset = oTDSavedOrder.a03DstopPriceOffset + oWLItem.stopPriceOffset.toString() + ", ";
+                    oTDSavedOrder.a03FcancelTime = oTDSavedOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+                    oTDSavedOrder.a04duration = oTDSavedOrder.a04duration + "\"" + oWLItem.duration + "\", ";
+                    oTDSavedOrder.a07instructionStart = oTDSavedOrder.a07instructionStart + "\"" + oWLItem.instruction + "\", ";
+                    oTDSavedOrder.instruction = oWLItem.instruction;
+                    oTDSavedOrder.a08quantity = oTDSavedOrder.a08quantity + oWLItem.quantity.toString() + ", ";
+                    oTDSavedOrder.a10symbol = oTDSavedOrder.a10symbol + "\"" + oWLItem.symbol + "\", "
+                    oTDSavedOrder.symbol = oWLItem.symbol;
 
-        gOrdersToPlace.length = 0;
-
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                iNumSelected++;
-                let oWLItem = new WLItemSavedOrder();
-                oWLItem = gWatchlists[idxWL].WLItems[idxWLItem];
-                let oTDSavedOrder = new TDSavedOrder();
-                oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                oTDSavedOrder.orderType = oWLItem.orderType;
-                oTDSavedOrder.a02orderType = oTDSavedOrder.a02orderType + "\"" + oWLItem.orderType + "\", ";
-                oTDSavedOrder.a02Aprice = oTDSavedOrder.a02Aprice + "\"" + oWLItem.price.toString() + "\", ";
-                oTDSavedOrder.a03DstopPriceOffset = oTDSavedOrder.a03DstopPriceOffset + oWLItem.stopPriceOffset.toString() + ", ";
-                oTDSavedOrder.a03FcancelTime = oTDSavedOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-                oTDSavedOrder.a04duration = oTDSavedOrder.a04duration + "\"" + oWLItem.duration + "\", ";
-                oTDSavedOrder.a07instructionStart = oTDSavedOrder.a07instructionStart + "\"" + oWLItem.instruction + "\", ";
-                oTDSavedOrder.instruction = oWLItem.instruction;
-                oTDSavedOrder.a08quantity = oTDSavedOrder.a08quantity + oWLItem.quantity.toString() + ", ";
-                oTDSavedOrder.a10symbol = oTDSavedOrder.a10symbol + "\"" + oWLItem.symbol + "\", "
-                oTDSavedOrder.symbol = oWLItem.symbol;
-
-                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                    gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                }
+            }
+            if (iNumSelected == 0) {
+                alert("Please select at least one saved order to place.")
+                return;
+            }
+            let sConfirmMsg = "";
+            sConfirmMsg = "Placing  " + iNumSelected.toString() + " saved orders. ";
+            if (AreYouSure(sConfirmMsg)) {
+                gbDoingCreateOrders = true;
+                SetWait();
+                window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
             }
         }
-        if (iNumSelected == 0) {
-            alert("Please select at least one saved order to place.")
-            return;
-        }
-        let sConfirmMsg = "";
-        sConfirmMsg = "Placing  " + iNumSelected.toString() + " saved orders. ";
-        if (AreYouSure(sConfirmMsg)) {
-            gbDoingCreateOrders = true;
-            SetWait();
-            window.setTimeout("PostWLPlaceOrders(true, 0, 0, 0, " + (gOrdersToPlace.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-        }
-
         return;
     }
 }
@@ -2510,8 +2540,11 @@ function DoURLEncode(sData) {
     return sReturn;
 }
 
-function DoWLBuy(idxWL) {
-    DoWLBuySell(idxWL, 1);
+function DoWLBuy(watchlistId, sLastWLAccountId) {
+    let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+    if (idxWL != -1) {
+        DoWLBuySell(idxWL, 1);
+    }
 //    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
 //        let sSelectNum = "";
 //        let iSelectNum = 0;
@@ -2759,251 +2792,243 @@ function DoWLBuySell(idxWL, iBuySell) {
 }
 
 
-function DoWLCloseSymbol(idxWL) {
+function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
-        let sSelectNum = "";
-        let dSelectNum = 0.0;
-        let sSymbol = "";
-        let bDoingAutoUpdate = false;
+        let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+        if (idxWL != -1) {
+            let sSelectNum = "";
+            let dSelectNum = 0.0;
+            let sSymbol = "";
+            let bDoingAutoUpdate = false;
 
-        if (gWatchlists[idxWL].watchlistId == gWatchlists[idxWL].accountId) {
-            alert("Cannot Update G/L or Add symbols in an Account watchlist.");
-            return;
-        }
+            if (gWatchlists[idxWL].watchlistId == gWatchlists[idxWL].accountId) {
+                alert("Cannot Update G/L or Add symbols in an Account watchlist.");
+                return;
+            }
 
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+            let sAccountId = gWatchlists[idxWL].accountId;
+            let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+            //if (document.getElementById("txtwlclose" + sThisId) == null) {
+            //    debugger
+            //}
+            let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
 
-        let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
-
-        if (sDollars != "") {
-            if (sDollars.substr(0, 1) == "$") {
-                //treat as number
-                dSelectNum = parseFloat(sDollars.substr(1, sDollars.length - 1));
-                if (isNaN(dSelectNum)) {
-                    dSelectNum = 0;
-                }
-            } else {
+            if (sDollars != "") {
                 //treat as date
                 if (ValidateTDDate(sDollars, false)) {
                     let sEndDate = FormatCurrentDateForTD();
                     if (sEndDate < sDollars) {
-                        alert("Invalid start date. Please enter a start date less than or equal to today.");
+                        alert("Invalid initialization start date. Please enter a start date less than or equal to today.");
                         return;
                     }
-                    bDoingAutoUpdate = true;
+                    let sConfirmMsg = "";
+                    sConfirmMsg = "Initializing the G/L for all of the symbols in the watchlist. ";
+                    if (AreYouSure(sConfirmMsg)) {
+                        //get the trade info for the selected symbols
+                        let aStartDate = sDollars.split("-");
+                        let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
+
+                        window.setTimeout("GetTradesAuto(true, " + iStartDate + ", " + idxWL + ", true)", 10);
+                    }
+                    //bDoingAutoUpdate = true;
                 } else {
-                    alert("Please enter either a date (yyyy-mm-dd) or a dollar amount ($xx.xx).")
+                    alert("Please enter an initialization start date as yyyy-mm-dd.")
+                    //alert("Please enter either a date (yyyy-mm-dd) or a dollar amount ($xx.xx).")
                     return;
                 }
-            }
-        } else {
-            alert("Please enter either a date (yyyy-mm-dd) or a dollar amount ($xx.xx).")
-            return;
-        }
-
-        if (bDoingAutoUpdate) {
-            let iNumSelected = 0;
-            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                    iNumSelected++;
-                }
-            }
-            if (iNumSelected == 0) {
-                alert("Please select at least 1 symbol.")
             } else {
+                //updating G/L for each symbol in the watchlist using the earliest update date found in the watchlist
                 let sConfirmMsg = "";
-                sConfirmMsg = "Auto Update the Old  G/L for the selected symbols. ";
+                sConfirmMsg = "Updating the G/L for all of the symbols in the watchlist. ";
                 if (AreYouSure(sConfirmMsg)) {
-                    //get the trade info for the selected symbols
-                    window.setTimeout("GetTradesAuto(true, '" + sDollars + "', " + idxWL + ")", 10);
-                }
-            }
-        } else {
-            sSelectNum = FormatDecimalNumber(dSelectNum, 5, 2, "");
-            dSelectNum = parseFloat(sSelectNum);
-
-            let iNumSelected = 0;
-            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                    iNumSelected++;
-                    if (iNumSelected > 1) {
-                        break;
+                    //get the lowest last update date
+                    let iLowestUpdateDate = 0;
+                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                        if (iLowestUpdateDate == 0) {
+                            iLowestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                        } else {
+                            if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate == 0) {
+                                alert("New symbol encountered. Please enter a date to use to initialize the entire watchlist.")
+                                return;
+                            } else if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate < iLowestUpdateDate) {
+                                iLowestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                            }
+                        }
                     }
-                    sSymbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                    //get the trade info for the selected symbols
+                    window.setTimeout("GetTradesAuto(true, " + iLowestUpdateDate + ", " + idxWL + ", false)", 10);
                 }
-            }
-            if (iNumSelected > 1) {
-                alert("Please select only 1 symbol.")
-            } else if (iNumSelected == 0) {
-                alert("Please select a symbol.")
-            } else {
-                let sConfirmMsg = "";
-                sConfirmMsg = "Update " + sSymbol + " with Gain/Loss $" + sSelectNum + ". ";
-                if (AreYouSure(sConfirmMsg)) {
-                    window.setTimeout("GenerateWLCloseSymbolOrders('" + sAccountId + "', " + dSelectNum + ", " + idxWL + ", '" + sSymbol + "')", 10);
-                }
-            }
-        }
-
-        return;
-    }
-}
-
-function DoWLDeleteSymbols(idxWL) {
-    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
-
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-
-        let sSymbolsToLookup = "";
-        let sSequenceIds = "";
-        let sSymbolsToLookupSep = "";
-
-        let iNumSelected = 0;
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                iNumSelected++;
-                sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                sSequenceIds = sSequenceIds + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId.toString();
-                sSymbolsToLookupSep = ", ";
-            }
-        }
-        if (iNumSelected == 0) {
-            alert("Please select at least one symbol to delete.")
-            return;
-        }
-
-        if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
-            alert("Cannot select all symbols to delete. Leave at least one symbol unselected.")
-            return;
-        }
-
-        let sConfirmMsg = "";
-        sConfirmMsg = "Deleting symbols " + sSymbolsToLookup.toUpperCase() + ". ";
-        if (AreYouSure(sConfirmMsg)) {
-            window.setTimeout("GenerateWLDeleteSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSequenceIds + "')", 10);
-        }
-        return;
-    }
-}
-
-function DoWLOpenSymbols(idxWL) {
-    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
-
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-
-        let sSymbolsToLookup = "";
-        let sSymbolsToLookupSep = "";
-        let sSymbolsToLookupTmp = TrimLikeVB(document.getElementById("txtwlopen" + sThisId).value);
-        let sSymbolsAlreadyOpen = "";
-        let sSymbolsAlreadyOpenSep = "";
-
-        let sAcquiredDate = TrimLikeVB(document.getElementById("txtwlacquired" + sThisId).value);
-        if (sAcquiredDate != "") {
-            if (!ValidateTDDate(sAcquiredDate, true)) {
-                alert("Please enter an acquired date as yyyy-mm-dd.");
                 return;
             }
         }
+        return;
+    }
+}
 
-        if (sSymbolsToLookupTmp == "") {
-            //alert("Please enter at least 1 symbol.");
+function DoWLDeleteSymbols(watchlistId, sLastWLAccountId) {
+    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+        if (idxWL != -1) {
+            let sAccountId = gWatchlists[idxWL].accountId;
+            let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
+            let sSymbolsToLookup = "";
+            let sSequenceIds = "";
+            let sSymbolsToLookupSep = "";
+
             let iNumSelected = 0;
-            let bHasShares = false;
             for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                 if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
                     iNumSelected++;
                     sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                    sSequenceIds = sSequenceIds + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId.toString();
                     sSymbolsToLookupSep = ", ";
                 }
             }
-            if (sAcquiredDate == "") {
-                if (iNumSelected == 0) {
-                    alert("Please select at least one symbol to clear the Acquired date.")
-                    return;
-                }
-                if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
-                    alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
-                    return;
-                }
-                let sConfirmMsg = "";
-                sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-                if (AreYouSure(sConfirmMsg)) {
-                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
-                }
-            } else {
-                if (iNumSelected == 0) {
-                    alert("Please select at least one symbol to change the Acquired date.")
-                    return;
-                }
-                let sConfirmMsg = "";
-                sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-                if (AreYouSure(sConfirmMsg)) {
-                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
-                }
+            if (iNumSelected == 0) {
+                alert("Please select at least one symbol to delete.")
+                return;
             }
-        } else {
-            sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp);
-            let vTmp = sSymbolsToLookupTmp.split(",");
-            if (vTmp.length > 0) {
-                let iNumAlreadyOpened = 0;
-                sSymbolsToLookup = "";
-                //check to see if already in watchlist
-                let bFound = false;
-                for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
-                    bFound = false;
-                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                        if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
-                            bFound = true;
-                            sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
-                            sSymbolsAlreadyOpenSep = ", ";
-                            iNumAlreadyOpened++;
-                            break;
-                        }
-                    }
-                    if (!bFound) {
-                        sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
-                        sSymbolsToLookupSep = ",";
-                    }
-                }
-                let sConfirmMsg = "";
-                if (sSymbolsAlreadyOpen != "") {
-                    if (iNumAlreadyOpened == 1) {
-                        sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
-                    } else {
-                        sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
-                    }
-                }
-                if (sSymbolsToLookup != "") {
-                    if (sConfirmMsg != "") {
-                        sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
-                    } else {
-                        sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
-                    }
-                    if (AreYouSure(sConfirmMsg)) {
-                        window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSymbolsToLookup.toUpperCase() + "','" + sAcquiredDate + "')", 10);
-                    }
-                } else {
-                    if (sConfirmMsg != "") {
-                        sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
-                    } else {
-                        sConfirmMsg = "No symbols will be added.";
-                    }
-                    alert(sConfirmMsg);
-                }
-            } else {
-                alert("Please enter at least 1 symbol.");
-            }
-        }
 
+            if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+                alert("Cannot select all symbols to delete. Leave at least one symbol unselected.")
+                return;
+            }
+
+            let sConfirmMsg = "";
+            sConfirmMsg = "Deleting symbols " + sSymbolsToLookup.toUpperCase() + ". ";
+            if (AreYouSure(sConfirmMsg)) {
+                window.setTimeout("GenerateWLDeleteSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSequenceIds + "')", 10);
+            }
+
+        }
         return;
     }
 }
 
-function DoWLSell(idxWL) {
-    DoWLBuySell(idxWL, 2);
+function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
+    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+        if (idxWL != -1) {
+            let sAccountId = gWatchlists[idxWL].accountId;
+            let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+
+            let sSymbolsToLookup = "";
+            let sSymbolsToLookupSep = "";
+            let sSymbolsToLookupTmp = TrimLikeVB(document.getElementById("txtwlopen" + sThisId).value);
+            let sSymbolsAlreadyOpen = "";
+            let sSymbolsAlreadyOpenSep = "";
+
+            let sAcquiredDate = "";
+            if (!((document.getElementById("txtwlacquired" + sThisId) == null) || (isUndefined(document.getElementById("txtwlacquired" + sThisId))))) {
+                sAcquiredDate = TrimLikeVB(document.getElementById("txtwlacquired" + sThisId).value);
+                if (sAcquiredDate != "") {
+                    if (!ValidateTDDate(sAcquiredDate, true)) {
+                        alert("Please enter an acquired date as yyyy-mm-dd.");
+                        return;
+                    }
+                }
+            }
+
+            if (sSymbolsToLookupTmp == "") {
+                //alert("Please enter at least 1 symbol.");
+                let iNumSelected = 0;
+                let bHasShares = false;
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                        iNumSelected++;
+                        sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                        sSymbolsToLookupSep = ", ";
+                    }
+                }
+                if (sAcquiredDate == "") {
+                    if (iNumSelected == 0) {
+                        alert("Please select at least one symbol to clear the Acquired date.")
+                        return;
+                    }
+                    if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+                        alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
+                        return;
+                    }
+                    let sConfirmMsg = "";
+                    sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+                    if (AreYouSure(sConfirmMsg)) {
+                        window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
+                    }
+                } else {
+                    if (iNumSelected == 0) {
+                        alert("Please select at least one symbol to change the Acquired date.")
+                        return;
+                    }
+                    let sConfirmMsg = "";
+                    sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+                    if (AreYouSure(sConfirmMsg)) {
+                        window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
+                    }
+                }
+            } else {
+                sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp);
+                let vTmp = sSymbolsToLookupTmp.split(",");
+                if (vTmp.length > 0) {
+                    let iNumAlreadyOpened = 0;
+                    sSymbolsToLookup = "";
+                    //check to see if already in watchlist
+                    let bFound = false;
+                    for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
+                        bFound = false;
+                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                            if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                                bFound = true;
+                                sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
+                                sSymbolsAlreadyOpenSep = ", ";
+                                iNumAlreadyOpened++;
+                                break;
+                            }
+                        }
+                        if (!bFound) {
+                            sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
+                            sSymbolsToLookupSep = ",";
+                        }
+                    }
+                    let sConfirmMsg = "";
+                    if (sSymbolsAlreadyOpen != "") {
+                        if (iNumAlreadyOpened == 1) {
+                            sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
+                        } else {
+                            sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
+                        }
+                    }
+                    if (sSymbolsToLookup != "") {
+                        if (sConfirmMsg != "") {
+                            sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+                        } else {
+                            sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+                        }
+                        if (AreYouSure(sConfirmMsg)) {
+                            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSymbolsToLookup.toUpperCase() + "','" + sAcquiredDate + "')", 10);
+                        }
+                    } else {
+                        if (sConfirmMsg != "") {
+                            sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
+                        } else {
+                            sConfirmMsg = "No symbols will be added.";
+                        }
+                        alert(sConfirmMsg);
+                    }
+                } else {
+                    alert("Please enter at least 1 symbol.");
+                }
+            }
+        }
+        return;
+    }
+}
+
+function DoWLSell(watchlistId, sLastWLAccountId) {
+    let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+    if (idxWL != -1) {
+        DoWLBuySell(idxWL, 2);
+    }
 //    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
 //        let sSelectNum = "";
 //        let iSelectNum = 0;
@@ -3066,53 +3091,255 @@ function DoWLSell(idxWL) {
 //    }
 }
 
-function DoWLTrailingStop(idxWL) {
+function DoWLTrailingStop(watchlistId, sLastWLAccountId) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
-        let sSelectNum = "";
-        let dSelectNum
-        //debugger
-        let sAccountId = gWatchlists[idxWL].accountId;
-        let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+        let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+        if (idxWL != -1) {
+            let sSelectNum = "";
+            let dSelectNum
+            //debugger
+            let sAccountId = gWatchlists[idxWL].accountId;
+            let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
-        if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
-            alert("Please check Save or Place or check both.");
-            return;
-        }
-
-        let sSymbolsThisWL = "";
-        let sSep = "";
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-                sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                sSep = ",";
-            }
-        }
-        sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
-
-        sSelectNum = document.getElementById("txtWLpercent" + sThisId).value;
-        let sTmp = TrimLikeVB(sSelectNum);
-        if (sTmp == "") {
-            alert("Please enter a percentage from 0.01 to 100.");
-            return;
-        }
-        try {
-            dSelectNum = parseFloat(sSelectNum);
-            if ((dSelectNum < 0.01) || (dSelectNum > 100)) {
-                alert("Invalid percentage. Must be from 0.01 to 100.");
+            if ((!document.getElementById("chkSave" + sThisId).checked) && (!document.getElementById("chkPlace" + sThisId).checked)) {
+                alert("Please check Save or Place or check both.");
                 return;
             }
-            else {
-                if (AreYouSure("Set TRAILING STOP at " + FormatDecimalNumber(dSelectNum,5,2,"") + "% for the selected symbols. ")) {
-                    window.setTimeout("GenerateWLTrailingStopOrders('" + sAccountId + "', " + parseFloat(FormatDecimalNumber(dSelectNum, 5, 2, "")) + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
+
+            let sSymbolsThisWL = "";
+            let sSep = "";
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+                    sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                    sSep = ",";
                 }
             }
-        }
-        catch (e) {
-            alert("Invalid percentage. Must be from 0.01 to 100.");
-            sSelectNum = "";
+            sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
+
+            sSelectNum = document.getElementById("txtWLpercent" + sThisId).value;
+            let sTmp = TrimLikeVB(sSelectNum);
+            if (sTmp == "") {
+                alert("Please enter a percentage from 0.01 to 100.");
+                return;
+            }
+            try {
+                dSelectNum = parseFloat(sSelectNum);
+                if ((dSelectNum < 0.01) || (dSelectNum > 100)) {
+                    alert("Invalid percentage. Must be from 0.01 to 100.");
+                    return;
+                }
+                else {
+                    if (AreYouSure("Set TRAILING STOP at " + FormatDecimalNumber(dSelectNum, 5, 2, "") + "% for the selected symbols. ")) {
+                        window.setTimeout("GenerateWLTrailingStopOrders('" + sAccountId + "', " + parseFloat(FormatDecimalNumber(dSelectNum, 5, 2, "")) + ", '" + sSymbolsThisWL + "', " + idxWL.toString() + ")", 10);
+                    }
+                }
+            }
+            catch (e) {
+                alert("Invalid percentage. Must be from 0.01 to 100.");
+                sSelectNum = "";
+            }
         }
     }
 }
+
+function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
+    //iFromWhere = 1 - GetTrades, 2 - WL Add button, 3 - WL Delete button, 4, WL Update GL button
+    if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        let idxWL = -1;
+        let sOldGL = sOldGLIn;
+        let sSymbol = sSymbolIn;
+        if (iFromWhere > 1) {
+            for (let idx = 0; idx < gWatchlists.length; idx++) {
+                if ((gWatchlists[idx].name == gsAccountOldGL) && (gWatchlists[idx].accountId == sAccountId)) {
+                    idxWL = idx;
+                    break;
+                }
+            }
+        } else {
+            idxWL = 0;
+        }
+        if (idxWL == -1) {
+            alert("DoWLUpdateOGLSymbols - Program error - invalid idxWL value.");
+        } else {
+            let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+            switch (iFromWhere) {
+                case 1: //GetTrades
+                    {
+                        let sConfirmMsg = "";
+                        if ((gSymbolsGL[sAccountId + sSymbol] == null) || (isUndefined(gSymbolsGL[sAccountId + sSymbol]))) {
+                            //add new symbol
+                            sConfirmMsg = "Adding " + sSymbol.toUpperCase() + " with an OldGL value of $" + sOldGL + ". ";
+                        } else {
+                            //update existing symbol
+                            sConfirmMsg = "Updating " + sSymbol.toUpperCase() + " with an OldGL value of $" + sOldGL + ". ";
+                        }
+                        if (AreYouSure(sConfirmMsg)) {
+                            window.setTimeout("GenerateWLUpdateOGLSymbolOrders(" + iFromWhere.toString() + ", '" + sAccountId + "', '" + sSymbol + "', '" + sOldGL + "')", 10);
+                        }
+                        break;
+                    }
+                case 2: //WL Add button
+                    {
+                        let sSymbolsToLookup = "";
+                        let sSymbolsToLookupSep = "";
+                        let sSymbolsToLookupTmp = TrimLikeVB(document.getElementById("txtwlopen" + sThisId).value);
+                        let sSymbolsAlreadyOpen = "";
+                        let sSymbolsAlreadyOpenSep = "";
+                        let sSelectNum = "";
+                        let dSelectNum = 0.0;
+                        let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
+
+                        if (sDollars != "") {
+                            //treat as number
+                            dSelectNum = parseFloat(sDollars);
+                            if (isNaN(dSelectNum)) {
+                                alert("Please enter either a dollar amount (xx.xx) or leave blank.");
+                                return;
+                            }
+                            sOldGL = FormatDecimalNumber(dSelectNum, 5, 2, "");
+                        }
+
+                        if (sSymbolsToLookupTmp == "") {
+                            alert("Please enter a symbol.");
+                        } else {
+                            sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp);
+                            let vTmp = sSymbolsToLookupTmp.split(",");
+                            if (vTmp.length > 0) {
+                                if (vTmp.length > 1) {
+                                    alert("Please enter only one symbol.");
+                                    return;
+                                }
+                                let iNumAlreadyOpened = 0;
+                                sSymbolsToLookup = "";
+                                //check to see if already in watchlist
+                                let bFound = false;
+                                for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
+                                    bFound = false;
+                                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                        if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                                            bFound = true;
+                                            sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
+                                            sSymbolsAlreadyOpenSep = ", ";
+                                            iNumAlreadyOpened++;
+                                            break;
+                                        }
+                                    }
+                                    if (!bFound) {
+                                        sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
+                                        sSymbolsToLookupSep = ",";
+                                    }
+                                }
+                                let sConfirmMsg = "";
+                                if (sSymbolsAlreadyOpen != "") {
+                                    if (iNumAlreadyOpened == 1) {
+                                        sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
+                                    } else {
+                                        sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
+                                    }
+                                }
+                                if (sSymbolsToLookup != "") {
+                                    if (sConfirmMsg != "") {
+                                        sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + " with an OldGL value of $" + sOldGL + ". ";
+                                    } else {
+                                        sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + " with an OldGL value of $" + sOldGL + ". ";
+                                    }
+                                    if (AreYouSure(sConfirmMsg)) {
+                                        window.setTimeout("GenerateWLUpdateOGLSymbolOrders(" + iFromWhere.toString() + ", '" + sAccountId + "', '" + sSymbolsToLookup.toUpperCase() + "', '" + sOldGL + "')", 10);
+                                    }
+                                } else {
+                                    if (sConfirmMsg != "") {
+                                        sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
+                                    } else {
+                                        sConfirmMsg = "No symbols will be added.";
+                                    }
+                                    alert(sConfirmMsg);
+                                }
+                            } else {
+                                alert("Please enter a symbol.");
+                            }
+                        }
+                        break;
+                    }
+                case 3: //WL Delete button
+                    {
+                        let sSymbolsToLookup = "";
+                        let sSymbolsToLookupSep = "";
+
+                        let iNumSelected = 0;
+                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                                iNumSelected++;
+                                sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                                sSymbolsToLookupSep = ", ";
+                            }
+                        }
+                        if (iNumSelected == 0) {
+                            alert("Please select at least one symbol to delete.")
+                            return;
+                        }
+
+                        //if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+                        //    alert("Cannot select all symbols to delete. Leave at least one symbol unselected.")
+                        //    return;
+                        //}
+
+                        let sConfirmMsg = "";
+                        sConfirmMsg = "Deleting symbols " + sSymbolsToLookup.toUpperCase() + ". ";
+                        if (AreYouSure(sConfirmMsg)) {
+                            window.setTimeout("GenerateWLUpdateOGLSymbolOrders(" + iFromWhere.toString() + ", '" + sAccountId + "', '" + sSymbolsToLookup.toUpperCase() + "', '" + sOldGL + "')", 10);
+                        }
+                        break;
+                    }
+                case 4: //WL Update button
+                    {
+                        let dSelectNum = 0.0;
+                        let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
+
+                        if (sDollars != "") {
+                            //treat as number
+                            dSelectNum = parseFloat(sDollars);
+                            if (isNaN(dSelectNum)) {
+                                alert("Please enter either a dollar amount (xx.xx) or leave blank.");
+                                return;
+                            }
+                            sOldGL = FormatDecimalNumber(dSelectNum, 5, 2, "");
+                        }
+                        dSelectNum = parseFloat(sOldGL);
+
+                        let iNumSelected = 0;
+                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                                iNumSelected++;
+                                if (iNumSelected > 1) {
+                                    break;
+                                }
+                                sSymbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                            }
+                        }
+                        if (iNumSelected > 1) {
+                            alert("Please select only 1 symbol.")
+                        } else if (iNumSelected == 0) {
+                            alert("Please select a symbol.")
+                        } else {
+                            let sConfirmMsg = "";
+                            sConfirmMsg = "Update " + sSymbol + " with Old GL $" + sOldGL + ". ";
+                            if (AreYouSure(sConfirmMsg)) {
+                                window.setTimeout("GenerateWLUpdateOGLSymbolOrders(" + iFromWhere.toString() + ", '" + sAccountId + "', '" + sSymbol.toUpperCase() + "', '" + sOldGL + "')", 10);
+                            }
+                        }
+                        break;
+                    }
+                default: //invalid value - do nothing
+                    {
+                        alert("Program error - invalid iFromWhere value.");
+                    }
+            }
+
+        }
+        return;
+    }
+}
+
 
 function drag_div(div_id) {
     let div;
@@ -3409,7 +3636,7 @@ function FormatDateForTD(d) {
     return s;
 }
 
-function GenerateWLAutoCloseSymbolOrders(sAccountId, sStartDate, idxWL) {
+function GenerateWLAutoCloseSymbolOrders(sAccountId, sStartDate, idxWL, bInitializing) {
     //debugger
     gTDWLOrders.length = 0;
     let sTodaysDate = FormatCurrentDateForTD();
@@ -3420,59 +3647,125 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, sStartDate, idxWL) {
     //let iQuantity = GetTDMillisecondTime(sStartDate) + (offset * 60 * 1000);
     let sQuantity = (iQuantity / 100000).toString();
 
-    let iAveragePrice = new Date(parseInt(aTodaysDate[0]), parseInt(aTodaysDate[1] - 1), parseInt(aTodaysDate[2])).getTime();
-    //let iAveragePrice = GetTDMillisecondTime(sTodaysDate) + (offset * 60 * 1000);
-    let sAveragePrice = (iAveragePrice / 100000).toString();
+    //let iAveragePrice = new Date(parseInt(aTodaysDate[0]), parseInt(aTodaysDate[1] - 1), parseInt(aTodaysDate[2])).getTime();
+    //let sAveragePrice = (iAveragePrice / 100000).toString();
+
+    let iAveragePrice = new Date().getTime();
+    let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
 
     for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-        if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-            let oTDWLOrder = new TDWLOrder();
-            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-            oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-            oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
-            oTDWLOrder.aWL05Aquantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
-            oTDWLOrder.aWL06AaveragePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
+        let oTDWLOrder = new TDWLOrder();
+        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
+        oTDWLOrder.aWL05Aquantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
+        oTDWLOrder.aWL06AaveragePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
 
-            let sCommission = "";
-
-            for (let idxSym = 0; idxSym < gSymbolsAuto.length; idxSym++) {
-                if (gSymbolsAuto[idxSym].symbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
-                    let oSymbolPrice = new SymbolPrice();
-                    let sLastAssetType = gSymbolsAuto[idxSym].assetType;
-                    oSymbolPrice = gSymbolsAuto[idxSym].SymbolPrice;
-                    let dCurrentPrice = 0.0;
-                    if (sLastAssetType == "OPTION") {
-                        dCurrentPrice = oSymbolPrice.price; //get the current price here
-
-                        let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
-                        if (dSelectNum < 0.0) {
-                            dSelectNum = (-1 * dSelectNum) + 1000000.0;
-                        }
-                        sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
-                    } else {
-                        dCurrentPrice = oSymbolPrice.price; //get the current price here
-                        let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
-                        if (dSelectNum < 0.0) {
-                            dSelectNum = (-1 * dSelectNum) + 1000000.0;
-                        }
-                        sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
-                    }
-                    break;
+        let sCommission = "";
+        let dLastCommision = 0.0;
+        for (let idxSym = 0; idxSym < gSymbolsAuto.length; idxSym++) {
+            if (gSymbolsAuto[idxSym].symbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                let oSymbolPrice = new SymbolPrice();
+                let sLastAssetType = gSymbolsAuto[idxSym].assetType;
+                oSymbolPrice = gSymbolsAuto[idxSym].SymbolPrice;
+                if (!bInitializing) {
+                    dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
                 }
-            }
-            if (sCommission == "") {
-                oTDWLOrder.sError = gsWLAutoGLUpdateNoAccountError;
-            } else {
-                oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
-                //update WLInfo
-                gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
-                gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate = iQuantity;
-            }
+                let dCurrentPrice = 0.0;
+                if (sLastAssetType == "OPTION") {
+                    dCurrentPrice = oSymbolPrice.price; //get the current price here
 
-            oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
-            oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-            gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
+                    dSelectNum = dSelectNum + dLastCommision;
+                    if (dSelectNum < 0.0) {
+                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                    }
+                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+                } else {
+                    dCurrentPrice = oSymbolPrice.price; //get the current price here
+                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
+                    dSelectNum = dSelectNum + dLastCommision;
+                    if (dSelectNum < 0.0) {
+                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                    }
+                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+                }
+                break;
+            }
         }
+        if (sCommission == "") {
+            //oTDWLOrder.sError = gsWLAutoGLUpdateNoAccountError;
+            dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
+            if (dLastCommision < 0.0) {
+                dLastCommision = (-1 * dLastCommision) + 1000000.0;
+            }
+            sCommission = FormatDecimalNumber(dLastCommision, 3, 2, "");
+        //} else {
+        //    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
+        //    //update WLInfo
+        //    gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
+        //    gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate = iQuantity;
+        }
+
+        oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
+        //update WLInfo
+        gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
+        gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate = iQuantity;
+
+        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
+        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+    //    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+    //        let oTDWLOrder = new TDWLOrder();
+    //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+    //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+    //        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
+    //        oTDWLOrder.aWL05Aquantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
+    //        oTDWLOrder.aWL06AaveragePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
+
+    //        let sCommission = "";
+    //        let dLastCommision = 0.0;
+    //        for (let idxSym = 0; idxSym < gSymbolsAuto.length; idxSym++) {
+    //            if (gSymbolsAuto[idxSym].symbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+    //                let oSymbolPrice = new SymbolPrice();
+    //                let sLastAssetType = gSymbolsAuto[idxSym].assetType;
+    //                oSymbolPrice = gSymbolsAuto[idxSym].SymbolPrice;
+
+    //                dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
+    //                let dCurrentPrice = 0.0;
+    //                if (sLastAssetType == "OPTION") {
+    //                    dCurrentPrice = oSymbolPrice.price; //get the current price here
+
+    //                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
+    //                    if (dSelectNum < 0.0) {
+    //                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
+    //                    }
+    //                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+    //                } else {
+    //                    dCurrentPrice = oSymbolPrice.price; //get the current price here
+    //                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
+    //                    if (dSelectNum < 0.0) {
+    //                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
+    //                    }
+    //                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+    //                }
+    //                break;
+    //            }
+    //        }
+    //        if (sCommission == "") {
+    //            oTDWLOrder.sError = gsWLAutoGLUpdateNoAccountError;
+    //        } else {
+    //            oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
+    //            //update WLInfo
+    //            gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
+    //            gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate = iQuantity;
+    //        }
+
+    //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
+    //        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+    //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+    //    }
     }
     //create orders here
     if (gTDWLOrders.length > 0) {
@@ -3482,6 +3775,8 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, sStartDate, idxWL) {
         window.setTimeout("PostWLAutoCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ")", 10);
     } else {
         alert("No symbols were updated.");
+        gbDoingCreateOrders = false;
+        GetTradesCanceled();
     }
 }
 
@@ -4776,6 +5071,313 @@ function GenerateWLTrailingStopOrders(sAccountId, dSelectNum, sSymbolsThisWL, id
                 break;
             }
         }
+    }
+
+}
+
+function GenerateWLUpdateOGLSymbolOrders(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
+    gTDWLOrders.length = 0;
+    gTDWLOrdersDeleteWL.length = 0;
+    let sWatchlistId = "";
+    let idxWL = -1;
+    let sOldGL = sOldGLIn;
+    let sSymbol = sSymbolIn;
+    if (iFromWhere > 1) {
+        for (let idx = 0; idx < gWatchlists.length; idx++) {
+            if ((gWatchlists[idx].name == gsAccountOldGL) && (gWatchlists[idx].accountId == sAccountId)) {
+                idxWL = idx;
+                break;
+            }
+        }
+    } else {
+        idxWL = 0;
+    }
+
+    switch (iFromWhere) {
+        case 1: //GetTrades
+            {
+                //check the symbol already exist in this account
+                if ((gSymbolsGL[sAccountId + sSymbol] == null) || (isUndefined(gSymbolsGL[sAccountId + sSymbol]))) {
+                    //add new symbol
+                    //find the OldGLx watchlist to add the symbol to - each watchlist can have up to 200 symbols
+                    let WLIds = new Array();
+                    let iLastGLNum = 0;
+                    for (let idx = 0; idx < gWatchlists.length; idx++) {
+                        if ((gWatchlists[idx].name.substr(0, gsAccountOldGLBase.length) == gsAccountOldGLBase) && (gWatchlists[idx].accountId == sAccountId)) {
+                            let oWLOGLStats = new WLOGLStats();
+                            oWLOGLStats.WLId = gWatchlists[idx].watchlistId;
+                            oWLOGLStats.WLName = gWatchlists[idx].name;
+                            if (iLastGLNum == 0) {
+                                iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
+                            } else {
+                                if (iLastGLNum < parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length))) {
+                                    iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
+                                }
+                            }
+                            oWLOGLStats.NumItems = gWatchlists[idx].WLItems.length;
+                            WLIds[WLIds.length] = oWLOGLStats;
+                        }
+                    }
+
+                    let idxWLIdAvailable = -1;
+                    for (let idxWLIds = 0; idxWLIds < WLIds.length; idxWLIds++) {
+                        if (WLIds[idxWLIds].NumItems < 200) {
+                            idxWLIdAvailable = idxWLIds;
+                            break;
+                        }
+                    }
+                    let oTDWLOrder = new TDWLOrder();
+                    oTDWLOrder.bDoingAddNewSymbols = true;
+                    if (idxWLIdAvailable == -1) {
+                        //need to create a new OldGLx watchlist
+                        oTDWLOrder.bDoingCreateWL = true;
+                        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gsAccountOldGLBase + (iLastGLNum + 1).toString() + "\", ";
+                        oTDWLOrder.aWL02watchlistId = "";
+                        sWatchlistId = "";
+                    } else {
+                        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + WLIds[idxWLIdAvailable].WLName + "\", ";
+                        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + WLIds[idxWLIdAvailable].WLId + "\", ";
+                        sWatchlistId = WLIds[idxWLIdAvailable].WLId;
+                    }
+                    oTDWLOrder.aWL04sequenceId = "";
+                    if (parseFloat(sOldGL) < 0.0) {
+                        sOldGL = FormatDecimalNumber(((-1 * parseFloat(sOldGL)) + 1000000.0), 5, 2, "");
+                    }
+                    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sOldGL + ", ";
+                    oTDWLOrder.aWL07purchasedDate = "";
+                    oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
+                    oTDWLOrder.symbol = sSymbol;
+                    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+                    //create orders here
+                    if (gTDWLOrders.length > 0) {
+                        //gTDWLOrders.sort(sortBySymbol);
+                        gbDoingCreateOrders = true;
+                        SetWait();
+                        window.setTimeout("PostWLOpenSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + sWatchlistId + "', 0, " + idxWL.toString() + ")", 10);
+                    } else {
+                        alert("No symbols were added.");
+                    }
+
+                } else {
+                    // update existing symbol
+                    let oTDWLOrder = new TDWLOrder();
+                    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gSymbolsGL[sAccountId + sSymbol].WLName + "\", ";
+                    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gSymbolsGL[sAccountId + sSymbol].WLId + "\", ";
+                    oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gSymbolsGL[sAccountId + sSymbol].sequenceId + ", ";
+                    if (parseFloat(sOldGL) < 0.0) {
+                        sOldGL = FormatDecimalNumber(((-1 * parseFloat(sOldGL)) + 1000000.0), 5, 2, "");
+                    }
+                    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sOldGL + ", ";
+                    oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
+                    oTDWLOrder.symbol = sSymbol;
+                    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+                    //create orders here
+                    if (gTDWLOrders.length > 0) {
+                        gTDWLOrders.sort(sortBySymbol);
+                        gbDoingCreateOrders = true;
+                        SetWait();
+                        window.setTimeout("PostWLCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gSymbolsGL[sAccountId + sSymbol].WLId + "', 0, " + idxWL.toString() + ")", 10);
+                    } else {
+                        alert("No symbols were updated.");
+                    }
+                }
+                break;
+            }
+        case 2: //WL Add button
+            {
+                //find the OldGLx watchlist to add the symbol to - each watchlist can have up to 200 symbols
+                let WLIds = new Array();
+                let iLastGLNum = 0;
+                for (let idx = 0; idx < gWatchlists.length; idx++) {
+                    if ((gWatchlists[idx].name.substr(0, gsAccountOldGLBase.length) == gsAccountOldGLBase) && (gWatchlists[idx].accountId == sAccountId)) {
+                        let oWLOGLStats = new WLOGLStats();
+                        oWLOGLStats.WLId = gWatchlists[idx].watchlistId;
+                        oWLOGLStats.WLName = gWatchlists[idx].name;
+                        if (iLastGLNum == 0) {
+                            iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
+                        } else {
+                            if (iLastGLNum < parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length))) {
+                                iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
+                            }
+                        }
+                        oWLOGLStats.NumItems = gWatchlists[idx].WLItems.length;
+                        WLIds[WLIds.length] = oWLOGLStats;
+                    }
+                }
+
+                let idxWLIdAvailable = -1;
+                for (let idxWLIds = 0; idxWLIds < WLIds.length; idxWLIds++) {
+                    if (WLIds[idxWLIds].NumItems < 200) {
+                        idxWLIdAvailable = idxWLIds;
+                        break;
+                    }
+                }
+                let oTDWLOrder = new TDWLOrder();
+                oTDWLOrder.bDoingAddNewSymbols = true;
+                if (idxWLIdAvailable == -1) {
+                    //need to create a new OldGLx watchlist
+                    oTDWLOrder.bDoingCreateWL = true;
+                    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gsAccountOldGLBase + (iLastGLNum + 1).toString() + "\", ";
+                    oTDWLOrder.aWL02watchlistId = "";
+                    sWatchlistId = "";
+                } else {
+                    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + WLIds[idxWLIdAvailable].WLName + "\", ";
+                    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + WLIds[idxWLIdAvailable].WLId + "\", ";
+                    sWatchlistId = WLIds[idxWLIdAvailable].WLId;
+                }
+                oTDWLOrder.aWL04sequenceId = "";
+                if (parseFloat(sOldGL) < 0.0) {
+                    sOldGL = FormatDecimalNumber(((-1 * parseFloat(sOldGL)) + 1000000.0), 5,2, "");
+                }
+                oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sOldGL + ", ";
+                oTDWLOrder.aWL07purchasedDate = "";
+                oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
+                oTDWLOrder.symbol = sSymbol;
+                gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+                //create orders here
+                if (gTDWLOrders.length > 0) {
+                    //gTDWLOrders.sort(sortBySymbol);
+                    gbDoingCreateOrders = true;
+                    SetWait();
+                    window.setTimeout("PostWLOpenSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + sWatchlistId + "', 0, " + idxWL.toString() + ")", 10);
+                } else {
+                    alert("No symbols were added.");
+                }
+
+                break;
+            }
+        case 3: //WL Delete button
+            {
+                let WLIds = new Array();
+                let iLastGLNum = 0;
+                for (let idx = 0; idx < gWatchlists.length; idx++) {
+                    if ((gWatchlists[idx].name.substr(0, gsAccountOldGLBase.length) == gsAccountOldGLBase) && (gWatchlists[idx].accountId == sAccountId)) {
+                        let oWLOGLStats = new WLOGLStats();
+                        oWLOGLStats.WLId = gWatchlists[idx].watchlistId;
+                        oWLOGLStats.WLName = gWatchlists[idx].name;
+                        if (iLastGLNum == 0) {
+                            iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
+                        } else {
+                            if (iLastGLNum < parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length))) {
+                                iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
+                            }
+                        }
+                        oWLOGLStats.NumItems = gWatchlists[idx].WLItems.length;
+                        WLIds[WLIds.length] = oWLOGLStats;
+                    }
+                }
+
+                let vSymbolsToDelete = sSymbolIn.split(", ");
+                let sSymbolsToDelete = "";
+                let sSymbolsToDeleteSep = "";
+                for (let idxWLIds = 0; idxWLIds < WLIds.length; idxWLIds++) {
+                    let sSymbolsToDeleteTmp = "";
+                    let sSymbolsToDeleteTmpSep = "";
+                    let bDeleteAll = false;
+                    for (let idxSym = 0; idxSym < vSymbolsToDelete.length; idxSym++) {
+                        if ((gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]] != null) && (!isUndefined(gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]]))) {
+                            if (WLIds[idxWLIds].WLId == gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].WLId) {
+                                if (WLIds[idxWLIds].NumItems > 1) {
+                                    WLIds[idxWLIds].NumItems = WLIds[idxWLIds].NumItems - 1;
+                                    sSymbolsToDeleteTmp = sSymbolsToDeleteTmp + sSymbolsToDeleteTmpSep + vSymbolsToDelete[idxSym];
+                                    sSymbolsToDeleteTmpSep = ", ";
+                                } else {
+                                    bDeleteAll = true;
+                                    //need to delete the entire OldGL watchlist
+                                    let oTDWLOrder = new TDWLOrder();
+                                    oTDWLOrder.bDoingDeleteWL = true;
+                                    oTDWLOrder.sWLId = gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].WLId;
+                                    oTDWLOrder.sWLName = gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].WLName;
+                                    gTDWLOrdersDeleteWL[gTDWLOrdersDeleteWL.length] = oTDWLOrder;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if ((!bDeleteAll) && (sSymbolsToDeleteTmp != ""))  {
+                        sSymbolsToDelete = sSymbolsToDelete + sSymbolsToDeleteSep + sSymbolsToDeleteTmp;
+                        sSymbolsToDeleteSep = ",";
+                    }
+                }
+
+                if (sSymbolsToDelete != "") {
+                    vSymbolsToDelete = sSymbolsToDelete.split(", ");
+                    for (let idxSym = 0; idxSym < vSymbolsToDelete.length; idxSym++) {
+                        if ((gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]] != null) && (!isUndefined(gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]]))) {
+                            let oTDWLOrder = new TDWLOrder();
+                            oTDWLOrder.sWLId = gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].WLId;
+                            oTDWLOrder.sWLName = gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].WLName;
+                            oTDWLOrder.sequenceId = gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].sequenceId;
+                            oTDWLOrder.bDoingPurchasedDateClear = true;
+                            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].WLName + "\", ";
+                            oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].WLId + "\", ";
+                            oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gSymbolsGL[sAccountId + vSymbolsToDelete[idxSym]].sequenceId + " ";
+                            oTDWLOrder.aWL05quantity = "";
+                            oTDWLOrder.aWL06averagePrice = "";
+                            oTDWLOrder.aWL07commission = "";
+                            oTDWLOrder.aWL07purchasedDate = "";
+                            oTDWLOrder.aWL08instrumentStart = "";
+                            oTDWLOrder.aWL09symbol = "";
+                            oTDWLOrder.aWL10assetType = "";
+                            oTDWLOrder.aWL11instrumentEnd = "";
+                            gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+                        }
+                    }
+                    if (gTDWLOrders.length > 1) {
+                        gTDWLOrders.sort(sortBySequenceId);
+                    }
+
+                }
+
+                if ((gTDWLOrders.length > 0) || (gTDWLOrdersDeleteWL.length > 0)) {
+                    //gTDWLOrders.sort(sortBySymbol);
+                    gbDoingCreateOrders = true;
+                    SetWait();
+                    window.setTimeout("PostWLDeleteSymbolOrdersOGL('" + sAccountId + "')", 10);
+                } else {
+                    alert("No symbols were deleted.");
+                }
+                break;
+            }
+        case 4: //WL Update button
+            {
+                gTDWLOrders.length = 0;
+                //check the symbol already exist in this account
+                if ((gSymbolsGL[sAccountId + sSymbol] == null) || (isUndefined(gSymbolsGL[sAccountId + sSymbol]))) {
+                    alert("GenerateWLUpdateOGLSymbolOrders - Program error - " + sSymbol + " not found in gSymbolsGL.");
+                } else {
+                    // update existing symbol
+                    let oTDWLOrder = new TDWLOrder();
+                    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gSymbolsGL[sAccountId + sSymbol].WLName + "\", ";
+                    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gSymbolsGL[sAccountId + sSymbol].WLId + "\", ";
+                    oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gSymbolsGL[sAccountId + sSymbol].sequenceId + ", ";
+                    if (parseFloat(sOldGL) < 0.0) {
+                        sOldGL = FormatDecimalNumber(((-1 * parseFloat(sOldGL)) + 1000000.0), 5, 2, "");
+                    }
+                    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sOldGL + ", ";
+                    oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
+                    oTDWLOrder.symbol = sSymbol;
+                    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+                    //create orders here
+                    if (gTDWLOrders.length > 0) {
+                        gTDWLOrders.sort(sortBySymbol);
+                        gbDoingCreateOrders = true;
+                        SetWait();
+                        window.setTimeout("PostWLCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gSymbolsGL[sAccountId + sSymbol].WLId + "', 0, " + idxWL.toString() + ")", 10);
+                    } else {
+                        alert("No symbols were updated.");
+                    }
+                }
+                break;
+            }
+        default: //invalid value - do nothing
+            {
+                alert("Program error - invalid iFromWhere value.");
+            }
     }
 
 }
@@ -6509,6 +7111,7 @@ function GetTDData(bFirstTime) {
                             GetWatchlistO();
                             GetWatchlistSO();
                             GetWatchlistSummary();
+                            GetWatchlistOGL();
                         }
 
                     } else if (mySock.readyState == 3) { //socket is closed or couldn't be opened
@@ -6557,6 +7160,7 @@ function GetTDData(bFirstTime) {
                                 GetWatchlistO();
                                 GetWatchlistSO();
                                 GetWatchlistSummary();
+                                GetWatchlistOGL();
                             }
                         //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
                         //    if (iReturn == 0) {
@@ -6573,6 +7177,21 @@ function GetTDData(bFirstTime) {
             }
         }
     }
+    //if (gAccounts.length > 1) { //if more than one account then allow selecting an account to use to setup Old GL symbols
+    //    if ((document.getElementById("spanOldGLAccount") != null) && (!isUndefined(document.getElementById("spanOldGLAccount")))) {
+    //        if (document.getElementById("spanOldGLAccount").style.display == "none") {
+    //            let sSelect = "Account name to setup Old G/L:" + "<select id=\"optOldGLAccount\">";
+    //            for (let idx = 0; idx < gAccounts.length; idx++) {
+    //                if (gAccounts[idx].CBliquidationValue >= 2000) {
+    //                    sSelect = sSelect + "<option value=\"" + gAccounts[idx].accountId + "\">" + gAccounts[idx].accountName + "</option>";
+    //                }
+    //            }
+    //            sSelect = sSelect + "</select>";
+    //            document.getElementById("spanOldGLAccount").innerHTML = sSelect;
+    //        }
+    //        document.getElementById("spanOldGLAccount").style.display = "block";
+    //    }
+    //}
     giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", giCurrentRefreshRate);
     gbDoingGetTDData = false;
 }
@@ -6877,6 +7496,16 @@ function GetTrades(bFirstTime) {
         gbDoingGetTrades = true;
         gGetTradesContext = new GetTradesContext();
         setCookie(gsMarketCookieName, SetCurrentCookie(), 30);
+
+        if (gAccounts.length > 1) { //if more than one account then allow selecting an account to use to setup Old GL symbols
+            if ((document.getElementById("spanOldGLAccount") != null) && (!isUndefined(document.getElementById("spanOldGLAccount")))) {
+                if (document.getElementById("spanOldGLAccount").style.display != "none") {
+                    gGetTradesContext.OldGLAccountId = document.getElementById("optOldGLAccount").options[document.getElementById("optOldGLAccount").selectedIndex].value;
+                    gGetTradesContext.OldGLAccountName = document.getElementById("optOldGLAccount").options[document.getElementById("optOldGLAccount").selectedIndex].text;
+                }
+            }
+        }
+
 
         if (sSymbolsToLookupTmp == "") {
             sSymbolsToLookup = "ALLSYMBOLS"; //set to this if nothing entered or more than one symbol entered
@@ -7537,10 +8166,18 @@ function GetTrades(bFirstTime) {
                             sTmp = FormatDecimalNumber((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice), 3, 2, "");
                         }
 
+                        let sOnclick = "";
+                        if (gGetTradesContext.OldGLAccountId != "") {
+                            if (gSymbols[idx].accountId != gGetTradesContext.OldGLAccountId) {
+                                sOnclick = " onclick=\"DoWLUpdateOGLSymbols(1, '" + gGetTradesContext.OldGLAccountId + "','" + sSymbol + "','" + sTmp + "') \" ";
+                                sTmp = "<U>" + sTmp + "</U>";
+                            }
+                        }
+
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         }
 
                         s = s + "</tr>";
@@ -7586,10 +8223,19 @@ function GetTrades(bFirstTime) {
                             //                            sTmp = FormatMoney((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice));
                             sTmp = FormatDecimalNumber((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice), 3, 2, "");
                         }
+
+                        let sOnclick = "";
+                        if (gGetTradesContext.OldGLAccountId != "") {
+                            if (gSymbols[idx].accountId != gGetTradesContext.OldGLAccountId) {
+                                sOnclick = " onclick=\"DoWLUpdateOGLSymbols(1, '" + gGetTradesContext.OldGLAccountId + "','" + sSymbol + "','" + sTmp + "') \" ";
+                                sTmp = "<U>" + sTmp + "</U>";
+                            }
+                        }
+
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         }
 
                         s = s + "</tr>";
@@ -7639,6 +8285,7 @@ function GetTrades(bFirstTime) {
                                 sTmp = FormatDecimalNumber((-1 * dTotalBuy) + dTotalSell + (dTotalShares * dCurrentPrice), 3, 2, "");
                                 dTotalLongShort = dTotalLongShort + ((-1 * dTotalBuy) + dTotalSell + (dTotalShares * dCurrentPrice));
                             }
+
                             if (sTmp.indexOf("-") != -1) {
                                 s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                             } else {
@@ -7718,10 +8365,18 @@ function GetTrades(bFirstTime) {
                             sTmp = FormatDecimalNumber((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice), 3, 2, "");
                         }
 
+                        let sOnclick = "";
+                        if (gGetTradesContext.OldGLAccountId != "") {
+                            if (gSymbols[idx].accountId != gGetTradesContext.OldGLAccountId) {
+                                sOnclick = " onclick=\"DoWLUpdateOGLSymbols(1, '" + gGetTradesContext.OldGLAccountId + "','" + sSymbol + "','" + sTmp + "') \" ";
+                                sTmp = "<U>" + sTmp + "</U>";
+                            }
+                        }
+
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         }
 
                         s = s + "</tr>";
@@ -7951,7 +8606,7 @@ function GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeIn) {
 
 }
 
-function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
+function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
     let iTryCount = 0;
     let vTmp = null;
     let sTmp = "";
@@ -7961,7 +8616,8 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
     //debugger
     let sServerUrlBase = "https://api.tdameritrade.com/v1/accounts/xxxxx/transactions?symbol=aaaaaaa&startDate=yyyyy&endDate=zzzzz";
     let sServerUrlBaseAllSymbols = "https://api.tdameritrade.com/v1/accounts/xxxxx/transactions?startDate=yyyyy&endDate=zzzzz";
-    let sStartDate = sStartDateIn;
+    let sStartDate = FormatDateForTD(new Date(iStartDateIn));
+    let iLastUpdateDateTime = iStartDateIn;
     let sEndDate = "";
 
     let sSymbolToLookup = "";
@@ -7980,10 +8636,12 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
         gGetTradesContextAuto = new GetTradesContext();
         let sSymbolsToLookupSep = "";
         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                sSymbolsToLookupSep = ",";
-            }
+            sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+            sSymbolsToLookupSep = ",";
+        //    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+        //        sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+        //        sSymbolsToLookupSep = ",";
+        //    }
         }
 
         sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp); 
@@ -8002,11 +8660,15 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
         gTradesAuto.length = 0;
         gSymbolsAuto.length = 0;
 
+        gbDoingCreateOrders = true;
+
+        SetWait();
         giProgress = 0;
         ShowProgress(true, false);
         idxDatesStart = gsStartDates.length - 1;
 
         gGetTradesContextAuto.iProgressIncrement = 100 / gsStartDates.length;
+        gGetTradesContextAuto.iLastUpdateDateTime = iLastUpdateDateTime;
 
         idxStart = 0;
     } else {
@@ -8023,6 +8685,7 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
 
         bEndDateISTodaysDate = gGetTradesContextAuto.bEndDateISTodaysDate;
         idxDatesStart = gGetTradesContextAuto.idxDatesStart;
+        iLastUpdateDateTime = gGetTradesContextAuto.iLastUpdateDateTime;
 
         bOk = gGetTradesContextAuto.bOk;
         bDoneGettingSymbolData = gGetTradesContextAuto.bDoneGettingSymbolData;
@@ -8039,7 +8702,7 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
         sStartDate = gsStartDates[idxDates];
         sEndDate = gsEndDates[idxDates];
         if (giProgress < 100) {
-            giProgress = giProgress + gGetTradesContext.iProgressIncrement;
+            giProgress = giProgress + gGetTradesContextAuto.iProgressIncrement;
         }
 
         iTryCount = 0;
@@ -8118,18 +8781,168 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
                                     //    GetTradesCanceled();
                                     //    return;
                                     //}
-                                    if (oCM[idxTrade].type == "DIVIDEND_OR_INTEREST") {
-                                        bUseTradeRS = false;
-                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                    if ((new Date(oCM[idxTrade].transactionDate.split("+")[0]).getTime()) > iLastUpdateDateTime) {
+                                        if (oCM[idxTrade].type == "DIVIDEND_OR_INTEREST") {
+                                            bUseTradeRS = false;
+                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                let oTrade = new Trade();
+                                                oTrade.accountId = gWatchlists[idxWL].accountId;
+                                                oTrade.accountName = "";
+                                                oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                oTrade.date = oCM[idxTrade].transactionDate;
+                                                oTrade.amount = 0;
+                                                oTrade.price = 0;
+                                                oTrade.cost = 0;
+                                                oTrade.netAmount = oCM[idxTrade].netAmount;
+                                                if (isUndefined(oCM[idxTrade].transactionSubType)) {
+                                                    oTrade.transactionSubType = "";
+                                                } else {
+                                                    oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                }
+                                                oTrade.fees = 0;
+
+                                                //now update the Symbols
+                                                if (!isUndefined(oCM[idxTrade].transactionItem)) {
+                                                    if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                            bNeedToAddSymbol = false;
+                                                            if ((sSymbolsToLookup.indexOf("," + oCM[idxTrade].transactionItem.instrument.symbol.toUpperCase() + ",") != -1) ||
+                                                                (sSymbolsToLookup == "ALLSYMBOLS")) {
+                                                                bNeedToAddSymbol = true;
+                                                                if (gSymbolsAuto.length > 0) {
+                                                                    for (let idxTmp = 0; idxTmp < gSymbolsAuto.length; idxTmp++) {
+                                                                        if (gSymbolsAuto[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) {
+                                                                            bNeedToAddSymbol = false;
+                                                                            gSymbolsAuto[idxTmp].sell = gSymbolsAuto[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                            gSymbolsAuto[idxTmp].trades[gSymbolsAuto[idxTmp].trades.length] = oTrade;
+                                                                            gSymbolsAuto[idxTmp].fees = gSymbolsAuto[idxTmp].fees + oTrade.fees;
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            if (bNeedToAddSymbol) {
+                                                                let oSymbol = new Symbol();
+                                                                oSymbol.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                                oSymbol.accountId = gWatchlists[idxWL].accountId;
+                                                                oSymbol.accountName = "";
+                                                                oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                oSymbol.sell = oCM[idxTrade].netAmount;
+                                                                oSymbol.trades[oSymbol.trades.length] = oTrade;
+                                                                oSymbol.fees = oTrade.fees;
+                                                                gSymbolsAuto[gSymbolsAuto.length] = oSymbol;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        } else if (oCM[idxTrade].type == "RECEIVE_AND_DELIVER") {
+                                            if (!isUndefined(oCM[idxTrade].transactionItem)) {
+                                                if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                    if (!isUndefined(oCM[idxTrade].transactionSubType)) {
+                                                        let bFoundSubType = false;
+                                                        let oTrade = new Trade();
+                                                        let sRADSymbol = "";
+                                                        oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                        if (oCM[idxTrade].transactionSubType == "TI") {
+                                                            bUseTradeRS = false;
+                                                            //TRANSFER OF SECURITY OR OPTION IN
+                                                            oTrade.accountId = gWatchlists[idxWL].accountId;
+                                                            oTrade.accountName = "";
+                                                            oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                            sRADSymbol = oTrade.symbol;
+                                                            oTrade.date = oCM[idxTrade].transactionDate;
+                                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                            oTrade.fees = 0;
+                                                            //need to get price on the transaction date
+                                                            let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
+                                                            if (gaFixedPrices.length > 0) {
+                                                                for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
+                                                                    let oFP = new FixedPrice();
+                                                                    oFP = gaFixedPrices[idxFP];
+                                                                    if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
+                                                                        (oFP.date == vTmp[0])) {
+                                                                        oTrade.price = oFP.price;
+                                                                        oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
+                                                                        oTrade.netAmount = oTrade.cost;
+                                                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                        bFoundSubType = true;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        } else if (oCM[idxTrade].transactionSubType == "RS") {
+                                                            //MANDATORY REVERSE SPLIT
+                                                            oTrade.accountId = gWatchlists[idxWL].accountId;
+                                                            oTrade.accountName = "";
+                                                            oTrade.date = oCM[idxTrade].transactionDate;
+                                                            oTrade.price = 0.0;
+                                                            oTrade.cost = 0.0;
+                                                            oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                            oTrade.fees = 0;
+                                                            if (isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                                //decreasing number of shares - cost 0
+                                                                oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                oTrade.netAmount = 0.0;
+                                                                //need to lookup cusip to get symbol
+                                                                let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/instruments?symbol=" + oCM[idxTrade].transactionItem.instrument.cusip + "&projection=symbol-search", 0);
+                                                                if (iReturn == 0) {
+                                                                    if (!isUndefined(oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip])) {
+                                                                        oTrade.symbol = oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip].symbol;
+                                                                        sRADSymbol = oTrade.symbol;
+                                                                        bFoundSubType = true;
+                                                                        bUseTradeRS = false;
+                                                                    } else {
+                                                                        oTradeRS = new Trade();
+                                                                        oTradeRS.accountId = oTrade.accountId
+                                                                        oTradeRS.accountName = oTrade.accountName;
+                                                                        oTradeRS.amount = oTrade.amount;
+                                                                        oTradeRS.assetType = oTrade.assetType;
+                                                                        oTradeRS.cost = oTrade.cost;
+                                                                        oTradeRS.date = oTrade.date;
+                                                                        oTradeRS.netAmount = oTrade.netAmount;
+                                                                        oTradeRS.fees = oTrade.fees;
+                                                                        oTradeRS.price = oTrade.price;
+                                                                        oTradeRS.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                                        bUseTradeRS = true;
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                //increasing number of shares - cost 0
+                                                                oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                oTrade.netAmount = -0.00001;
+                                                                oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                                sRADSymbol = oTrade.symbol;
+                                                                bFoundSubType = true;
+                                                            }
+                                                        } else {
+                                                            bUseTradeRS = false;
+                                                        }
+
+                                                        if (bFoundSubType) {
+                                                            if (bUseTradeRS) {
+                                                                bUseTradeRS = false;
+                                                                oTradeRS.symbol = sRADSymbol;
+                                                                GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeRS);
+                                                            }
+                                                            GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTrade);
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                        } else if (oCM[idxTrade].type == "TRADE") {
+                                            bUseTradeRS = false;
                                             let oTrade = new Trade();
                                             oTrade.accountId = gWatchlists[idxWL].accountId;
                                             oTrade.accountName = "";
                                             oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
                                             oTrade.date = oCM[idxTrade].transactionDate;
-                                            oTrade.amount = 0;
-                                            oTrade.price = 0;
-                                            oTrade.cost = 0;
+                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                            oTrade.price = oCM[idxTrade].transactionItem.price;
+                                            oTrade.cost = oCM[idxTrade].transactionItem.cost;
                                             oTrade.netAmount = oCM[idxTrade].netAmount;
+                                            oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
                                             if (isUndefined(oCM[idxTrade].transactionSubType)) {
                                                 oTrade.transactionSubType = "";
                                             } else {
@@ -8149,7 +8962,15 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
                                                                 for (let idxTmp = 0; idxTmp < gSymbolsAuto.length; idxTmp++) {
                                                                     if (gSymbolsAuto[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) {
                                                                         bNeedToAddSymbol = false;
-                                                                        gSymbolsAuto[idxTmp].sell = gSymbolsAuto[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                        if (oCM[idxTrade].netAmount < 0.0) {
+                                                                            //buy
+                                                                            gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares + oCM[idxTrade].transactionItem.amount;
+                                                                            gSymbolsAuto[idxTmp].buy = gSymbolsAuto[idxTmp].buy - oCM[idxTrade].netAmount;
+                                                                        } else {
+                                                                            //sell
+                                                                            gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares - oCM[idxTrade].transactionItem.amount;
+                                                                            gSymbolsAuto[idxTmp].sell = gSymbolsAuto[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                        }
                                                                         gSymbolsAuto[idxTmp].trades[gSymbolsAuto[idxTmp].trades.length] = oTrade;
                                                                         gSymbolsAuto[idxTmp].fees = gSymbolsAuto[idxTmp].fees + oTrade.fees;
                                                                         break;
@@ -8163,183 +8984,29 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
                                                             oSymbol.accountId = gWatchlists[idxWL].accountId;
                                                             oSymbol.accountName = "";
                                                             oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                            oSymbol.sell = oCM[idxTrade].netAmount;
+                                                            if (oCM[idxTrade].netAmount < 0.0) {
+                                                                //buy
+                                                                oSymbol.shares = oCM[idxTrade].transactionItem.amount;
+                                                                oSymbol.buy = -1 * oCM[idxTrade].netAmount;
+                                                            } else {
+                                                                //sell
+                                                                oSymbol.shares = -1 * oCM[idxTrade].transactionItem.amount;
+                                                                oSymbol.sell = oCM[idxTrade].netAmount;
+                                                            }
                                                             oSymbol.trades[oSymbol.trades.length] = oTrade;
                                                             oSymbol.fees = oTrade.fees;
                                                             gSymbolsAuto[gSymbolsAuto.length] = oSymbol;
                                                         }
+
                                                     }
                                                 }
                                             }
-                                        }
-                                    } else if (oCM[idxTrade].type == "RECEIVE_AND_DELIVER") {
-                                        if (!isUndefined(oCM[idxTrade].transactionItem)) {
-                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
-                                                if (!isUndefined(oCM[idxTrade].transactionSubType)) {
-                                                    let bFoundSubType = false;
-                                                    let oTrade = new Trade();
-                                                    let sRADSymbol = "";
-                                                    oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
-                                                    if (oCM[idxTrade].transactionSubType == "TI") {
-                                                        bUseTradeRS = false;
-                                                        //TRANSFER OF SECURITY OR OPTION IN
-                                                        oTrade.accountId = gWatchlists[idxWL].accountId;
-                                                        oTrade.accountName = "";
-                                                        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                        sRADSymbol = oTrade.symbol;
-                                                        oTrade.date = oCM[idxTrade].transactionDate;
-                                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                        oTrade.fees = 0;
-                                                        //need to get price on the transaction date
-                                                        let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
-                                                        if (gaFixedPrices.length > 0) {
-                                                            for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
-                                                                let oFP = new FixedPrice();
-                                                                oFP = gaFixedPrices[idxFP];
-                                                                if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
-                                                                    (oFP.date == vTmp[0])) {
-                                                                    oTrade.price = oFP.price;
-                                                                    oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
-                                                                    oTrade.netAmount = oTrade.cost;
-                                                                    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                    bFoundSubType = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                    } else if (oCM[idxTrade].transactionSubType == "RS") {
-                                                        //MANDATORY REVERSE SPLIT
-                                                        oTrade.accountId = gWatchlists[idxWL].accountId;
-                                                        oTrade.accountName = "";
-                                                        oTrade.date = oCM[idxTrade].transactionDate;
-                                                        oTrade.price = 0.0;
-                                                        oTrade.cost = 0.0;
-                                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                        oTrade.fees = 0;
-                                                        if (isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
-                                                            //decreasing number of shares - cost 0
-                                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                            oTrade.netAmount = 0.0;
-                                                            //need to lookup cusip to get symbol
-                                                            let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/instruments?symbol=" + oCM[idxTrade].transactionItem.instrument.cusip + "&projection=symbol-search", 0);
-                                                            if (iReturn == 0) {
-                                                                if (!isUndefined(oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip])) {
-                                                                    oTrade.symbol = oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip].symbol;
-                                                                    sRADSymbol = oTrade.symbol;
-                                                                    bFoundSubType = true;
-                                                                    bUseTradeRS = false;
-                                                                } else {
-                                                                    oTradeRS = new Trade();
-                                                                    oTradeRS.accountId = oTrade.accountId
-                                                                    oTradeRS.accountName = oTrade.accountName;
-                                                                    oTradeRS.amount = oTrade.amount;
-                                                                    oTradeRS.assetType = oTrade.assetType;
-                                                                    oTradeRS.cost = oTrade.cost;
-                                                                    oTradeRS.date = oTrade.date;
-                                                                    oTradeRS.netAmount = oTrade.netAmount;
-                                                                    oTradeRS.fees = oTrade.fees;
-                                                                    oTradeRS.price = oTrade.price;
-                                                                    oTradeRS.transactionSubType = oCM[idxTrade].transactionSubType;
-                                                                    bUseTradeRS = true;
-                                                                }
-                                                            }
-                                                        } else {
-                                                            //increasing number of shares - cost 0
-                                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                            oTrade.netAmount = -0.00001;
-                                                            oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                            sRADSymbol = oTrade.symbol;
-                                                            bFoundSubType = true;
-                                                        }
-                                                    } else {
-                                                        bUseTradeRS = false;
-                                                    }
-
-                                                    if (bFoundSubType) {
-                                                        if (bUseTradeRS) {
-                                                            bUseTradeRS = false;
-                                                            oTradeRS.symbol = sRADSymbol;
-                                                            GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeRS);
-                                                        }
-                                                        GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTrade);
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                    } else if (oCM[idxTrade].type == "TRADE") {
-                                        bUseTradeRS = false;
-                                        let oTrade = new Trade();
-                                        oTrade.accountId = gWatchlists[idxWL].accountId;
-                                        oTrade.accountName = "";
-                                        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                        oTrade.date = oCM[idxTrade].transactionDate;
-                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                        oTrade.price = oCM[idxTrade].transactionItem.price;
-                                        oTrade.cost = oCM[idxTrade].transactionItem.cost;
-                                        oTrade.netAmount = oCM[idxTrade].netAmount;
-                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                        if (isUndefined(oCM[idxTrade].transactionSubType)) {
-                                            oTrade.transactionSubType = "";
                                         } else {
-                                            oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                            bUseTradeRS = false;
                                         }
-                                        oTrade.fees = 0;
 
-                                        //now update the Symbols
-                                        if (!isUndefined(oCM[idxTrade].transactionItem)) {
-                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
-                                                if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
-                                                    bNeedToAddSymbol = false;
-                                                    if ((sSymbolsToLookup.indexOf("," + oCM[idxTrade].transactionItem.instrument.symbol.toUpperCase() + ",") != -1) ||
-                                                        (sSymbolsToLookup == "ALLSYMBOLS")) {
-                                                        bNeedToAddSymbol = true;
-                                                        if (gSymbolsAuto.length > 0) {
-                                                            for (let idxTmp = 0; idxTmp < gSymbolsAuto.length; idxTmp++) {
-                                                                if (gSymbolsAuto[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) {
-                                                                    bNeedToAddSymbol = false;
-                                                                    if (oCM[idxTrade].netAmount < 0.0) {
-                                                                        //buy
-                                                                        gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares + oCM[idxTrade].transactionItem.amount;
-                                                                        gSymbolsAuto[idxTmp].buy = gSymbolsAuto[idxTmp].buy - oCM[idxTrade].netAmount;
-                                                                    } else {
-                                                                        //sell
-                                                                        gSymbolsAuto[idxTmp].shares = gSymbolsAuto[idxTmp].shares - oCM[idxTrade].transactionItem.amount;
-                                                                        gSymbolsAuto[idxTmp].sell = gSymbolsAuto[idxTmp].sell + oCM[idxTrade].netAmount;
-                                                                    }
-                                                                    gSymbolsAuto[idxTmp].trades[gSymbolsAuto[idxTmp].trades.length] = oTrade;
-                                                                    gSymbolsAuto[idxTmp].fees = gSymbolsAuto[idxTmp].fees + oTrade.fees;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    if (bNeedToAddSymbol) {
-                                                        let oSymbol = new Symbol();
-                                                        oSymbol.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                        oSymbol.accountId = gWatchlists[idxWL].accountId;
-                                                        oSymbol.accountName = "";
-                                                        oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                        if (oCM[idxTrade].netAmount < 0.0) {
-                                                            //buy
-                                                            oSymbol.shares = oCM[idxTrade].transactionItem.amount;
-                                                            oSymbol.buy = -1 * oCM[idxTrade].netAmount;
-                                                        } else {
-                                                            //sell
-                                                            oSymbol.shares = -1 * oCM[idxTrade].transactionItem.amount;
-                                                            oSymbol.sell = oCM[idxTrade].netAmount;
-                                                        }
-                                                        oSymbol.trades[oSymbol.trades.length] = oTrade;
-                                                        oSymbol.fees = oTrade.fees;
-                                                        gSymbolsAuto[gSymbolsAuto.length] = oSymbol;
-                                                    }
-
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        bUseTradeRS = false;
                                     }
+
                                 }
                             }
                             if (oCMLength != -1) {
@@ -8405,7 +9072,7 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
         gGetTradesContextAuto.bNeedToAddSymbol = bNeedToAddSymbol;
         gGetTradesContextAuto.idxStart = 0;
 
-        window.setTimeout("GetTradesAuto(false,''," + idxWL.toString() + ")", 100);
+        window.setTimeout("GetTradesAuto(false, " + iLastUpdateDateTime.toString() +  ", " + idxWL.toString() + ", " + bInitializing + ")", 100);
         return;
 
     }
@@ -8417,16 +9084,18 @@ function GetTradesAuto(bFirstTime, sStartDateIn, idxWL) {
         if (gSymbolsAuto.length > 0) {
             GetCurrentPricesAuto();
             gSymbolsAuto.sort(sortBySymbol);
-            window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', '" + sStartDate + "', " + idxWL + ")", 10);
+            window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', '" + sStartDate + "', " + idxWL + ", " + bInitializing + ")", 10);
         } else {
             if (sSymbolsToLookupTmp.split(",").length == 1) {
                 alert("No trades found for the selected symbol.");
             } else {
                 alert("No trades found for the selected symbols.");
             }
+            gbDoingCreateOrders = false;
+            GetTradesCanceled();
         }
     }
-    GetTradesCanceled();
+//    GetTradesCanceled();
 }
 
 function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idxSymbol) {
@@ -8836,9 +9505,9 @@ function GetWatchlistO() {
                             "<span style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders(" + idxWL.toString() + ")\" value=\"Cancel\" ></th>";
+                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders('" + gWatchlists[idxWL].watchlistId + "','" +  sLastWLAccountId + "')\" value=\"Cancel\" ></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -8863,9 +9532,9 @@ function GetWatchlistO() {
                             "<span style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColCloseLabelWidth + lengthsWLO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders(" + idxWL.toString() + ")\" value=\"Cancel\" ></th>";
+                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId  + "')\" value=\"Cancel\" ></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -9120,6 +9789,327 @@ function GetWatchlistO() {
                 }
             }
 
+        }
+    }
+}
+
+function GetWatchlistOGL() {
+
+    let oWLItemDetail = new WLItemDetail();
+    let dt = new Date();
+    let sDate = FormatDateWithTime(dt, true, false);
+
+    if (gWatchlists.length > 0) {
+        for (let idxWLMain = 0; idxWLMain < gWatchlists.length; idxWLMain++) {
+            if (gWatchlists[idxWLMain].bSelectedOGL) {
+                gWLDisplayed.length = 0;
+
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
+                    if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
+                        let sSymbol = gWatchlists[idxWLMain].WLItems[idxWLItem].symbol;
+                        let oWLDisplayed = new WLDisplayed();
+                        oWLDisplayed.symbol = sSymbol;
+                        oWLItemDetail = new WLItemDetail();
+                        //get OldGL value
+                        oWLItemDetail.averagePrice = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.averagePrice;
+                        oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
+
+                        oWLDisplayed.sSortOrderFields = gWatchlists[idxWLMain].sSortOrderFields;
+                        oWLDisplayed.iSortOrderAscDesc = gWatchlists[idxWLMain].iSortOrderAscDesc;
+
+                        gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
+                    }
+                }
+                //now show the results
+                let sThisDiv = "";
+                let sThisTable = "";
+                let sLastWLName = "";
+                let sLastWLAccountName = "";
+                let sLastWLAccountId = "";
+                let sThisId = "";
+                let sHeadingTextAlign = "right";
+                let sBodyTextAlign = "right";
+                let sTableRowVerticalAlignment = "middle";
+                let sTmp = "";
+                let bEverythingIsChecked = true;
+
+                let sTitle = {
+                    "Symbol": "<b><I><U>Symbol</U>&nbsp;</I></b>",
+                    "OldGL": "<b><I><U>Old&nbsp;G/L</U></I></b>"
+                };
+
+                let sTitleWithArrow = {
+                    "Symbol": "<b><I><U>Symbol</U>&nbsp;</I>xxx</b>",
+                    "OldGL": "<b><I><U>Old&nbsp;G/L</U></I>xxx</b>"
+                };
+
+                sThisDiv = "";
+                sLastWLName = gWatchlists[idxWLMain].name;
+                sLastWLAccountName = gWatchlists[idxWLMain].accountName;
+                sLastWLAccountId = gWatchlists[idxWLMain].accountId;
+                sThisId = gWatchlists[idxWLMain].watchlistId + sLastWLAccountId;
+
+                if (gbUsingCell) {
+                    sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    sThisDiv = sThisDiv + "<tr>";
+                    //style=\"vertical-align:bottom\">
+                    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLUpdateOGLSymbols(3, '" + sLastWLAccountId + "', '', '')\" />" +
+                        "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLUpdateOGLSymbols(2, '" + sLastWLAccountId + "', '', '')\" />" +
+                        "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+
+                    sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                        "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
+                        "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+
+                    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLUpdateOGLSymbols(4, '" + sLastWLAccountId + "', '', '')\" value=\"Update G/L\" >" +
+                        "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+
+                    sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDivOldGL('" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                    sThisDiv = sThisDiv + "</tr>";
+                    sThisDiv = sThisDiv + "<tr>";
+
+                    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+                } else { //not using cell
+                    //                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
+                    sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    sThisDiv = sThisDiv + "<tr>";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLUpdateOGLSymbols(3, '" + sLastWLAccountId + "', '', '')\" />" +
+                        "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLUpdateOGLSymbols(2, '" + sLastWLAccountId + "', '', '')\" />" +
+                        "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                        "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
+                        "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLUpdateOGLSymbols(4, '" + sLastWLAccountId + "', '', '')\" value=\"Update G/L\" >" +
+                        "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDivOldGL('" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                    sThisDiv = sThisDiv + "</tr>";
+
+                    sThisDiv = sThisDiv + "<tr>";
+
+                    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+
+                }
+
+
+                sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                sThisTable = "";
+                sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+
+                sThisTable = sThisTable + "<tr>";
+                let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + "000";
+
+                let sonClickChangeOrderBase = "onclick =\"wlChangeOrder(" + idxWLMain.toString() + ", 'xxx')\"";
+                let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Symbol);
+                sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
+                    "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
+                    "<span " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                    sTitle.Symbol + "</span></td > ";
+
+                sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.OldGL);
+                sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.OldGL + "</td>";
+
+                sThisTable = sThisTable + "</tr>";
+
+                let sDownArrow = "&darr;";
+                let sUpArrow = "&uarr;";
+                let sArrow = "";
+                if (gWatchlists[idxWLMain].iSortOrderAscDesc == 0) {
+                    sArrow = sDownArrow;
+                } else {
+                    sArrow = sUpArrow;
+                }
+
+                sTitle[gWatchlists[idxWLMain].sSortOrderFields] = sTitleWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
+
+
+                if (gWLDisplayed.length > 0) {
+
+                    //let bDoingDividendWL = false;
+                    //if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
+                    //    bDoingDividendWL = true;
+                    //}
+
+                    //let sDownArrow = "&darr;";
+                    //let sUpArrow = "&uarr;";
+                    //let sArrow = "";
+                    //if (gWatchlists[idxWLMain].iSortOrderAscDesc == 0) {
+                    //    sArrow = sDownArrow;
+                    //} else {
+                    //    sArrow = sUpArrow;
+                    //}
+
+                    //sTitle[gWatchlists[idxWLMain].sSortOrderFields] = sTitleWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
+                    gWLDisplayed.sort(sortWL);
+
+                    bEverythingIsChecked = true;
+                    let iTotalSymbolsUp = 0;
+                    let iTotalSymbolsDown = 0;
+                    let iTotalSymbolsUpDay = 0;
+                    let iTotalSymbolsDownDay = 0;
+                    let iTotalSymbolsUpRealized = 0;
+                    let iTotalSymbolsDownRealized = 0;
+                    let sSymbolsThisWL = "";
+                    let sSymbolsSelectedForOrderThisWL = "";
+                    let sSep = "";
+                    let sSepForOrder = "|";
+
+
+                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
+                        if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
+                            sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol;
+                            sSep = ",";
+
+                            //sSymbolsSelectedForOrderThisWL will contain: |symbol,idxWLItem,true|symbol,idxWLItem,false...
+                            sSymbolsSelectedForOrderThisWL = sSymbolsSelectedForOrderThisWL + sSepForOrder + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol + "," + idxWLItem.toString() + "," + gWatchlists[idxWLMain].WLItems[idxWLItem].bSelectedForOrder;
+                        }
+                    }
+                    sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
+
+                    let dTotalCost = 0.0;
+                    let iLineCnt = 0;
+                    let dTotalAmt = 0.0;
+                    let dTotalHoldingsGain = 0.0;
+                    let dTotalGain = 0.0;
+                    let dTotalDayGain = 0.0;
+                    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                        let oWLDisplayed = new WLDisplayed();
+                        oWLDisplayed = gWLDisplayed[idxDisplayed];
+                        let sSymbol = oWLDisplayed.symbol;
+
+                        let oWLItemDetail = new WLItemDetail();
+                        let dCost = 0.0;
+                        let dQty = 0.0;
+                        if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
+                            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+                                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+                                let bOkToShowThisDetail = false;
+                                if ((gWatchlists[idxWLMain].accountId == oWLItemDetail.accountId) ||
+                                    (oWLItemDetail.accountId == "")) {
+                                    bOkToShowThisDetail = true;
+                                }
+
+                                if (bOkToShowThisDetail) {
+
+                                    let sOldGLOnclick = "";
+
+                                    iLineCnt++;
+
+                                    let sChecked = "";
+                                    let sThisidxWLItem = "";
+                                    let idxThisSymbol = sSymbolsSelectedForOrderThisWL.indexOf("|" + sSymbol + ",");
+                                    let idxThisSymbolidxWLItem = sSymbolsSelectedForOrderThisWL.substring(idxThisSymbol + 1, sSymbolsSelectedForOrderThisWL.length - 1).indexOf(",");
+                                    let idxThisSymbolselected = sSymbolsSelectedForOrderThisWL.substring(idxThisSymbolidxWLItem + idxThisSymbol + 2, sSymbolsSelectedForOrderThisWL.length - 1).indexOf(",");
+                                    sThisidxWLItem = sSymbolsSelectedForOrderThisWL.substr(idxThisSymbol + idxThisSymbolidxWLItem + 2, idxThisSymbolselected);
+
+
+                                    if (sSymbolsSelectedForOrderThisWL.substr(idxThisSymbol + idxThisSymbolidxWLItem + idxThisSymbolselected + 3, 4).toUpperCase() == "TRUE") {
+                                        sChecked = "checked";
+                                    } else {
+                                        bEverythingIsChecked = false;
+                                    }
+
+                                    let sThisTRId = "TR" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
+                                    if (sChecked == "checked") {
+                                        sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableSelectedRowBackgroundColor + ";\">";
+                                    } else {
+                                        if ((iLineCnt % 2) == 0) {
+                                            sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableEvenRowBackgroundColor + ";\">";
+                                        } else {
+                                            sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableOddRowBackgroundColor + ";\">";
+                                        }
+                                    }
+
+                                    sTmp = "";
+
+                                    let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
+                                    sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
+                                        "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
+                                        "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                                        sSymbol + sTmp + "</span></td>";
+
+                                    if ((isUndefined(goWLDisplayed)) || (isUndefined(goWLDisplayed[sThisId + sSymbol]))) {
+                                        let oT = {
+                                            "symbol": sSymbol,
+                                            "averagePrice": oWLItemDetail.averagePrice
+                                        }
+                                        goWLDisplayed[sThisId + sSymbol] = oT;
+                                    }
+
+                                    //Old G/L
+                                    let dTmpOrig = 0.0;
+                                    dTmpOrig = oWLItemDetail.averagePrice;
+
+                                    sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                    let dTmp = parseFloat(sTmp);
+                                    if (dTmp == 0) {
+                                        sTmp = "";
+                                    }
+                                    if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
+                                        if (dTmp < 0.0) {
+                                            sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                        } else if (dTmp > 0.0) {
+                                            sThisTable = sThisTable + "<td " + sOldGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                        } else {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                        }
+                                    } else {
+                                        if (dTmp < 0.0) {
+                                            sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                        } else if (dTmp > 0.0) {
+                                            sThisTable = sThisTable + "<td  " + sOldGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                        } else {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                        }
+                                        goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
+                                    }
+
+                                    sThisTable = sThisTable + "</tr>";
+                                    //    iLineCnt++;
+                                }
+                            }
+                        }
+
+                    }
+                }
+                if (sThisTable != "") {
+
+                    sThisTable = sThisTable + "</table>";
+                    if (bEverythingIsChecked) {
+                        sThisTable = sThisTable.replace("xxthisWillBeReplacedxx", "checked");
+                    }
+
+                    sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
+                }
+                if (gWatchlists[idxWLMain].spanName == "") {
+                    gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
+                    sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWLMain].spanName);
+                    wlAddDiv(gWatchlists[idxWLMain].spanName, sThisDiv);
+                } else {
+                    if (document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML == "") {
+                        sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWLMain].spanName);
+                        document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
+                    } else {
+                        document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
+                        document.getElementById("spanWLDate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
+                    }
+                }
+            }
         }
     }
 }
@@ -9444,7 +10434,7 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                             sThisDiv = sThisDiv + "</tr>";
 
@@ -9461,12 +10451,10 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "<tr>";
                             //style=\"vertical-align:bottom\">
                             sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols(" + idxWLMain.toString() + ")\" />" +
-                                "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" />" +
+                                "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                                 "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
-
-                            //"&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
 
                             sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
@@ -9475,10 +10463,10 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                             sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
+                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
                                 "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
-                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
 
                             sThisDiv = sThisDiv + "</tr>";
@@ -9499,9 +10487,9 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "</th> ";
 
                         sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-                                              "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                                              "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >";
+                        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
                         sThisDiv = sThisDiv + "</th> ";
 
                         sThisDiv = sThisDiv + "</tr>";
@@ -9521,7 +10509,7 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                 "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
-                            sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                            sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                             sThisDiv = sThisDiv + "</tr>";
 
@@ -9539,13 +10527,10 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "<tr>";
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols(" + idxWLMain.toString() + ")\" />" +
-                                "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" />" +
+                                "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                                 "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
-
-                            //"&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLOpenSymbols(" + idxWLMain.toString() + ")\" value=\"Add\" >" +
-
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
@@ -9554,10 +10539,10 @@ function GetWatchlistPrices() {
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol(" + idxWLMain.toString() + ")\" value=\"Update G/L\" >" +
+                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
                                 "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
-                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                             sThisDiv = sThisDiv + "</tr>";
 
@@ -9574,36 +10559,20 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                                 "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >";
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
                             sThisDiv = sThisDiv + "</th > ";
 
                         } else {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                                 "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >";
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
                             sThisDiv = sThisDiv + "</th > ";
                         }
-
-                        //sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                        //    "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy(" + idxWLMain.toString() + ")\" value=\"Buy\" >" +
-                        //    "&nbsp;&nbsp;<input id=\"txtbuypercent" + sThisId + "\" name=\"txtbuypercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:30px\" value=\"\">%" +
-                        //    "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                        //    "&dollar;<input id=\"txtbuydollars" + sThisId + "\" name=\"txtbuydollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:45px\" value=\"\">";
-
-                        //sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell(" + idxWLMain.toString() + ")\" value=\"Sell\" >" +
-                        //    "&nbsp;&nbsp;<input id=\"txtsellpercent" + sThisId + "\" name=\"txtsellpercent" + sThisId + "\" type=\"text\" style=\"width:30px;font-family:Arial,Helvetica, sans-serif; font-size:10pt;\" value=\"\">%";
-
-
-                        //sThisDiv = sThisDiv + "<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>" +
-                        //    "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop(" + idxWLMain.toString() + ")\" value=\"Trailing Stop\" >" +
-                        //    "&nbsp;&nbsp;<input id=\"txttrailingstoppercent" + sThisId + "\" name=\"txttrailingstoppercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:" + lengthsWL.WLTrailingstopPercentWidth + "\" value=\"\">%";
-
-                        //sThisDiv = sThisDiv + "</th > ";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -10168,6 +11137,12 @@ function GetWatchlistPrices() {
                                         //Old G/L
                                         let dTmpOrig = 0.0;
                                         dTmpOrig = oWLItemDetail.averagePrice;
+
+                                        if (!isUndefined(gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol])) {
+                                            dTmpOrig = dTmpOrig + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].averagePrice;
+                                        }
+
+
                                         //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
                                         //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
                                         //        dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
@@ -10227,6 +11202,11 @@ function GetWatchlistPrices() {
                                         //Old G/L
                                         let dTmpOrig = 0.0;
                                         dTmpOrig = oWLItemDetail.averagePrice;
+
+                                        if (!isUndefined(gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol])) {
+                                            dTmpOrig = dTmpOrig + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].averagePrice;
+                                        }
+
                                         sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
                                         let dTmp = parseFloat(sTmp);
                                         dTotalGain = dTotalGain + dTmp;
@@ -10432,7 +11412,7 @@ function GetWatchlistPrices() {
                     sThisDiv = sThisDiv + "<table style=\"width:100%; border-width:1px; border-style:solid;border-spacing:1px;border-color:White;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                     sThisDiv = sThisDiv + "<tr>";
                     sThisDiv = sThisDiv + "<th style=\"width:780px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
-                    sThisDiv = sThisDiv + "<th style=\"width:18px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White\" onclick=\"wlDoRemoveDiv(" + idxWLMain.toString() + ")\">X&nbsp;&nbsp;</th>";
+                    sThisDiv = sThisDiv + "<th style=\"width:18px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + gWatchlists[idxWLMain].accountId + "')\">X&nbsp;&nbsp;</th>";
                     //                                                            sThisDiv = sThisDiv + "<th style=\"width:100%; vertical-align:top; border-width:1px; border-style:solid;border-spacing:1px;border-color:White\"><b>Watchlist -- " + sLastWLAccountName + "--" + sLastWLName + "</b></th>";
                     sThisDiv = sThisDiv + "</tr>";
                     sThisDiv = sThisDiv + "<tr>";
@@ -10522,7 +11502,7 @@ function GetWatchlists(bDoingReset) {
                                         }
 
                                         if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
-                                            oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
+                                            oWLItem.priceInfo.GLUpdateDate = (oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice + 1000000000) * 1000;
                                         }
 
                                         if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
@@ -10609,7 +11589,7 @@ function GetWatchlists(bDoingReset) {
                                             oWLItem.priceInfo.averagePrice = -1 * (oWLItem.priceInfo.averagePrice - 1000000.0);
                                         }
                                         if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice)) {
-                                            oWLItem.priceInfo.GLUpdateDate = oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice * 100000;
+                                            oWLItem.priceInfo.GLUpdateDate = (oCMWL[idxWL].watchlistItems[idxWLItem].averagePrice + 1000000000) * 1000;
                                         }
 
                                         if (!isUndefined(oCMWL[idxWL].watchlistItems[idxWLItem].quantity)) {
@@ -10633,18 +11613,19 @@ function GetWatchlists(bDoingReset) {
             for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                 oAccount = new Account();
                 oAccount = gAccounts[idxAccounts];
-
-                if (gWatchlists.length > 0) {
-                    for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
-                        if ((gWatchlists[idxWL].accountId == oAccount.accountId) &&
-                            (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) ) {
-                            let oWL = new WLWatchList();
-                            oWL.accountId = oAccount.accountId;
-                            oWL.accountName = oAccount.accountName;
-                            oWL.watchlistId = oAccount.accountId + "AccountWLSummary";
-                            oWL.name = gsAccountWLSummary;
-                            gWatchlists[gWatchlists.length] = oWL;
-                            break;
+                if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                    if (gWatchlists.length > 0) {
+                        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+                            if ((gWatchlists[idxWL].accountId == oAccount.accountId) &&
+                                (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1)) {
+                                let oWL = new WLWatchList();
+                                oWL.accountId = oAccount.accountId;
+                                oWL.accountName = oAccount.accountName;
+                                oWL.watchlistId = oAccount.accountId + "AccountWLSummary";
+                                oWL.name = gsAccountWLSummary;
+                                gWatchlists[gWatchlists.length] = oWL;
+                                break;
+                            }
                         }
                     }
                 }
@@ -10722,6 +11703,119 @@ function GetWatchlists(bDoingReset) {
                 }
             }
         }
+
+        //add an Account Old GL watchlist for each account 
+        gSymbolsGL = [];
+        for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
+            oAccount = new Account();
+            oAccount = gAccounts[idxAccounts];
+            if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                if (gWatchlists.length > 0) {
+                    let sSymbols = [];
+                    for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+                        if (gWatchlists[idxWL].accountId == oAccount.accountId) {
+                            let oWLOld = new WLWatchList();
+                            oWLOld = gWatchlists[idxWL];
+                            if (oWLOld.name.substr(0, gsAccountOldGLBase.length) == gsAccountOldGLBase) {
+                                for (let idxSymbol = 0; idxSymbol < oWLOld.WLItems.length; idxSymbol++) {
+                                    let oT = {
+                                        "symbol": oWLOld.WLItems[idxSymbol].symbol,
+                                        "averagePrice": oWLOld.WLItems[idxSymbol].priceInfo.averagePrice,
+                                        "sequenceId": oWLOld.WLItems[idxSymbol].sequenceId,
+                                        "WLName": oWLOld.name,
+                                        "WLId": oWLOld.watchlistId
+                                    }
+                                    sSymbols[oWLOld.WLItems[idxSymbol].symbol] = oT;
+                                    //    if (isUndefined(sSymbols[oWLOld.WLItems[idxSymbol].symbol])) {
+                                    //        let oT = {
+                                    //            "symbol": oWLOld.WLItems[idxSymbol].symbol,
+                                    //            "averagePrice": oWLOld.WLItems[idxSymbol].priceInfo.averagePrice,
+                                    //            "WLName": gWatchlists[idxWL].name,
+                                    //            "WLId": gWatchlists[idxWL].watchlistId
+                                    //        }
+                                    //        sSymbols[oWLOld.WLItems[idxSymbol].symbol] = oT;
+                                    //    } else {
+                                    //        let oT = {
+                                    //            "symbol": oWLOld.WLItems[idxSymbol].symbol,
+                                    //            "averagePrice": sSymbols[oWLOld.WLItems[idxSymbol].symbol].averagePrice + oWLOld.WLItems[idxSymbol].priceInfo.averagePrice,
+                                    //            "WLName": gWatchlists[idxWL].name,
+                                    //            "WLId": gWatchlists[idxWL].watchlistId
+                                    //        }
+                                    //        sSymbols[oWLOld.WLItems[idxSymbol].symbol] = oT;
+                                    //    }
+                                }
+                            }
+                        }
+                    }
+                    //now have all of the symbols and OldGL values so create the watchlist and gOldGLSymbols array
+                    let oWL = new WLWatchList();
+                    oWL.accountId = oAccount.accountId;
+                    oWL.accountName = oAccount.accountName;
+                    oWL.watchlistId = oAccount.accountId + gsAccountOldGLBase;
+                    oWL.name = gsAccountOldGL;
+                    for (var key in sSymbols) {
+                        let oWLItem = new WLItem();
+                        oWLItem.symbol = sSymbols[key].symbol;
+                        oWLItem.priceInfo.averagePrice = sSymbols[key].averagePrice;
+                        oWL.WLItems[oWL.WLItems.length] = oWLItem;
+                        let oT = {
+                            "symbol": sSymbols[key].symbol,
+                            "averagePrice": sSymbols[key].averagePrice,
+                            "sequenceId": sSymbols[key].sequenceId,
+                            "WLName": sSymbols[key].WLName,
+                            "WLId": sSymbols[key].WLId
+                        }
+                        gSymbolsGL[oAccount.accountId + sSymbols[key].symbol] = oT;
+                    }
+                    if (oWL.WLItems.length > 0) {
+                        oWL.WLItems.sort(sortBySymbol);
+                    }
+                    if (bDoingReset) {
+                        //check to see if the OldGL watchlist has been selected
+                        for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                            if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                                (oWL.name == oOldWL[idxWLCur].name)) {
+                                oWL.spanName = oOldWL[idxWLCur].spanName;
+                                if (oOldWL[idxWLCur].bSelectedOGL) {
+                                    oWL.bSelectedOGL = true;
+                                    oWL.bSelectedOGLTemp = true;
+
+                                    // now reset the selected for order flag
+                                    if (oWL.WLItems.length > 0) {
+                                        if (oOldWL[idxWLCur].WLItems.length > 0) {
+                                            for (let idxWLItem = 0; idxWLItem < oWL.WLItems.length; idxWLItem++) {
+                                                for (let idxWLItemOld = 0; idxWLItemOld < oOldWL[idxWLCur].WLItems.length; idxWLItemOld++) {
+                                                    if ((oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol == oWL.WLItems[idxWLItem].symbol) &&
+                                                        (oOldWL[idxWLCur].WLItems[idxWLItemOld].accountId == oWL.WLItems[idxWLItem].accountId)) {
+                                                        oWL.WLItems[idxWLItem].bSelectedForOrder = oOldWL[idxWLCur].WLItems[idxWLItemOld].bSelectedForOrder;
+                                                        oWL.WLItems[idxWLItem].bCheckboxEnabled = oOldWL[idxWLCur].WLItems[idxWLItemOld].bCheckboxEnabled;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    gWatchlists[gWatchlists.length] = oWL;
+                //    if (oWL.WLItems.length > 0) {
+                //        gWatchlists[gWatchlists.length] = oWL;
+                //    }
+                } else {
+                    //add empty Account OldGL watchlist
+                    let oWL = new WLWatchList();
+                    oWL.accountId = oAccount.accountId;
+                    oWL.accountName = oAccount.accountName;
+                    oWL.watchlistId = oAccount.accountId + gsAccountOldGLBase;
+                    oWL.name = gsAccountOldGL;
+                    gWatchlists[gWatchlists.length] = oWL;
+                }
+            }
+        }
+
 
         //add an Account Orders watchlist for each account 
         if (gbShowSavedOrders) {
@@ -10967,7 +12061,7 @@ function GetWatchlistSO() {
                         sThisDiv = sThisDiv + "<tr>";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
+                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','"  + sLastWLAccountId + "')\" value=\"Place\" ></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
@@ -10976,9 +12070,9 @@ function GetWatchlistSO() {
                             "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
 
                         sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders(" + idxWL.toString() + ")\" value=\"Delete\" ></th>";
+                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -10991,7 +12085,7 @@ function GetWatchlistSO() {
                         sThisDiv = sThisDiv + "<tr>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders(" + idxWL.toString() + ")\" value=\"Place\" ></th>";
+                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Place\" ></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
@@ -11000,9 +12094,9 @@ function GetWatchlistSO() {
                             "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders(" + idxWL.toString() + ")\" value=\"Delete\" ></th>";
+                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWL.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -11479,6 +12573,11 @@ function GetWatchlistSummary() {
                                                     for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
                                                         if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
                                                             dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+
+                                                            if (!isUndefined(gSymbolsGL[gWatchlists[idxWL].accountId + sSymbol])) {
+                                                                dTmpOrig = dTmpOrig + gSymbolsGL[gWatchlists[idxWL].accountId + sSymbol].averagePrice;
+                                                            }
+
                                                             break;
                                                         }
                                                     }
@@ -11634,7 +12733,7 @@ function GetWatchlistSummary() {
                                         "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
                                         "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
                                         "<span style=\"vertical-align: middle;\" id=\"spanSummaryDate" + sThisId + "\" name=\"spanSummaryDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</b></span></th > ";
-                                    sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv(" + idxWLSummaryMain.toString() + ")\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                                    sThisDiv = sThisDiv + "<th style=\"height:25px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLSummaryMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                                     sThisDiv = sThisDiv + "</tr>";
 
@@ -13195,12 +14294,20 @@ function PageLoad() {
             "<label for=\"chkIndexOther\"> Other</label>" + "</td>" +
             "<td>" + "&nbsp;" + "</td>" +
             "</tr>" +
-            "</table><div id=\"spanIndexes\" style=\"display:none; font-size:10pt;\">" +
+            "</table>" +
+            "<div id=\"spanOldGLAccount\" style=\"display:none; font-size:10pt;\">" +
+            "</div>" +
+            "<div id=\"spanIndexes\" style=\"display:none; font-size:10pt;\">" +
             "Index or stock symbols separated by commas:" +
             "<br />" +
             "<input id=\"txtIndexes\" name=\"txtIndexes\" type=\"search\" style=\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;width:300px\" value=\"\">" +
             "</div>";
     }
+
+    //"Account name to setup Old G/L:" +
+    //    "<br />" +
+    //    "<input id=\"txtOldGLAccount\" name=\"txtOldGLAccount\" type=\"search\" style=\"font-family:Arial, Helvetica, sans-serif; font-size:10pt;width:300px\" value=\"\">" +
+
     document.getElementById("tdIndexes").innerHTML = sTmp;
 
     document.getElementById("tblDetail").onclick = function () {
@@ -13824,6 +14931,210 @@ function PostTDPlaceOrder(sAccountId, sData) {
     return iReturn;
 }
 
+function PostTDWLCreateWL(sAccountId, sData) {
+    let iTryCount = 0;
+    let iReturn = 0;
+
+    iTryCount = 0;
+    while (iTryCount < 2) {
+        //-------------------------------------------------------------------------------------------------
+
+        let xhttp = null;
+        let iInnerTryCount = 0;
+        let sServerURL = "https://api.tdameritrade.com/v1/accounts/" + sAccountId + "/watchlists";
+
+        xhttp = oHTTP();
+        while ((xhttp == null) && (iInnerTryCount < 5)) {
+            xhttp = oHTTP();
+            iInnerTryCount = iInnerTryCount + 1;
+        }
+        iInnerTryCount = 0;
+        if (CheckHTTPOpen(xhttp, sServerURL, "Error during xhttp.open to " + sServerURL, false)) {
+            // set the request header
+            xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+
+            // send the request
+            try {
+                //debugger
+                xhttp.send(sData);
+                if (xhttp.responseText != null) {
+                    if (xhttp.responseText != "") {
+                        let oCM = myJSON.parse(xhttp.responseText);
+                        switch (checkTDAPIErrorNoErrorDisplayed(oCM)) {
+                            case 0: //no error
+                                {
+                                    break;
+                                }
+                            case 1: //acces code expired
+                                {
+                                    xhttp = null;
+                                    if (GetAccessCodeUsingRefreshToken()) {
+                                        iTryCount++;
+                                    } else {
+                                        alert("An error occurred attempting to refresh the access code. Please reload the app.");
+                                        iReturn = 1;
+                                        iTryCount = 2;
+                                    }
+                                    break;
+                                }
+                            case 2: //other error
+                                {
+                                    iReturn = 2;
+                                    iTryCount = 2;
+                                    gsLastError = oCM.error;
+                                    break;
+                                }
+                            default:
+                                {
+                                    iReturn = 3;
+                                    iTryCount = 2;
+                                    break;
+                                }
+                        }
+                    }
+                    else {
+                        iReturn = 0; //success
+                        iTryCount = 2;
+                    }
+                }
+                else {
+                    iTryCount++;
+                    if (iTryCount < 2) {
+                        xhttp = null;
+                    }
+                    else {
+                        iReturn = 5;
+                        gsLastError = "HTTP response is null.";
+                    }
+                }
+            }
+            catch (e1) {
+                //debugger
+                iTryCount++;
+                if (iTryCount < 2) {
+                    xhttp = null;
+                }
+                else {
+                    //alert("PostTDOrder Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                    iReturn = 6;
+                    gsLastError = e1.message;
+                }
+            }
+        }
+        else {
+            iReturn = 7; //error during HTTP open request
+            gsLastError = "Error during HTTP open request";
+            iTryCount = 2;
+            break;
+        }
+    }
+
+    return iReturn;
+}
+
+function PostWLDeleteWL(sAccountId, sWLId) {
+    let iTryCount = 0;
+    let iReturn = 0;
+
+    iTryCount = 0;
+    while (iTryCount < 2) {
+        //-------------------------------------------------------------------------------------------------
+
+        let xhttp = null;
+        let iInnerTryCount = 0;
+
+        let sServerURL = "https://api.tdameritrade.com/v1/accounts/" + sAccountId + "/watchlists/" + sWLId;
+
+        xhttp = oHTTP();
+        while ((xhttp == null) && (iInnerTryCount < 5)) {
+            xhttp = oHTTP();
+            iInnerTryCount = iInnerTryCount + 1;
+        }
+        iInnerTryCount = 0;
+        if (CheckHTTPOpenDelete(xhttp, sServerURL, "Error during xhttp.open to " + sServerURL, false, false, "", "")) {
+            // set the request header
+            xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+
+            // send the request
+            try {
+                //debugger
+                xhttp.send();
+                if (xhttp.responseText != null) {
+                    if (xhttp.responseText != "") {
+                        let oCM = myJSON.parse(xhttp.responseText);
+                        switch (checkTDAPIErrorNoErrorDisplayed(oCM)) {
+                            case 0: //no error
+                                {
+                                    break;
+                                }
+                            case 1: //acces code expired
+                                {
+                                    xhttp = null;
+                                    if (GetAccessCodeUsingRefreshToken()) {
+                                        iTryCount++;
+                                    } else {
+                                        alert("An error occurred attempting to refresh the access code. Please reload the app.");
+                                        iReturn = 1;
+                                        iTryCount = 2;
+                                    }
+                                    break;
+                                }
+                            case 2: //other error
+                                {
+                                    iReturn = 2;
+                                    iTryCount = 2;
+                                    gsLastError = oCM.error;
+                                    break;
+                                }
+                            default:
+                                {
+                                    iReturn = 3;
+                                    iTryCount = 2;
+                                    break;
+                                }
+                        }
+                    }
+                    else {
+                        iReturn = 0; //success
+                        iTryCount = 2;
+                    }
+                }
+                else {
+                    iTryCount++;
+                    if (iTryCount < 2) {
+                        xhttp = null;
+                    }
+                    else {
+                        iReturn = 5;
+                        gsLastError = "HTTP response is null.";
+                    }
+                }
+            }
+            catch (e1) {
+                //debugger
+                iTryCount++;
+                if (iTryCount < 2) {
+                    xhttp = null;
+                }
+                else {
+                    //alert("PostTDOrder Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                    iReturn = 6;
+                    gsLastError = e1.message;
+                }
+            }
+        }
+        else {
+            iReturn = 7; //error during HTTP open request
+            gsLastError = "Error during HTTP open request";
+            iTryCount = 2;
+            break;
+        }
+    }
+
+    return iReturn;
+}
+
 function PostTDWLOrder(sAccountId, sWatchlistId, sData) {
     let iTryCount = 0;
     let iReturn = 0;
@@ -13936,7 +15247,7 @@ function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iP
         iProgressIncrement = 100 / gTDWLOrders.length;
         gsLastErrors.length = 0;
         giTDPostOrderRetryCnt = 0;
-        ShowProgress(true, false);
+//        ShowProgress(true, false);
     }
     for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
         if (giProgress < 100) {
@@ -14036,9 +15347,11 @@ function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iP
     if (iNumErrors == 0) {
         ClearAllWLInputFields(idxWL);
     }
-    ShowProgress(false, true);
+
+    GetTradesCanceled();
+//    ShowProgress(false, true);
     gbDoingCreateOrders = false;
-    SetDefault();
+//    SetDefault();
 }
 
 function PostWLBuyOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, iTryCountIn, idxWL) {
@@ -14372,7 +15685,9 @@ function PostWLCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgr
         giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
     }
     if (iNumErrors == 0) {
-        ClearAllWLInputFields(idxWL);
+        if (idxWL != -1) {
+            ClearAllWLInputFields(idxWL);
+        }
     }
     ShowProgress(false, true);
     gbDoingCreateOrders = false;
@@ -14457,6 +15772,157 @@ function PostWLDeleteSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProg
     }
 }
 
+function PostWLDeleteSymbolOrdersOGL(sAccountId) {
+    let iNumSuccess = 0;
+    let iNumSuccessDeleteWL = 0;
+    let iNumErrors = 0;
+    let iNumErrorsDeleteWL = 0;
+    let iProgressIncrement = 100;
+
+    giProgress = 0;
+    iProgressIncrement = 100;
+    //iProgressIncrement = 100 / gTDWLOrders.length;
+    gsLastErrors.length = 0;
+    giTDPostOrderRetryCnt = 0;
+    ShowProgress(true, false);
+
+    if (giProgress < 100) {
+        giProgress = giProgress + iProgressIncrement;
+    }
+
+    let sMsg = "";
+
+    if (gTDWLOrdersDeleteWL.length > 0) {
+        //first delete all of the watchlists
+        for (let idxOrder = 0; idxOrder < gTDWLOrdersDeleteWL.length; idxOrder++) {
+            let oTDWLOrder = new TDWLOrder();
+            oTDWLOrder = gTDWLOrdersDeleteWL[idxOrder];
+            if (PostWLDeleteWL(sAccountId, oTDWLOrder.sWLId) == 0) {
+                iNumSuccessDeleteWL++;
+            } else {
+                // an error occurred
+                iNumErrorsDeleteWL++;
+                gTDWLOrdersDeleteWL[idxOrder].sError = oTDWLOrder.sWLName + " -- " + gsLastError;
+            }
+        }
+    }
+
+    //now delete the symbols from the watchlists
+
+    let sOrder = "";
+    let sSep = "";
+    let sLastWLId = "";
+    let iNumInThisOrder = 0;
+    let sErrors = "";
+    for (let idxOrder = 0; idxOrder < gTDWLOrders.length; idxOrder++) {
+        let oTDWLOrder = new TDWLOrder();
+        oTDWLOrder = gTDWLOrders[idxOrder];
+        if (oTDWLOrder.sWLId != sLastWLId) {
+            sLastWLId = oTDWLOrder.sWLId;
+            if (sOrder != "") {
+                let oTDWLOrder = new TDWLOrder();
+                sOrder = sOrder + oTDWLOrder.aWL12watchlistItemsEnd +
+                    oTDWLOrder.aWL13end;
+                if (PostTDWLOrder(sAccountId, sLastWLId, sOrder) == 0) {
+                    //success
+                    iNumSuccess = iNumSuccess + iNumInThisOrder;
+                } else {
+                    let sMsg = ""
+                    sErrors = sErrors + gsLastError + "\n";
+                }
+                sOrder = "";
+                sSep = "";
+                iNumInThisOrder = 0;
+            }
+        }
+        if (sOrder == "") {
+            sOrder = oTDWLOrder.aWL00Start +
+                oTDWLOrder.aWL01name +
+                oTDWLOrder.aWL02watchlistId +
+                oTDWLOrder.aWL03watchlistItemsStart;
+        }
+        iNumInThisOrder++;
+        sOrder = sOrder + sSep +
+            oTDWLOrder.aWL03watchlistItemStart +
+            oTDWLOrder.aWL04sequenceId +
+            oTDWLOrder.aWL05quantity +
+            oTDWLOrder.aWL06averagePrice +
+            oTDWLOrder.aWL07commission +
+            oTDWLOrder.aWL07purchasedDate +
+            oTDWLOrder.aWL08instrumentStart +
+            oTDWLOrder.aWL09symbol +
+            oTDWLOrder.aWL10assetType +
+            oTDWLOrder.aWL11instrumentEnd +
+            oTDWLOrder.aWL12watchlistItemEnd;
+        sSep = ",";
+    }
+    if (sOrder != "") {
+        let oTDWLOrder = new TDWLOrder();
+        sOrder = sOrder + oTDWLOrder.aWL12watchlistItemsEnd +
+            oTDWLOrder.aWL13end;
+        if (PostTDWLOrder(sAccountId, sLastWLId, sOrder) == 0) {
+            //success
+            iNumSuccess = iNumSuccess + iNumInThisOrder;
+        } else {
+            sErrors = sErrors + gsLastError + "\n";
+        }
+    }
+
+    if (sErrors == "") {
+        //no errors
+        if (iNumSuccessDeleteWL > 0) {
+            sMsg = iNumSuccessDeleteWL.toString() + " Old GL ";
+            if (iNumSuccessDeleteWL > 1) {
+                sMsg = sMsg + "watchlists deleted\n";
+            } else {
+                sMsg = sMsg + "watchlist deleted\n";
+            }
+        }
+        if (iNumSuccess > 0) {
+            sMsg = sMsg + iNumSuccess.toString() + " Old GL ";
+            if (iNumSuccess > 1) {
+                sMsg = sMsg + "symbols deleted";
+            } else {
+                sMsg = sMsg + "symbol deleted";
+            }
+        }
+    } else {
+        if ((iNumSuccess > 0) || (iNumSuccessDeleteWL > 0)) {
+            if (iNumSuccessDeleteWL > 0) {
+                sMsg = iNumSuccessDeleteWL.toString() + " Old GL ";
+                if (iNumSuccessDeleteWL > 1) {
+                    sMsg = sMsg + "watchlists deleted\n";
+                } else {
+                    sMsg = sMsg + "watchlist deleted\n";
+                }
+            }
+            if (iNumSuccess > 0) {
+                sMsg = sMsg + iNumSuccess.toString() + " Old GL ";
+                if (iNumSuccess > 1) {
+                    sMsg = sMsg + "symbols deleted";
+                } else {
+                    sMsg = sMsg + "symbol deleted";
+                }
+            }
+            sMsg = sMsg + " with the following errors\n" + sErrors;
+
+        } else {
+            //nothing worked
+            sMsg = "No Old GL symbols deleted";
+            sMsg = sMsg + " with the following errors\n" + sErrors;
+        }
+    }
+    alert(sMsg);
+    gbDoResetWatchlists = true;
+    if (giGetTDDataTimeoutId != 0) {
+        window.clearTimeout(giGetTDDataTimeoutId);
+        giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+    }
+    ShowProgress(false, true);
+    gbDoingCreateOrders = false;
+    SetDefault();
+}
+
 function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, sWatchlistId, iTryCountIn, idxWL) {
     let iNumSuccess = iNumSuccessIn;
     let iNumErrors = iNumErrorsIn;
@@ -14464,6 +15930,7 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
     let iTryCount = iTryCountIn;
     let bDoingPurchasedDateUpdate = false;
     let bDoingPurchasedDateClear = false;
+    let bDoingCreateWL = false;
     let bDoingAddSymbols = false;
     if (bFirstTime) {
         giProgress = 0;
@@ -14486,6 +15953,8 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
                 bDoingPurchasedDateClear = true;
             } else if (oTDWLOrder.bDoingPurchasedDateUpdate) {
                 bDoingPurchasedDateUpdate = true;
+            } else if (oTDWLOrder.bDoingCreateWL) {
+                bDoingCreateWL = true;
             } else {
                 bDoingAddSymbols = true;
             }
@@ -14512,67 +15981,110 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
     sOrder = sOrder + oTDWLOrder.aWL12watchlistItemsEnd +
                       oTDWLOrder.aWL13end;
 
-    if (PostTDWLOrder(sAccountId, sWatchlistId, sOrder) == 0) {
-        //success
-        if (bDoingPurchasedDateClear) {
-            iNumSuccess = gTDWLOrders.length / 2;
-        } else if (bDoingPurchasedDateUpdate) {
+    if (bDoingCreateWL) {
+        if (PostTDWLCreateWL(sAccountId, sOrder) == 0) {
+            //success
             iNumSuccess = gTDWLOrders.length;
-        } else {
-            iNumSuccess = gTDWLOrders.length;
-        }
-        let sMsg = iNumSuccess.toString() + " watchlist ";
-        if (bDoingPurchasedDateUpdate) {
-            if (iNumSuccess > 1) {
-                sMsg = sMsg + "symbols Acquired Date updated";
-            } else {
-                sMsg = sMsg + "symbol Acquired Date updated";
-            }
-        } else if (bDoingPurchasedDateClear) {
-            if (iNumSuccess > 1) {
-                sMsg = sMsg + "symbols Acquired Date cleared";
-            } else {
-                sMsg = sMsg + "symbol Acquired Date cleared";
-            }
-        } else {
+            let sMsg = iNumSuccess.toString() + " watchlist ";
             if (iNumSuccess > 1) {
                 sMsg = sMsg + "symbols added";
             } else {
                 sMsg = sMsg + "symbol added";
             }
-        }
-        alert(sMsg);
-        gbDoResetWatchlists = true;
-        if (giGetTDDataTimeoutId != 0) {
-            window.clearTimeout(giGetTDDataTimeoutId);
-            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
-        }
-        if (iNumErrors == 0) {
-            ClearAllWLInputFields(idxWL);
-        }
-        ShowProgress(false, true);
-        gbDoingCreateOrders = false;
-        SetDefault();
-    } else {
-        let sMsg = ""
-        if (bDoingPurchasedDateUpdate) {
-            sMsg = sMsg + "Error updating Acquired Date -- ";
-        } else if (bDoingPurchasedDateClear) {
-            sMsg = sMsg + "Error clearing Acquired Date -- ";
+            alert(sMsg);
+            gbDoResetWatchlists = true;
+            if (giGetTDDataTimeoutId != 0) {
+                window.clearTimeout(giGetTDDataTimeoutId);
+                giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+            }
+            if (iNumErrors == 0) {
+                if (idxWL != -1) {
+                    ClearAllWLInputFields(idxWL);
+                }
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
         } else {
+            let sMsg = ""
             sMsg = sMsg + "Error adding new symbols -- ";
+            sMsg = sMsg + gsLastError;
+            alert(sMsg);
+            gbDoResetWatchlists = true;
+            if (giGetTDDataTimeoutId != 0) {
+                window.clearTimeout(giGetTDDataTimeoutId);
+                giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
         }
-        sMsg = sMsg + gsLastError;
-        alert(sMsg);
-        gbDoResetWatchlists = true;
-        if (giGetTDDataTimeoutId != 0) {
-            window.clearTimeout(giGetTDDataTimeoutId);
-            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+    } else {
+        if (PostTDWLOrder(sAccountId, sWatchlistId, sOrder) == 0) {
+            //success
+            if (bDoingPurchasedDateClear) {
+                iNumSuccess = gTDWLOrders.length / 2;
+            } else if (bDoingPurchasedDateUpdate) {
+                iNumSuccess = gTDWLOrders.length;
+            } else {
+                iNumSuccess = gTDWLOrders.length;
+            }
+            let sMsg = iNumSuccess.toString() + " watchlist ";
+            if (bDoingPurchasedDateUpdate) {
+                if (iNumSuccess > 1) {
+                    sMsg = sMsg + "symbols Acquired Date updated";
+                } else {
+                    sMsg = sMsg + "symbol Acquired Date updated";
+                }
+            } else if (bDoingPurchasedDateClear) {
+                if (iNumSuccess > 1) {
+                    sMsg = sMsg + "symbols Acquired Date cleared";
+                } else {
+                    sMsg = sMsg + "symbol Acquired Date cleared";
+                }
+            } else {
+                if (iNumSuccess > 1) {
+                    sMsg = sMsg + "symbols added";
+                } else {
+                    sMsg = sMsg + "symbol added";
+                }
+            }
+            alert(sMsg);
+            gbDoResetWatchlists = true;
+            if (giGetTDDataTimeoutId != 0) {
+                window.clearTimeout(giGetTDDataTimeoutId);
+                giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+            }
+            if (iNumErrors == 0) {
+                if (idxWL != -1) {
+                    ClearAllWLInputFields(idxWL);
+                }
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
+        } else {
+            let sMsg = ""
+            if (bDoingPurchasedDateUpdate) {
+                sMsg = sMsg + "Error updating Acquired Date -- ";
+            } else if (bDoingPurchasedDateClear) {
+                sMsg = sMsg + "Error clearing Acquired Date -- ";
+            } else {
+                sMsg = sMsg + "Error adding new symbols -- ";
+            }
+            sMsg = sMsg + gsLastError;
+            alert(sMsg);
+            gbDoResetWatchlists = true;
+            if (giGetTDDataTimeoutId != 0) {
+                window.clearTimeout(giGetTDDataTimeoutId);
+                giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+            }
+            ShowProgress(false, true);
+            gbDoingCreateOrders = false;
+            SetDefault();
         }
-        ShowProgress(false, true);
-        gbDoingCreateOrders = false;
-        SetDefault();
     }
+
     //for (let idxOrder = idxOrderStart; idxOrder > -1; idxOrder--) {
     //    if (giProgress < 100) {
     //        giProgress = giProgress + iProgressIncrement;
@@ -15724,7 +17236,9 @@ function SetupWatchlists(bDoingSymbols) {
             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                 if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) ||
                     ((gWatchlists[idxWL].name == gsAccountWLSummary) && (!bDoingSymbols)) ||
-                    ((gWatchlists[idxWL].name != gsAccountSavedOrders) && (gWatchlists[idxWL].name != gsAccountWLSummary))) {
+                    ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                     (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                     (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase))) {
                     if (gWatchlists[idxWL].accountName != sLastAccountname) {
                         sLastAccountname = gWatchlists[idxWL].accountName;
                         s = s + "<tr>";
@@ -15779,7 +17293,9 @@ function SetupWatchlists(bDoingSymbols) {
             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                 if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) ||
                     ((gWatchlists[idxWL].name == gsAccountWLSummary) && (!bDoingSymbols)) ||
-                    ((gWatchlists[idxWL].name != gsAccountSavedOrders) && (gWatchlists[idxWL].name != gsAccountWLSummary)) ) {
+                    ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                     (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                     (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase))) {
                     if (sLastAccountname == "") {
                         sLastAccountname = gWatchlists[idxWL].accountName;
                         s = s + "<option selected value=\"\">&nbsp;</option>";
@@ -15855,7 +17371,7 @@ function SetWait() {
         document.pwdForm.txtSymbols.style.cursor = "wait";
         document.pwdForm.txtSymbols.disabled = true;
 
-        if (!gbDoingGetTrades) {
+        if (!gbDoingGetTrades || gbDoingCreateOrders) {
             document.pwdForm.btnGetTrades.style.cursor = "wait";
             document.pwdForm.btnGetTrades.disabled = true;
         }
@@ -15936,7 +17452,7 @@ function ShowAutoUpdateDates(sSymbol, iStartDate, iUpdateDate) {
     if (iUpdateDate == 0) {
         alert(sSymbol + " has not been automatically updated.");
     } else {
-        alert(sSymbol + " was updated on " + FormatDateForTD(new Date(iUpdateDate)) + "\nusing " + FormatDateForTD(new Date(iStartDate)) + " as the start date.");
+        alert(sSymbol + " was updated on " + FormatDateWithTime(new Date(iUpdateDate), true, false) + "\nusing " + FormatDateForTD(new Date(iStartDate)) + " as the start date.");
     }
 }
 
@@ -15985,6 +17501,35 @@ function sortByRank(a, b) {
         return -1;
     }
     if (a.rank > b.rank) {
+        return 1;
+    }
+    return 0;
+}
+
+function sortBySequenceId(a, b) {
+    let aSequenceId = a.sequenceId;
+    let bSequenceId = b.sequenceId;
+    let aWLId = a.sWLId;
+    let bWLId = b.sWLId;
+    let sXId = "00000";
+    let sX = "                                                  ";
+
+    if (aSequenceId.length < 5) {
+        aSequenceId = sXId.substr(0, 5 - aSequenceId.length) + aSequenceId;
+    }
+    if (bSequenceId.length < 5) {
+        bSequenceId = sXId.substr(0, 5 - bSequenceId.length) + bSequenceId;
+    }
+    if (aWLId.length < 40) {
+        aWLId = aWLId + sX.substr(0, 40 - aWLId.length);
+    }
+    if (bWLId.length < 40) {
+        bWLId = bWLId + sX.substr(0, 40 - bWLId.length);
+    }
+    if ((aWLId + aSequenceId) < (bWLId + bSequenceId)) {
+        return -1;
+    }
+    if ((aWLId + aSequenceId) > (bWLId + bSequenceId)) {
         return 1;
     }
     return 0;
@@ -16668,30 +18213,57 @@ function wlDoCancelPopup() {
     wlWatchlistSelected();
 }
 
-function wlDoRemoveDiv(idxWL) {
-    if (gWatchlists[idxWL].spanName != "") {
-        wlRemoveDiv(gWatchlists[idxWL].spanName);
-        gWatchlists[idxWL].spanName = "";
-        gWatchlists[idxWL].bSelected = false;
-        gWatchlists[idxWL].bSelectedTemp = false;
-        gWatchlists[idxWL].bSelectedO = false;
-        gWatchlists[idxWL].bSelectedOTemp = false;
-        gWatchlists[idxWL].bSelectedSO = false;
-        gWatchlists[idxWL].bSelectedSOTemp = false;
-        gWatchlists[idxWL].bSelectedWLSummary = false;
-        gWatchlists[idxWL].bSelectedWLSummaryTemp = false;
+function wlDoRemoveDiv(watchlistId, sLastWLAccountId) {
+    let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+    if (idxWL != -1) {
+        if (gWatchlists[idxWL].spanName != "") {
+            wlRemoveDiv(gWatchlists[idxWL].spanName);
+            gWatchlists[idxWL].spanName = "";
+            gWatchlists[idxWL].bSelected = false;
+            gWatchlists[idxWL].bSelectedTemp = false;
+            gWatchlists[idxWL].bSelectedOGL = false;
+            gWatchlists[idxWL].bSelectedOGLTemp = false;
+            gWatchlists[idxWL].bSelectedO = false;
+            gWatchlists[idxWL].bSelectedOTemp = false;
+            gWatchlists[idxWL].bSelectedSO = false;
+            gWatchlists[idxWL].bSelectedSOTemp = false;
+            gWatchlists[idxWL].bSelectedWLSummary = false;
+            gWatchlists[idxWL].bSelectedWLSummaryTemp = false;
 
-        for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-            gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = false;
-            gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled = true;
+            for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
+                gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = false;
+                gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled = true;
+            }
         }
-
     }
+}
 
+function wlDoRemoveDivOldGL(sAccountId) {
+    let idxWL = -1;
+    for (let idx = 0; idx < gWatchlists.length; idx++) {
+        if ((gWatchlists[idx].name == gsAccountOldGL) && (gWatchlists[idx].accountId == sAccountId)) {
+            idxWL = idx;
+            break;
+        }
+    }
+    if (idxWL != -1) {
+        wlDoRemoveDiv(gWatchlists[idxWL].watchlistId, sAccountId);
+    }
 }
 
 function wlDoSetShowingSelectWatchlists() {
     gbShowingSelectWatchlists = true;
+}
+
+function wlGetIdxWL(watchlistId, sLastWLAccountId) {
+    if (gWatchlists.length > 0) {
+        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+            if ((gWatchlists[idxWL].watchlistId == watchlistId) && ((gWatchlists[idxWL].accountId == sLastWLAccountId))) {
+                return idxWL;
+            }
+        }
+    }
+    return -1;
 }
 
 function wlHideAllWatchlists() {
@@ -16712,6 +18284,8 @@ function wlMarkSelected(idxWL) {
     } else {
         if (gWatchlists[idxWL].name == gsAccountWLSummary) {
             gWatchlists[idxWL].bSelectedWLSummaryTemp = !gWatchlists[idxWL].bSelectedWLSummaryTemp;
+        } else if (gWatchlists[idxWL].name == gsAccountOldGL) {
+            gWatchlists[idxWL].bSelectedOGLTemp = !gWatchlists[idxWL].bSelectedOGLTemp;
         } else if (gWatchlists[idxWL].name == gsAccountOrders) {
             gWatchlists[idxWL].bSelectedOTemp = !gWatchlists[idxWL].bSelectedOTemp;
         } else if (gWatchlists[idxWL].name == gsAccountSavedOrders) {
@@ -16853,6 +18427,21 @@ function wlOKClicked() {
                         gWatchlists[idx].spanName = "";
                     }
                 }
+            } else if (gWatchlists[idx].name == gsAccountOldGL) {
+                gWatchlists[idx].bSelectedOGL = gWatchlists[idx].bSelectedOGLTemp;
+                gWatchlists[idx].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
+                if (gWatchlists[idx].bSelectedOGL) {
+                    if (gWatchlists[idx].spanName == "") {
+                        gWatchlists[idx].spanName = gWatchlists[idx].watchlistId + gWatchlists[idx].accountId;
+                        wlAddDiv(gWatchlists[idx].spanName, "");
+                    }
+                } else {
+                    if (gWatchlists[idx].spanName != "") {
+                        wlRemoveDiv(gWatchlists[idx].spanName);
+                        gWatchlists[idx].spanName = "";
+                    }
+                }
+
             } else if (gWatchlists[idx].name == gsAccountOrders) {
                 gWatchlists[idx].bSelectedO = gWatchlists[idx].bSelectedOTemp;
                 gWatchlists[idx].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
@@ -16952,7 +18541,7 @@ function wlResetDragAllWatchlists() {
     if (gWatchlists.length > 0) {
         for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
             if (gWatchlists[idxWL].spanName != "") {
-                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary)) {
+                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary) || (gWatchlists[idxWL].bSelectedOGL)) {
                     if (!isUndefined(document.getElementById(gWatchlists[idxWL].spanName))) {
                         let x = document.getElementById(gWatchlists[idxWL].spanName);
                         let sSpanId = gWatchlists[idxWL].spanName;
@@ -16982,7 +18571,8 @@ function wlShowAllWatchlists() {
     if (gWatchlists.length > 0) {
         for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
             if (gWatchlists[idxWL].spanName != "") {
-                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO)) {
+                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary) || (gWatchlists[idxWL].bSelectedOGL)) {
+//                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO)) {
                     document.getElementById(gWatchlists[idxWL].spanName).style.display = "block";
                 }
             }
@@ -17010,6 +18600,10 @@ function wlWatchlistSelected() {
                 if (gWatchlists[idxWL].name == gsAccountWLSummary) {
                     gWatchlists[idxWL].bSelectedWLSummary = true;
                     gWatchlists[idxWL].bSelectedWLSummaryTemp = true;
+                    gWatchlists[idxWL].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
+                } else if (gWatchlists[idxWL].name == gsAccountOldGL) {
+                    gWatchlists[idxWL].bSelectedOGL = true;
+                    gWatchlists[idxWL].bSelectedOGLTemp = true;
                     gWatchlists[idxWL].bShowAllAccountsForEachSymbol = gbWLShowAllAccountsForSymbol;
                 } else if (gWatchlists[idxWL].name == gsAccountOrders) {
                     gWatchlists[idxWL].bSelectedO = true;
