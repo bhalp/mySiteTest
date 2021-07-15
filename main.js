@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.6 2021-07-13 22:50"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.6 2021-07-14 19:16"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -3694,19 +3694,19 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL,
                 if (!bInitializing) {
                     dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
                 }
-                let dCurrentPrice = 0.0;
+                //let dCurrentPrice = 0.0;
                 if (sLastAssetType == "OPTION") {
-                    dCurrentPrice = oSymbolPrice.price; //get the current price here
+                    //dCurrentPrice = oSymbolPrice.price; //get the current price here
 
-                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
+                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell; // + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
                     dSelectNum = dSelectNum + dLastCommision;
                     if (dSelectNum < 0.0) {
                         dSelectNum = (-1 * dSelectNum) + 1000000.0;
                     }
                     sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
                 } else {
-                    dCurrentPrice = oSymbolPrice.price; //get the current price here
-                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
+                    //dCurrentPrice = oSymbolPrice.price; //get the current price here
+                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell; // + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
                     dSelectNum = dSelectNum + dLastCommision;
                     if (dSelectNum < 0.0) {
                         dSelectNum = (-1 * dSelectNum) + 1000000.0;
@@ -9309,7 +9309,7 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
     //}
     if (bOk) {
         if (gSymbolsAuto.length > 0) {
-            GetCurrentPricesAuto();
+            //GetCurrentPricesAuto();
             gSymbolsAuto.sort(sortBySymbol);
             window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ")", 10);
         } else {
@@ -10926,9 +10926,11 @@ function GetWatchlistPrices() {
                         let oWLItemDetail = new WLItemDetail();
                         let dCost = 0.0;
                         let dQty = 0.0;
+                        let dLastPrice = 0.0;
                         if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
                             for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
                                 oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+                                dLastPrice = oWLItemDetail.lastPrice;
                                 let bOkToShowThisDetail = false;
                                 if ((gWatchlists[idxWLMain].accountId == oWLItemDetail.accountId) ||
                                     (oWLItemDetail.accountId == "")) {
@@ -10937,7 +10939,7 @@ function GetWatchlistPrices() {
 
                                 if (bOkToShowThisDetail) {
 
-                                    let sGLOnclick = "onclick=\"ShowAutoUpdateDates('" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ") \" ";
+                                    let sGLOnclick = "onclick=\"ShowAutoUpdateDates('" + gWatchlists[idxWLMain].accountId + "', '" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ") \" ";
 
                                     iLineCnt++;
                                     //let sCurrentPurchasedDate = "";
@@ -11367,14 +11369,16 @@ function GetWatchlistPrices() {
                                     dTotalCost = dTotalCost + (dCost * dQty);
 
                                     if (!bDoingDividendWL) {
-                                        //Old G/L
+                                        //G/L
                                         let dTmpOrig = 0.0;
                                         dTmpOrig = oWLItemDetail.averagePrice;
+                                        if (dQty > 0) {
+                                            dTmpOrig = dTmpOrig + (dQty * dLastPrice);
+                                        }
 
                                         if (!isUndefined(gSymbolsGL[oWLItemDetail.accountId + sSymbol])) {
                                             dTmpOrig = dTmpOrig + gSymbolsGL[oWLItemDetail.accountId + sSymbol].averagePrice;
                                         }
-
 
                                         //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
                                         //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
@@ -11432,9 +11436,12 @@ function GetWatchlistPrices() {
 
                                     if (bDoingDividendWL) {
 
-                                        //Old G/L
+                                        //G/L
                                         let dTmpOrig = 0.0;
                                         dTmpOrig = oWLItemDetail.averagePrice;
+                                        if (dQty > 0) {
+                                            dTmpOrig = dTmpOrig + (dQty * dLastPrice);
+                                        }
 
                                         if (!isUndefined(gSymbolsGL[oWLItemDetail.accountId + sSymbol])) {
                                             dTmpOrig = dTmpOrig + gSymbolsGL[oWLItemDetail.accountId + sSymbol].averagePrice;
@@ -12571,6 +12578,8 @@ function GetWatchlistSummary() {
                     for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                         if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
                             (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                            (gWatchlists[idxWL].name != gsAccountOldGL) &&
+                            (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
                             (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&
                             (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
                             (gWatchlists[idxWL].accountId == gWatchlists[idxWLSummaryMain].accountId)) {
@@ -12724,6 +12733,8 @@ function GetWatchlistSummary() {
                             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                                 if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
                                     (gWatchlists[idxWL].name != gsAccountWLSummary) &&
+                                    (gWatchlists[idxWL].name != gsAccountOldGL) &&
+                                    (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
                                     (gWatchlists[idxWL].name.toUpperCase().indexOf("DIVIDEND") == -1) &&
                                     (gWatchlists[idxWL].accountId != gWatchlists[idxWL].watchlistId) &&
                                     (gWatchlists[idxWL].accountId == gWatchlists[idxWLSummaryMain].accountId)) {
@@ -12762,12 +12773,14 @@ function GetWatchlistSummary() {
                                         let oWLItemDetail = new WLItemDetail();
                                         let dCost = 0.0;
                                         let dQty = 0.0;
+                                        let dLastPrice = 0.0;
                                         if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
                                             for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
                                                 oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
                                                 if ((gWatchlists[idxWL].accountId == oWLItemDetail.accountId) ||
                                                     (oWLItemDetail.accountId == "")) {
                                                     iLineCnt++;
+                                                    dLastPrice = oWLItemDetail.lastPrice;
 
                                                     //Qty
                                                     sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
@@ -12808,6 +12821,9 @@ function GetWatchlistSummary() {
                                                     for (let idxTmp = 0; idxTmp < gWatchlists[idxWL].WLItems.length; idxTmp++) {
                                                         if (gWatchlists[idxWL].WLItems[idxTmp].symbol == sSymbol) {
                                                             dTmpOrig = gWatchlists[idxWL].WLItems[idxTmp].priceInfo.averagePrice;
+                                                            if (dQty > 0) {
+                                                                dTmpOrig = dTmpOrig + (dQty * dLastPrice);
+                                                            }
 
                                                             if (!isUndefined(gSymbolsGL[gWatchlists[idxWL].accountId + sSymbol])) {
                                                                 dTmpOrig = dTmpOrig + gSymbolsGL[gWatchlists[idxWL].accountId + sSymbol].averagePrice;
@@ -17681,7 +17697,7 @@ function showTDAPIError(sError) {
 
 }
 
-function ShowAutoUpdateDates(sSymbol, iStartDate, iUpdateDate) {
+function ShowAutoUpdateDates(sAccountId, sSymbol, iStartDate, iUpdateDate) {
     //let sSpanName = "SAU" + (giZIndex++).toString();
     //let sWidth = "300px";
     //let sThisDiv = "<div id=\"" + sSpanName + "\" style =\"width:" + sWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
@@ -17692,7 +17708,11 @@ function ShowAutoUpdateDates(sSymbol, iStartDate, iUpdateDate) {
     if (iUpdateDate == 0) {
         alert(sSymbol + " has not been automatically updated.");
     } else {
-        alert(sSymbol + " was updated on " + FormatDateWithTime(new Date(iUpdateDate), true, false) + "\nusing " + FormatDateWithTime(new Date(iStartDate), true, false) + " as the start date.");
+        let sOldGLInfo = ".";
+        if (!isUndefined(gSymbolsGL[sAccountId + sSymbol])) {
+            sOldGLInfo = "\nplus an OldGL value of " + FormatDecimalNumber(gSymbolsGL[sAccountId + sSymbol].averagePrice, 5,2, "") + ".";
+        }
+        alert(sSymbol + " was updated on " + FormatDateWithTime(new Date(iUpdateDate), true, false) + "\nusing " + FormatDateWithTime(new Date(iStartDate), true, false) + " as the start date" + sOldGLInfo);
     }
 }
 
