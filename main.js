@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.6 2021-07-14 19:16"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.6 2021-07-14 23:51"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2838,11 +2838,11 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
                     return;
                 }
             } else {
-                //updating G/L for each symbol in the watchlist using the earliest update date found in the watchlist
+                //updating G/L for each symbol in the watchlist using the latest update date found in the watchlist
                 let sConfirmMsg = "";
                 sConfirmMsg = "Updating the G/L for all of the symbols in the watchlist. ";
                 if (AreYouSure(sConfirmMsg)) {
-                    //get the lowest last update date
+                    //get the highest last update date
                     let iHighestUpdateDate = 0;
                     for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                         if (iHighestUpdateDate == 0) {
@@ -2928,49 +2928,58 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                         alert("Please enter an acquired date as yyyy-mm-dd.");
                         return;
                     }
+                } else {
+                    alert("Please enter an acquired date as yyyy-mm-dd.");
+                    return;
                 }
+
             }
 
             if (sSymbolsToLookupTmp == "") {
-                //alert("Please enter at least 1 symbol.");
-                let iNumSelected = 0;
-                let bHasShares = false;
-                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                        iNumSelected++;
-                        sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                        sSymbolsToLookupSep = ", ";
-                    }
-                }
-                if (sAcquiredDate == "") {
-                    if (iNumSelected == 0) {
-                        alert("Please select at least one symbol to clear the Acquired date.")
-                        return;
-                    }
-                    if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
-                        alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
-                        return;
-                    }
-                    let sConfirmMsg = "";
-                    sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-                    if (AreYouSure(sConfirmMsg)) {
-                        window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
-                    }
-                } else {
-                    if (iNumSelected == 0) {
-                        alert("Please select at least one symbol to change the Acquired date.")
-                        return;
-                    }
-                    let sConfirmMsg = "";
-                    sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-                    if (AreYouSure(sConfirmMsg)) {
-                        window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
-                    }
-                }
+                alert("Please enter a symbol to add.");
+                return;
+            //    let iNumSelected = 0;
+            //    let bHasShares = false;
+            //    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+            //        if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+            //            iNumSelected++;
+            //            sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+            //            sSymbolsToLookupSep = ", ";
+            //        }
+            //    }
+            //    if (sAcquiredDate == "") {
+            //        if (iNumSelected == 0) {
+            //            alert("Please select at least one symbol to clear the Acquired date.")
+            //            return;
+            //        }
+            //        if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+            //            alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
+            //            return;
+            //        }
+            //        let sConfirmMsg = "";
+            //        sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+            //        if (AreYouSure(sConfirmMsg)) {
+            //            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
+            //        }
+            //    } else {
+            //        if (iNumSelected == 0) {
+            //            alert("Please select at least one symbol to change the Acquired date.")
+            //            return;
+            //        }
+            //        let sConfirmMsg = "";
+            //        sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+            //        if (AreYouSure(sConfirmMsg)) {
+            //            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
+            //        }
+            //    }
             } else {
                 sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp);
                 let vTmp = sSymbolsToLookupTmp.split(",");
                 if (vTmp.length > 0) {
+                    if (vTmp.length > 1) {
+                        alert("Please enter only one symbol to add.");
+                        return;
+                    }
                     let iNumAlreadyOpened = 0;
                     sSymbolsToLookup = "";
                     //check to see if already in watchlist
@@ -3006,7 +3015,24 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                             sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
                         }
                         if (AreYouSure(sConfirmMsg)) {
-                            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSymbolsToLookup.toUpperCase() + "','" + sAcquiredDate + "')", 10);
+
+                            //need to get the start and end dates with time
+                            //get the highest last update date
+                            let iEndDate = 0;
+                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
+                                    iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                                }
+                            }
+
+                            let aStartDate = sAcquiredDate.split("-");
+                            let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
+
+                            //if the highest last update date is less than the acquired date then set the start date to the highest last update date 
+                            if (iEndDate < iStartDate) {
+                                iStartDate = iEndDate;
+                            }
+                            window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + sAcquiredDate + "')", 10);
                         }
                     } else {
                         if (sConfirmMsg != "") {
@@ -3017,7 +3043,7 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                         alert(sConfirmMsg);
                     }
                 } else {
-                    alert("Please enter at least 1 symbol.");
+                    alert("Please enter a symbol to add.");
                 }
             }
         }
@@ -4782,121 +4808,148 @@ function GenerateWLDeleteSymbolOrders(sAccountId, idxWL, sSequenceIds) {
     }
 }
 
-function GenerateWLOpenSymbolOrders(sAccountId, idxWL, sSymbolsToLookup, sPurchasedDate) {
+function GenerateWLOpenSymbolOrders(sAccountId, idxWL, sSymbolsToLookup, sPurchasedDate, sGL, iStartDateIn, iEndDateIn) {
     gTDWLOrders.length = 0;
+    let iQuantity = iStartDateIn;
+    let sQuantity = ((iQuantity / 1000) - 1000000000).toString();
 
-    if (sSymbolsToLookup == "") {
-        if (sPurchasedDate == "") {
-            //generate all deletes then generate all inserts
-            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-                    let oTDWLOrder = new TDWLOrder();
-                    oTDWLOrder.bDoingPurchasedDateClear = true;
-                    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-                    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-                    oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + " ";
-                    oTDWLOrder.aWL05quantity = "";
-                    oTDWLOrder.aWL06averagePrice = "";
-                    oTDWLOrder.aWL07commission = "";
-                    oTDWLOrder.aWL07purchasedDate = "";
-                    oTDWLOrder.aWL08instrumentStart = "";
-                    oTDWLOrder.aWL09symbol = "";
-                    oTDWLOrder.aWL10assetType = "";
-                    oTDWLOrder.aWL11instrumentEnd = "";
-                    oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-                }
-            }
-            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-                    let oTDWLOrder = new TDWLOrder();
-                    oTDWLOrder.bDoingPurchasedDateClear = true;
-                    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-                    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-                    //oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + (1000 + idxWLItem).toString() + ", ";
-                    oTDWLOrder.aWL04sequenceId = "";
-                    if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice != 0) {
-                        let dAveragePrice = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
-                        if (dAveragePrice < 0) {
-                            dAveragePrice = (dAveragePrice * -1) + 1000000;
-                        }
-                        oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + FormatDecimalNumber(dAveragePrice, 5, 2, "") + ", ";
-                    } else {
-                        oTDWLOrder.aWL07commission = "";
-                    }
-                    oTDWLOrder.aWL07purchasedDate = "";
-                    oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
-                    oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-                }
-            }
-        } else {
-            //generate all updates
-            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-                    let oTDWLOrder = new TDWLOrder();
-                    oTDWLOrder.bDoingPurchasedDateUpdate = true;
-                    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-                    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-                    oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
-                    oTDWLOrder.aWL05quantity = "";
-                    oTDWLOrder.aWL06averagePrice = "";
-                    oTDWLOrder.aWL07commission = "";
-                    oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\" ";
-                    oTDWLOrder.aWL08instrumentStart = "";
-                    oTDWLOrder.aWL09symbol = "";
-                    oTDWLOrder.aWL10assetType = "";
-                    oTDWLOrder.aWL11instrumentEnd = "";
-                    oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-                }
-            }
-        }
-        //for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-        //    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-        //        let oTDWLOrder = new TDWLOrder();
-        //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-        //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-        //        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
-        //        oTDWLOrder.aWL07commission = "";
-        //        if (sPurchasedDate == "") {
-        //            oTDWLOrder.aWL07purchasedDate = "";
-        //        } else {
-        //            oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
-        //        }
-        //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
-        //        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-        //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-        //    }
-        //}
+    let iAveragePrice = iEndDateIn; //current update date and time
+    let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
 
+    let sSymbol = sSymbolsToLookup.toUpperCase();
+
+    let oTDWLOrder = new TDWLOrder();
+    oTDWLOrder.bDoingAddNewSymbols = true;
+    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+    oTDWLOrder.aWL04sequenceId = "";
+    oTDWLOrder.aWL05quantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
+    oTDWLOrder.aWL06averagePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
+    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sGL + ", ";
+    if (sPurchasedDate == "") {
+        oTDWLOrder.aWL07purchasedDate = "";
     } else {
-
-        let vSymbols = sSymbolsToLookup.split(",");
-
-        for (let idxSymbol = 0; idxSymbol < vSymbols.length; idxSymbol++) {
-            let oTDWLOrder = new TDWLOrder();
-            oTDWLOrder.bDoingAddNewSymbols = true;
-            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-            oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-            oTDWLOrder.aWL04sequenceId = "";
-            oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + "0, ";
-            if (sPurchasedDate == "") {
-                oTDWLOrder.aWL07purchasedDate = "";
-            } else {
-                oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
-            }
-            oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + vSymbols[idxSymbol] + "\" ,";
-            oTDWLOrder.symbol = vSymbols[idxSymbol];
-            gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-
-        }
+        oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
     }
+    oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
+    oTDWLOrder.symbol = sSymbol;
+    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+
+    //if (sSymbolsToLookup == "") {
+    //    if (sPurchasedDate == "") {
+    //        //generate all deletes then generate all inserts
+    //        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+    //            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+    //                let oTDWLOrder = new TDWLOrder();
+    //                oTDWLOrder.bDoingPurchasedDateClear = true;
+    //                oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+    //                oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+    //                oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + " ";
+    //                oTDWLOrder.aWL05quantity = "";
+    //                oTDWLOrder.aWL06averagePrice = "";
+    //                oTDWLOrder.aWL07commission = "";
+    //                oTDWLOrder.aWL07purchasedDate = "";
+    //                oTDWLOrder.aWL08instrumentStart = "";
+    //                oTDWLOrder.aWL09symbol = "";
+    //                oTDWLOrder.aWL10assetType = "";
+    //                oTDWLOrder.aWL11instrumentEnd = "";
+    //                oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+    //                gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+    //            }
+    //        }
+    //        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+    //            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+    //                let oTDWLOrder = new TDWLOrder();
+    //                oTDWLOrder.bDoingPurchasedDateClear = true;
+    //                oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+    //                oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+    //                //oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + (1000 + idxWLItem).toString() + ", ";
+    //                oTDWLOrder.aWL04sequenceId = "";
+    //                if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice != 0) {
+    //                    let dAveragePrice = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
+    //                    if (dAveragePrice < 0) {
+    //                        dAveragePrice = (dAveragePrice * -1) + 1000000;
+    //                    }
+    //                    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + FormatDecimalNumber(dAveragePrice, 5, 2, "") + ", ";
+    //                } else {
+    //                    oTDWLOrder.aWL07commission = "";
+    //                }
+    //                oTDWLOrder.aWL07purchasedDate = "";
+    //                oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
+    //                oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+    //                gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+    //            }
+    //        }
+    //    } else {
+    //        //generate all updates
+    //        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+    //            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+    //                let oTDWLOrder = new TDWLOrder();
+    //                oTDWLOrder.bDoingPurchasedDateUpdate = true;
+    //                oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+    //                oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+    //                oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
+    //                oTDWLOrder.aWL05quantity = "";
+    //                oTDWLOrder.aWL06averagePrice = "";
+    //                oTDWLOrder.aWL07commission = "";
+    //                oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\" ";
+    //                oTDWLOrder.aWL08instrumentStart = "";
+    //                oTDWLOrder.aWL09symbol = "";
+    //                oTDWLOrder.aWL10assetType = "";
+    //                oTDWLOrder.aWL11instrumentEnd = "";
+    //                oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+    //                gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+    //            }
+    //        }
+    //    }
+    //    //for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+    //    //    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+    //    //        let oTDWLOrder = new TDWLOrder();
+    //    //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+    //    //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+    //    //        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
+    //    //        oTDWLOrder.aWL07commission = "";
+    //    //        if (sPurchasedDate == "") {
+    //    //            oTDWLOrder.aWL07purchasedDate = "";
+    //    //        } else {
+    //    //            oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
+    //    //        }
+    //    //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
+    //    //        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+    //    //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+    //    //    }
+    //    //}
+
+    //} else {
+
+    //    let vSymbols = sSymbolsToLookup.split(",");
+
+    //    for (let idxSymbol = 0; idxSymbol < vSymbols.length; idxSymbol++) {
+    //        let oTDWLOrder = new TDWLOrder();
+    //        oTDWLOrder.bDoingAddNewSymbols = true;
+    //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+    //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+    //        oTDWLOrder.aWL04sequenceId = "";
+    //        //oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + "0, ";
+    //        oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sGL + ", ";
+    //        if (sPurchasedDate == "") {
+    //            oTDWLOrder.aWL07purchasedDate = "";
+    //        } else {
+    //            oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
+    //        }
+    //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + vSymbols[idxSymbol] + "\" ,";
+    //        oTDWLOrder.symbol = vSymbols[idxSymbol];
+    //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+    //    }
+    //}
     //create orders here
     if (gTDWLOrders.length > 0) {
         //gTDWLOrders.sort(sortBySymbol);
         gbDoingCreateOrders = true;
         SetWait();
+        //window.setTimeout("PostWLAutoCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ")", 10);
         window.setTimeout("PostWLOpenSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ")", 10);
     } else {
         alert("No symbols were added.");
@@ -8799,6 +8852,10 @@ function GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeIn) {
 }
 
 function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
+    GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, "", 0, "");
+}
+
+function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymbolIn, iEndDateIn, sPurchasedDateIn) {
     let iTryCount = 0;
     let vTmp = null;
     let sTmp = "";
@@ -8827,13 +8884,17 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
         gbDoingGetTrades = true;
         gGetTradesContextAuto = new GetTradesContext();
         let sSymbolsToLookupSep = "";
-        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-            sSymbolsToLookupSep = ",";
-        //    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-        //        sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-        //        sSymbolsToLookupSep = ",";
-        //    }
+        if (sSymbolIn != "") {
+            sSymbolsToLookupTmp = sSymbolIn;
+        } else {
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                sSymbolsToLookupSep = ",";
+                //    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                //        sSymbolsToLookupTmp = sSymbolsToLookupTmp + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                //        sSymbolsToLookupSep = ",";
+                //    }
+            }
         }
 
         sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp); 
@@ -8845,7 +8906,11 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
         }
         sSymbolsToLookup = "," + sSymbolsToLookupTmp.toUpperCase() + ",";
 
-        sEndDate = FormatCurrentDateForTD();
+        if (iEndDateIn != 0) {
+            sEndDate = FormatDateForTD(new Date(iEndDateIn));
+        } else {
+            sEndDate = FormatCurrentDateForTD();
+        }
 
         bEndDateISTodaysDate = BuildStartEndDates(sStartDate, sEndDate);
 
@@ -9246,7 +9311,7 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
                                 xhttp = null;
                             }
                             else {
-                                //alert ("GetTradesAuto Error - HTTP response is blank." + " (" + iTryCount.toString() + ")");
+                                //alert ("GetTradesAutoBase Error - HTTP response is blank." + " (" + iTryCount.toString() + ")");
                             }
                         }
                     }
@@ -9256,7 +9321,7 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
                             xhttp = null;
                         }
                         else {
-                            //alert ("GetTradesAuto Error - HTTP response is null." + " (" + iTryCount.toString() + ")");
+                            //alert ("GetTradesAutoBase Error - HTTP response is null." + " (" + iTryCount.toString() + ")");
                         }
                     }
                 }
@@ -9267,7 +9332,7 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
                         xhttp = null;
                     }
                     else {
-                        alert("GetTradesAuto Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                        alert("GetTradesAutoBase Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
                         bOk = false;
                     }
                 }
@@ -9299,7 +9364,7 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
         gGetTradesContextAuto.bNeedToAddSymbol = bNeedToAddSymbol;
         gGetTradesContextAuto.idxStart = 0;
 
-        window.setTimeout("GetTradesAuto(false, " + iLastUpdateDateTime.toString() +  ", " + idxWL.toString() + ", " + bInitializing + ")", 100);
+        window.setTimeout("GetTradesAutoBase(false, " + iLastUpdateDateTime.toString() + ", " + idxWL.toString() + ", " + bInitializing + ", '" + sSymbolIn + "', " + iEndDateIn + ", '" + sPurchasedDateIn + "')", 100);
         return;
 
     }
@@ -9308,22 +9373,45 @@ function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
     //    return;
     //}
     if (bOk) {
-        if (gSymbolsAuto.length > 0) {
-            //GetCurrentPricesAuto();
-            gSymbolsAuto.sort(sortBySymbol);
-            window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ")", 10);
-        } else {
-            if (sSymbolsToLookupTmp.split(",").length == 1) {
-                alert("No trades found for the selected symbol.");
+        if (sSymbolIn != "") {
+            if (gSymbolsAuto.length > 0) {
+                //there should only be one symbol
+                let dSelectNum = (-1 * gSymbolsAuto[0].buy) + gSymbolsAuto[0].sell; // + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
+                if (dSelectNum < 0.0) {
+                    dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                }
+                window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '" + FormatDecimalNumber(dSelectNum, 3, 2, "") + "', " + iStartDateIn + ", " + iEndDateIn + ")", 10);
+                gbDoingGetTrades = false;
+                gbStopGetTrades = false;
             } else {
-                alert("No trades found for the selected symbols.");
+                window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '0', " + iStartDateIn + ", " + iEndDateIn + ")", 10);
+                gbDoingGetTrades = false;
+                gbStopGetTrades = false;
             }
+        } else {
+            if (gSymbolsAuto.length > 0) {
+                //GetCurrentPricesAuto();
+                gSymbolsAuto.sort(sortBySymbol);
+                window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ")", 10);
+            } else {
+                if (sSymbolsToLookupTmp.split(",").length == 1) {
+                    alert("No trades found for the selected symbol.");
+                } else {
+                    alert("No trades found for the selected symbols.");
+                }
+                gbDoingCreateOrders = false;
+                GetTradesCanceled();
+            }
+        }
+    } else {
+        if (sSymbolIn != "") {
+            window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '0', " + iStartDateIn + ", " + iEndDateIn + ")", 10);
+            gbDoingGetTrades = false;
+            gbStopGetTrades = false;
+        } else {
             gbDoingCreateOrders = false;
             GetTradesCanceled();
         }
-    } else {
-        gbDoingCreateOrders = false;
-        GetTradesCanceled();
     }
 //    GetTradesCanceled();
 }
@@ -11865,6 +11953,21 @@ function GetWatchlists(bDoingReset) {
                                 oWL.accountName = oAccount.accountName;
                                 oWL.watchlistId = oAccount.accountId + "AccountWLSummary";
                                 oWL.name = gsAccountWLSummary;
+
+                                if (bDoingReset) {
+                                    //check to see if the Account Summary watchlist has been selected
+                                    for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                                        if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                                            (oWL.name == oOldWL[idxWLCur].name)) {
+                                            oWL.spanName = oOldWL[idxWLCur].spanName;
+                                            if (oOldWL[idxWLCur].bSelectedWLSummary) {
+                                                oWL.bSelectedWLSummary = true;
+                                                oWL.bSelectedWLSummaryTemp = true;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
                                 gWatchlists[gWatchlists.length] = oWL;
                                 break;
                             }
@@ -12808,7 +12911,7 @@ function GetWatchlistSummary() {
                                                             iTotalSymbolsUp++;
                                                         }
                                                     }
-                                                    dTotalGain = dTotalGain + parseFloat(sTmp);
+                                                    //dTotalGain = dTotalGain + parseFloat(sTmp);
                                                     dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
 
                                                     //Cost
