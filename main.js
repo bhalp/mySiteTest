@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.6 2021-07-14 23:51"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.6 2021-07-15 15:51"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2909,71 +2909,45 @@ function DoWLDeleteSymbols(watchlistId, sLastWLAccountId) {
 
 function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        //allow the following
+        // 1 - something in txtwlopen and something in txtwlacquired - only one symbol allowed, use txtwlacquired as starting date for trades - require deleting existing before adding new
+        // 2 - something in txtwlopen and nothing in txtwlacquired - adding a symbol with no acquired date - set starting and ending time to last update time, set GL value to 0
+        // 3 - nothing entered in txtwlopen and something in txtwlacquired - updating acquired date only - need to select at least one symbol - don't change GL value or dates
+        // 4 - nothing entered in txtwlopen and nothing in txtwlacquired - clearing acquired date only - need to select at least one symbol - don't change GL value or dates
+
         let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
         if (idxWL != -1) {
             let sAccountId = gWatchlists[idxWL].accountId;
             let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
+            let stxtwlopen = "";
+            if (!((document.getElementById("txtwlopen" + sThisId) == null) || (isUndefined(document.getElementById("txtwlopen" + sThisId))))) {
+                stxtwlopen = TrimLikeVB(document.getElementById("txtwlopen" + sThisId).value);
+            }
+            let stxtwlacquired = "";
+            if (!((document.getElementById("txtwlacquired" + sThisId) == null) || (isUndefined(document.getElementById("txtwlacquired" + sThisId))))) {
+                stxtwlacquired = TrimLikeVB(document.getElementById("txtwlacquired" + sThisId).value);
+            }
+
             let sSymbolsToLookup = "";
             let sSymbolsToLookupSep = "";
-            let sSymbolsToLookupTmp = TrimLikeVB(document.getElementById("txtwlopen" + sThisId).value);
-            let sSymbolsAlreadyOpen = "";
-            let sSymbolsAlreadyOpenSep = "";
+            let iNumSelected = 0;
+            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                    iNumSelected++;
+                    sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                    sSymbolsToLookupSep = ", ";
+                }
+            }
 
-            let sAcquiredDate = "";
-            if (!((document.getElementById("txtwlacquired" + sThisId) == null) || (isUndefined(document.getElementById("txtwlacquired" + sThisId))))) {
-                sAcquiredDate = TrimLikeVB(document.getElementById("txtwlacquired" + sThisId).value);
-                if (sAcquiredDate != "") {
-                    if (!ValidateTDDate(sAcquiredDate, true)) {
-                        alert("Please enter an acquired date as yyyy-mm-dd.");
-                        return;
-                    }
-                } else {
+            if ((stxtwlopen != "") && (stxtwlacquired != "")) { //case 1
+                let sSymbolsAlreadyOpen = "";
+                let sSymbolsAlreadyOpenSep = "";
+                if (!ValidateTDDate(stxtwlacquired, true)) {
                     alert("Please enter an acquired date as yyyy-mm-dd.");
                     return;
                 }
-
-            }
-
-            if (sSymbolsToLookupTmp == "") {
-                alert("Please enter a symbol to add.");
-                return;
-            //    let iNumSelected = 0;
-            //    let bHasShares = false;
-            //    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            //        if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-            //            iNumSelected++;
-            //            sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-            //            sSymbolsToLookupSep = ", ";
-            //        }
-            //    }
-            //    if (sAcquiredDate == "") {
-            //        if (iNumSelected == 0) {
-            //            alert("Please select at least one symbol to clear the Acquired date.")
-            //            return;
-            //        }
-            //        if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
-            //            alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
-            //            return;
-            //        }
-            //        let sConfirmMsg = "";
-            //        sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-            //        if (AreYouSure(sConfirmMsg)) {
-            //            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
-            //        }
-            //    } else {
-            //        if (iNumSelected == 0) {
-            //            alert("Please select at least one symbol to change the Acquired date.")
-            //            return;
-            //        }
-            //        let sConfirmMsg = "";
-            //        sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-            //        if (AreYouSure(sConfirmMsg)) {
-            //            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '','" + sAcquiredDate + "')", 10);
-            //        }
-            //    }
-            } else {
-                sSymbolsToLookupTmp = GetUniqueListOfSymbols(sSymbolsToLookupTmp);
+                let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
                 let vTmp = sSymbolsToLookupTmp.split(",");
                 if (vTmp.length > 0) {
                     if (vTmp.length > 1) {
@@ -3015,7 +2989,6 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                             sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
                         }
                         if (AreYouSure(sConfirmMsg)) {
-
                             //need to get the start and end dates with time
                             //get the highest last update date
                             let iEndDate = 0;
@@ -3024,15 +2997,13 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                                     iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
                                 }
                             }
-
-                            let aStartDate = sAcquiredDate.split("-");
+                            let aStartDate = stxtwlacquired.split("-");
                             let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
-
                             //if the highest last update date is less than the acquired date then set the start date to the highest last update date 
                             if (iEndDate < iStartDate) {
                                 iStartDate = iEndDate;
                             }
-                            window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + sAcquiredDate + "')", 10);
+                            window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + stxtwlacquired + "')", 10);
                         }
                     } else {
                         if (sConfirmMsg != "") {
@@ -3044,6 +3015,98 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                     }
                 } else {
                     alert("Please enter a symbol to add.");
+                }
+
+            } else if ((stxtwlopen != "") && (stxtwlacquired == "")) { //case 2
+                let sSymbolsAlreadyOpen = "";
+                let sSymbolsAlreadyOpenSep = "";
+                let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
+                let vTmp = sSymbolsToLookupTmp.split(",");
+                if (vTmp.length > 0) {
+                    if (vTmp.length > 1) {
+                        alert("Please enter only one symbol to add.");
+                        return;
+                    }
+                    let iNumAlreadyOpened = 0;
+                    sSymbolsToLookup = "";
+                    //check to see if already in watchlist
+                    let bFound = false;
+                    for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
+                        bFound = false;
+                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                            if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                                bFound = true;
+                                sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
+                                sSymbolsAlreadyOpenSep = ", ";
+                                iNumAlreadyOpened++;
+                                break;
+                            }
+                        }
+                        if (!bFound) {
+                            sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
+                            sSymbolsToLookupSep = ",";
+                        }
+                    }
+                    let sConfirmMsg = "";
+                    if (sSymbolsAlreadyOpen != "") {
+                        if (iNumAlreadyOpened == 1) {
+                            sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
+                        } else {
+                            sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
+                        }
+                    }
+                    if (sSymbolsToLookup != "") {
+                        if (sConfirmMsg != "") {
+                            sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+                        } else {
+                            sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+                        }
+                        if (AreYouSure(sConfirmMsg)) {
+                            //need to get the start and end dates with time
+                            //get the highest last update date
+                            let iEndDate = new Date().getTime();
+                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
+                                    iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                                }
+                            }
+                            let iStartDate = iEndDate;
+                            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSymbolsToLookup.toUpperCase() + "', '" + stxtwlacquired + "', '0', " + iStartDate + ", " + iEndDate + ")", 10);
+                        }
+                    } else {
+                        if (sConfirmMsg != "") {
+                            sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
+                        } else {
+                            sConfirmMsg = "No symbols will be added.";
+                        }
+                        alert(sConfirmMsg);
+                    }
+                } else {
+                    alert("Please enter a symbol to add.");
+                }
+            } else if ((stxtwlopen == "") && (stxtwlacquired != "")) { //case 3
+                if (iNumSelected == 0) {
+                    alert("Please select at least one symbol to change the Acquired date.")
+                    return;
+                }
+                let sConfirmMsg = "";
+                sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+                if (AreYouSure(sConfirmMsg)) {
+                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '" + stxtwlacquired + "', '', 0, 0)", 10);
+                }
+            } else { //case 4
+                if (iNumSelected == 0) {
+                    alert("Please select at least one symbol to clear the Acquired date.")
+                    return;
+                }
+                if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+                    alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
+                    return;
+                }
+                let sConfirmMsg = "";
+                sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+                if (AreYouSure(sConfirmMsg)) {
+                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '', '', 0, 0)", 10);
                 }
             }
         }
@@ -4386,16 +4449,15 @@ function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, idx
                                         oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
                                         oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
-                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
-                                        if (iNumToBuy >= 1.0) {
-                                            iNumToBuy = Math.floor(iNumToBuy);
-                                        } else if (iNumToBuy > 0.0) {
-                                            iNumToBuy = 1;
+                                        let iNumToBuySell = 0;
+                                        iNumToBuySell = oPosition.longQuantity * (dSelectNum / 100.0);
+                                        if (iNumToBuySell >= 1.0) {
+                                            iNumToBuySell = Math.floor(iNumToBuySell);
                                         } else {
-                                            iNumToBuy = 0;
+                                            iNumToBuySell = 0;
                                         }
-                                        if (iNumToBuy > 0) {
-                                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+                                        if (iNumToBuySell > 0) {
+                                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
                                             oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
                                             oTDOrder.symbol = oPosition.symbol;
                                             gTDOrders[gTDOrders.length] = oTDOrder;
@@ -4464,19 +4526,19 @@ function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, idx
                             oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
                             oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
-                            let iNumToBuy = 0;
+                            let iNumToBuySell = 0;
                             if (sBuySell == "SELL") {
                                 if (oWLItemDetail.marketValue > 0) {
                                     if (dSelectNum > oWLItemDetail.marketValue) {
                                         dSelectNum = oWLItemDetail.marketValue;
                                     }
-                                    iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                                    iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
                                 }
                             } else {
-                                iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                                iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
                             }
-                            if (iNumToBuy > 0) {
-                                oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+                            if (iNumToBuySell > 0) {
+                                oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
                                 oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
                                 oTDOrder.symbol = sSymbol;
                                 gTDOrders[gTDOrders.length] = oTDOrder;
@@ -4543,7 +4605,7 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
     gTDOrders.length = 0;
     gOrdersToPlace.length = 0;
     if (sPercent != "") {
-        //buying a percentage of shares based on what is currently owned
+        //buying or selling a percentage of shares based on what is currently owned
         if (gAccounts.length > 0) {
             for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                 if (gAccounts[idxAccounts].accountId == sAccountId) {
@@ -4573,15 +4635,16 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                                         oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
                                         oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
                                         oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
-                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
-                                        if (iNumToBuy >= 1.0) {
-                                            iNumToBuy = Math.floor(iNumToBuy);
-                                        } else if (iNumToBuy > 0.0) {
-                                            iNumToBuy = 1;
+
+                                        let iNumToBuySell = 0;
+                                        iNumToBuySell = oPosition.longQuantity * (dSelectNum / 100.0);
+                                        if (iNumToBuySell >= 1.0) {
+                                            iNumToBuySell = Math.floor(iNumToBuySell);
                                         } else {
-                                            iNumToBuy = 0;
+                                            iNumToBuySell = 0;
                                         }
-                                        if (iNumToBuy > 0) {
+
+                                        if (iNumToBuySell > 0) {
                                             //get the price to use
                                             for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                                                 if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
@@ -4608,7 +4671,7 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                                                                     let sPrice = FormatMoney(dPrice);
                                                                     if (parseFloat(sPrice) > 0) {
                                                                         oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+                                                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
                                                                         oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
                                                                         oTDOrder.symbol = sSymbol;
                                                                         gTDOrders[gTDOrders.length] = oTDOrder;
@@ -4671,7 +4734,7 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
             }
         }
     } else {
-        //then buying dSelectNum's worth of shares for each stock in the watchlist
+        //then buying or selling dSelectNum's worth of shares for each stock in the watchlist
         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
             if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
                 let oWatchList = new WLWatchList();
@@ -4694,12 +4757,23 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                             oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
                             oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
-                            let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-                            if (iNumToBuy > 0) {
+                            let iNumToBuySell = 0;
+                            if (sBuySell == "SELL") {
+                                if (oWLItemDetail.marketValue > 0) {
+                                    if (dSelectNum > oWLItemDetail.marketValue) {
+                                        dSelectNum = oWLItemDetail.marketValue;
+                                    }
+                                    iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                                }
+                            } else {
+                                iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                            }
+
+                            if (iNumToBuySell > 0) {
                                 let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
                                 if (parseFloat(sPrice) > 0) {
                                     oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
+                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
                                     oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
                                     oTDOrder.symbol = sSymbol;
                                     gTDOrders[gTDOrders.length] = oTDOrder;
@@ -4810,140 +4884,143 @@ function GenerateWLDeleteSymbolOrders(sAccountId, idxWL, sSequenceIds) {
 
 function GenerateWLOpenSymbolOrders(sAccountId, idxWL, sSymbolsToLookup, sPurchasedDate, sGL, iStartDateIn, iEndDateIn) {
     gTDWLOrders.length = 0;
-    let iQuantity = iStartDateIn;
-    let sQuantity = ((iQuantity / 1000) - 1000000000).toString();
 
-    let iAveragePrice = iEndDateIn; //current update date and time
-    let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
+    if (sGL != "") { //case 2
+        let iQuantity = iStartDateIn;
+        let sQuantity = ((iQuantity / 1000) - 1000000000).toString();
 
-    let sSymbol = sSymbolsToLookup.toUpperCase();
+        let iAveragePrice = iEndDateIn; //current update date and time
+        let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
 
-    let oTDWLOrder = new TDWLOrder();
-    oTDWLOrder.bDoingAddNewSymbols = true;
-    oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-    oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-    oTDWLOrder.aWL04sequenceId = "";
-    oTDWLOrder.aWL05quantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
-    oTDWLOrder.aWL06averagePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
-    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sGL + ", ";
-    if (sPurchasedDate == "") {
-        oTDWLOrder.aWL07purchasedDate = "";
+        let sSymbol = sSymbolsToLookup.toUpperCase();
+
+        let oTDWLOrder = new TDWLOrder();
+        oTDWLOrder.bDoingAddNewSymbols = true;
+        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+        oTDWLOrder.aWL04sequenceId = "";
+        oTDWLOrder.aWL05quantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
+        oTDWLOrder.aWL06averagePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
+        oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sGL + ", ";
+        if (sPurchasedDate == "") {
+            oTDWLOrder.aWL07purchasedDate = "";
+        } else {
+            oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
+        }
+        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
+        oTDWLOrder.symbol = sSymbol;
+        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
     } else {
-        oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
+        if (sSymbolsToLookup == "") {
+            if (sPurchasedDate == "") { //case 4
+                //generate all deletes then generate all inserts
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+                        let oTDWLOrder = new TDWLOrder();
+
+                        oTDWLOrder.bDoingPurchasedDateClear = true;
+                        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+                        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+                        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + " ";
+                        oTDWLOrder.aWL05quantity = "";
+                        oTDWLOrder.aWL06averagePrice = "";
+                        oTDWLOrder.aWL07commission = "";
+                        oTDWLOrder.aWL07purchasedDate = "";
+                        oTDWLOrder.aWL08instrumentStart = "";
+                        oTDWLOrder.aWL09symbol = "";
+                        oTDWLOrder.aWL10assetType = "";
+                        oTDWLOrder.aWL11instrumentEnd = "";
+                        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+                    }
+                }
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+                        let oTDWLOrder = new TDWLOrder();
+                        oTDWLOrder.bDoingPurchasedDateClear = true;
+                        let iQuantity = 0;
+                        let sQuantity = "0";
+                        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate != 0) {
+                            iQuantity = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate;
+                            sQuantity = ((iQuantity / 1000) - 1000000000).toString();
+                        }
+
+                        //this.GLUpdateDate = 0; //from WL info averagePrice field - the date the OldGL was automatically updated
+                        let iAveragePrice = 0;
+                        let sAveragePrice = "0";
+                        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate != 0) {
+                            iAveragePrice = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                            sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
+                        }
+
+                        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+                        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+                        //oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + (1000 + idxWLItem).toString() + ", ";
+                        oTDWLOrder.aWL04sequenceId = "";
+                        oTDWLOrder.aWL05quantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
+                        oTDWLOrder.aWL06averagePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
+                        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice != 0) {
+                            let dAveragePrice = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
+                            if (dAveragePrice < 0) {
+                                dAveragePrice = (dAveragePrice * -1) + 1000000;
+                            }
+                            oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + FormatDecimalNumber(dAveragePrice, 5, 2, "") + ", ";
+                        } else {
+                            oTDWLOrder.aWL07commission = "";
+                        }
+                        oTDWLOrder.aWL07purchasedDate = "";
+                        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
+                        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+                    }
+                }
+            } else { //case 3
+                //generate all updates
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+                        let oTDWLOrder = new TDWLOrder();
+                        oTDWLOrder.bDoingPurchasedDateUpdate = true;
+                        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+                        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+                        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
+                        oTDWLOrder.aWL05quantity = "";
+                        oTDWLOrder.aWL06averagePrice = "";
+                        oTDWLOrder.aWL07commission = "";
+                        oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\" ";
+                        oTDWLOrder.aWL08instrumentStart = "";
+                        oTDWLOrder.aWL09symbol = "";
+                        oTDWLOrder.aWL10assetType = "";
+                        oTDWLOrder.aWL11instrumentEnd = "";
+                        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+                    }
+                }
+            }
+        //} else {
+        //    //should never get here because this is either case 1 or case 2
+        //    let vSymbols = sSymbolsToLookup.split(",");
+
+        //    for (let idxSymbol = 0; idxSymbol < vSymbols.length; idxSymbol++) {
+        //        let oTDWLOrder = new TDWLOrder();
+        //        oTDWLOrder.bDoingAddNewSymbols = true;
+        //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+        //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
+        //        oTDWLOrder.aWL04sequenceId = "";
+        //        oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + "0, ";
+        //        if (sPurchasedDate == "") {
+        //            oTDWLOrder.aWL07purchasedDate = "";
+        //        } else {
+        //            oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
+        //        }
+        //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + vSymbols[idxSymbol] + "\" ,";
+        //        oTDWLOrder.symbol = vSymbols[idxSymbol];
+        //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
+
+        //    }
+        }
+
     }
-    oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
-    oTDWLOrder.symbol = sSymbol;
-    gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
 
-
-    //if (sSymbolsToLookup == "") {
-    //    if (sPurchasedDate == "") {
-    //        //generate all deletes then generate all inserts
-    //        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-    //            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-    //                let oTDWLOrder = new TDWLOrder();
-    //                oTDWLOrder.bDoingPurchasedDateClear = true;
-    //                oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-    //                oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-    //                oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + " ";
-    //                oTDWLOrder.aWL05quantity = "";
-    //                oTDWLOrder.aWL06averagePrice = "";
-    //                oTDWLOrder.aWL07commission = "";
-    //                oTDWLOrder.aWL07purchasedDate = "";
-    //                oTDWLOrder.aWL08instrumentStart = "";
-    //                oTDWLOrder.aWL09symbol = "";
-    //                oTDWLOrder.aWL10assetType = "";
-    //                oTDWLOrder.aWL11instrumentEnd = "";
-    //                oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-    //                gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-    //            }
-    //        }
-    //        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-    //            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-    //                let oTDWLOrder = new TDWLOrder();
-    //                oTDWLOrder.bDoingPurchasedDateClear = true;
-    //                oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-    //                oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-    //                //oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + (1000 + idxWLItem).toString() + ", ";
-    //                oTDWLOrder.aWL04sequenceId = "";
-    //                if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice != 0) {
-    //                    let dAveragePrice = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
-    //                    if (dAveragePrice < 0) {
-    //                        dAveragePrice = (dAveragePrice * -1) + 1000000;
-    //                    }
-    //                    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + FormatDecimalNumber(dAveragePrice, 5, 2, "") + ", ";
-    //                } else {
-    //                    oTDWLOrder.aWL07commission = "";
-    //                }
-    //                oTDWLOrder.aWL07purchasedDate = "";
-    //                oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
-    //                oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-    //                gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-    //            }
-    //        }
-    //    } else {
-    //        //generate all updates
-    //        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-    //            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-    //                let oTDWLOrder = new TDWLOrder();
-    //                oTDWLOrder.bDoingPurchasedDateUpdate = true;
-    //                oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-    //                oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-    //                oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
-    //                oTDWLOrder.aWL05quantity = "";
-    //                oTDWLOrder.aWL06averagePrice = "";
-    //                oTDWLOrder.aWL07commission = "";
-    //                oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\" ";
-    //                oTDWLOrder.aWL08instrumentStart = "";
-    //                oTDWLOrder.aWL09symbol = "";
-    //                oTDWLOrder.aWL10assetType = "";
-    //                oTDWLOrder.aWL11instrumentEnd = "";
-    //                oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-    //                gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-    //            }
-    //        }
-    //    }
-    //    //for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-    //    //    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-    //    //        let oTDWLOrder = new TDWLOrder();
-    //    //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-    //    //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-    //    //        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
-    //    //        oTDWLOrder.aWL07commission = "";
-    //    //        if (sPurchasedDate == "") {
-    //    //            oTDWLOrder.aWL07purchasedDate = "";
-    //    //        } else {
-    //    //            oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
-    //    //        }
-    //    //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
-    //    //        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-    //    //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-    //    //    }
-    //    //}
-
-    //} else {
-
-    //    let vSymbols = sSymbolsToLookup.split(",");
-
-    //    for (let idxSymbol = 0; idxSymbol < vSymbols.length; idxSymbol++) {
-    //        let oTDWLOrder = new TDWLOrder();
-    //        oTDWLOrder.bDoingAddNewSymbols = true;
-    //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-    //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-    //        oTDWLOrder.aWL04sequenceId = "";
-    //        //oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + "0, ";
-    //        oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sGL + ", ";
-    //        if (sPurchasedDate == "") {
-    //            oTDWLOrder.aWL07purchasedDate = "";
-    //        } else {
-    //            oTDWLOrder.aWL07purchasedDate = oTDWLOrder.aWL07purchasedDate + "\"" + sPurchasedDate + "\", ";
-    //        }
-    //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + vSymbols[idxSymbol] + "\" ,";
-    //        oTDWLOrder.symbol = vSymbols[idxSymbol];
-    //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-
-    //    }
-    //}
     //create orders here
     if (gTDWLOrders.length > 0) {
         //gTDWLOrders.sort(sortBySymbol);
@@ -11458,49 +11535,54 @@ function GetWatchlistPrices() {
 
                                     if (!bDoingDividendWL) {
                                         //G/L
-                                        let dTmpOrig = 0.0;
-                                        dTmpOrig = oWLItemDetail.averagePrice;
-                                        if (dQty > 0) {
-                                            dTmpOrig = dTmpOrig + (dQty * dLastPrice);
-                                        }
-
-                                        if (!isUndefined(gSymbolsGL[oWLItemDetail.accountId + sSymbol])) {
-                                            dTmpOrig = dTmpOrig + gSymbolsGL[oWLItemDetail.accountId + sSymbol].averagePrice;
-                                        }
-
-                                        //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                                        //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                                        //        dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-                                        //        break;
-                                        //    }
-                                        //}
-                                        sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-                                        let dTmp = parseFloat(sTmp);
-                                        dTotalGain = dTotalGain + dTmp;
-                                        if (dTmp == 0) {
-                                            sTmp = "";
-                                        }
-                                        if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
-                                            if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                                iTotalSymbolsDownRealized++;
-                                            } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td " + sGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                                iTotalSymbolsUpRealized++;
-                                            } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                                            }
+                                        if (bDoingAccountWL) {
+                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                         } else {
-                                            if (dTmp < 0.0) {
-                                                sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                                iTotalSymbolsDownRealized++;
-                                            } else if (dTmp > 0.0) {
-                                                sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                                iTotalSymbolsUpRealized++;
-                                            } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                            let dTmpOrig = 0.0;
+                                            dTmpOrig = oWLItemDetail.averagePrice;
+                                            if (dQty > 0) {
+                                                dTmpOrig = dTmpOrig + (dQty * dLastPrice);
                                             }
-                                            goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
+
+                                            if (!isUndefined(gSymbolsGL[oWLItemDetail.accountId + sSymbol])) {
+                                                dTmpOrig = dTmpOrig + gSymbolsGL[oWLItemDetail.accountId + sSymbol].averagePrice;
+                                            }
+
+                                            //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
+                                            //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
+                                            //        dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
+                                            //        break;
+                                            //    }
+                                            //}
+                                            sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                            let dTmp = parseFloat(sTmp);
+                                            dTotalGain = dTotalGain + dTmp;
+                                            if (dTmp == 0) {
+                                                sTmp = "";
+                                            }
+                                            if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
+                                                if (dTmp < 0.0) {
+                                                    sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                    iTotalSymbolsDownRealized++;
+                                                } else if (dTmp > 0.0) {
+                                                    sThisTable = sThisTable + "<td " + sGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                    iTotalSymbolsUpRealized++;
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                            } else {
+                                                if (dTmp < 0.0) {
+                                                    sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                    iTotalSymbolsDownRealized++;
+                                                } else if (dTmp > 0.0) {
+                                                    sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                    iTotalSymbolsUpRealized++;
+                                                } else {
+                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                                goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
+                                            }
+
                                         }
 
                                     }
@@ -18062,8 +18144,8 @@ function sortWL(a, b) {
             }
         case gsSortOrderFields.GL:
             {
-                aAmt = a.WLItemDetails[0].averagePrice;
-                bAmt = b.WLItemDetails[0].averagePrice;
+                aAmt = a.WLItemDetails[0].averagePrice + (a.WLItemDetails[0].shares * a.WLItemDetails[0].lastPrice);
+                bAmt = b.WLItemDetails[0].averagePrice + (b.WLItemDetails[0].shares * b.WLItemDetails[0].lastPrice);
                 if (!isUndefined(gSymbolsGL[a.WLItemDetails[0].accountId + a.symbol])) {
                     aAmt = aAmt + gSymbolsGL[a.WLItemDetails[0].accountId + a.symbol].averagePrice;
                 }
