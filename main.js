@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.6 2021-07-15 15:51"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.6 2021-07-16 15:49"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -9115,7 +9115,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
                                     //    GetTradesCanceled();
                                     //    return;
                                     //}
-                                    if ((new Date(oCM[idxTrade].transactionDate.split("+")[0]).getTime()) > iLastUpdateDateTime) {
+                                    if ((new Date(oCM[idxTrade].transactionDate.split("+")[0] + "+00:00").getTime()) > iLastUpdateDateTime) {
                                         if (oCM[idxTrade].type == "DIVIDEND_OR_INTEREST") {
                                             bUseTradeRS = false;
                                             if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
@@ -11104,8 +11104,6 @@ function GetWatchlistPrices() {
 
                                 if (bOkToShowThisDetail) {
 
-                                    let sGLOnclick = "onclick=\"ShowAutoUpdateDates('" + gWatchlists[idxWLMain].accountId + "', '" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ") \" ";
-
                                     iLineCnt++;
                                     //let sCurrentPurchasedDate = "";
                                     //let dCurrentAveragePrice = 0.0;
@@ -11538,6 +11536,8 @@ function GetWatchlistPrices() {
                                         if (bDoingAccountWL) {
                                             sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                         } else {
+                                            let sGLOnclick = "onclick=\"ShowAutoUpdateDates('" + gWatchlists[idxWLMain].accountId + "', '" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ", " + oWLItemDetail.averagePrice.toString() + ", " + dQty.toString() + ", " + dLastPrice.toString() + ") \" ";
+
                                             let dTmpOrig = 0.0;
                                             dTmpOrig = oWLItemDetail.averagePrice;
                                             if (dQty > 0) {
@@ -11605,8 +11605,10 @@ function GetWatchlistPrices() {
                                     }
 
                                     if (bDoingDividendWL) {
-
                                         //G/L
+
+                                        let sGLOnclick = "onclick=\"ShowAutoUpdateDates('" + gWatchlists[idxWLMain].accountId + "', '" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ", " + oWLItemDetail.averagePrice.toString() + ", " + dQty.toString() + ", " + dLastPrice.toString() + ") \" ";
+
                                         let dTmpOrig = 0.0;
                                         dTmpOrig = oWLItemDetail.averagePrice;
                                         if (dQty > 0) {
@@ -17882,7 +17884,7 @@ function showTDAPIError(sError) {
 
 }
 
-function ShowAutoUpdateDates(sAccountId, sSymbol, iStartDate, iUpdateDate) {
+function ShowAutoUpdateDates(sAccountId, sSymbol, iStartDate, iUpdateDate, dAveragePrice, dQty, dPrice) {
     //let sSpanName = "SAU" + (giZIndex++).toString();
     //let sWidth = "300px";
     //let sThisDiv = "<div id=\"" + sSpanName + "\" style =\"width:" + sWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
@@ -17890,14 +17892,18 @@ function ShowAutoUpdateDates(sAccountId, sSymbol, iStartDate, iUpdateDate) {
     //sThisDiv = sThisDiv + "<tr>";
     //sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:0px; border-bottom-width:0px; border-left-width:0px; border-right-width:0px; border-style:solid; border-spacing:0px; border-color: White\" onclick=\"wlRemoveDiv('" + sSpanName + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
     //sThisDiv = sThisDiv + "</tr>";
+    let dGL = dAveragePrice + (dQty * dPrice);
     if (iUpdateDate == 0) {
         alert(sSymbol + " has not been automatically updated.");
     } else {
-        let sOldGLInfo = ".";
+        let sMsg = sSymbol + " was updated on " + FormatDateWithTime(new Date(iUpdateDate), true, false) + "\nusing " + FormatDateWithTime(new Date(iStartDate), true, false) + " as the start date" +
+            ".\nThe current GL value " + FormatDecimalNumber(dAveragePrice, 5, 2, "") + " + (" + FormatIntegerNumber(dQty, 3, "") + " * " + FormatDecimalNumber(dPrice, 5, 2, "") + ") = " + FormatDecimalNumber(dGL, 5, 2, "");
         if (!isUndefined(gSymbolsGL[sAccountId + sSymbol])) {
-            sOldGLInfo = "\nplus an OldGL value of " + FormatDecimalNumber(gSymbolsGL[sAccountId + sSymbol].averagePrice, 5,2, "") + ".";
+            sMsg = sMsg + "\nplus an OldGL value of " + FormatDecimalNumber(gSymbolsGL[sAccountId + sSymbol].averagePrice, 5, 2, "") + " = " + FormatDecimalNumber(dGL + gSymbolsGL[sAccountId + sSymbol].averagePrice, 5, 2, "") + ".";
+        } else {
+            sMsg = sMsg + ".";
         }
-        alert(sSymbol + " was updated on " + FormatDateWithTime(new Date(iUpdateDate), true, false) + "\nusing " + FormatDateWithTime(new Date(iStartDate), true, false) + " as the start date" + sOldGLInfo);
+        alert(sMsg);
     }
 }
 
