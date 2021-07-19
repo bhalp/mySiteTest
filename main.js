@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.6 2021-07-16 15:49"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.7 2021-07-18 18:39"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -122,6 +122,7 @@ var giAPIErrorTimeoutId = 0;
 
 var gsLogonUser = ""; //the user id used to log into TD Ameritrade
 
+
 function Position() {
     this.averagePrice = 0.0; //cost/share
     this.currentDayProfitLoss = 0.0; //day gain
@@ -130,7 +131,7 @@ function Position() {
     this.longQuantity = 0;
     this.shortQuantity = 0;
     this.assetType = "";
-    this.symbol = "";
+    this.symbol = ""; //will contain the watchlist id that contains a new symbol being added
     this.accountId = "";
     this.accountName = "";
 }
@@ -2954,6 +2955,104 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                         alert("Please enter only one symbol to add.");
                         return;
                     }
+                    sSymbolsToLookup = vTmp[0];
+
+                    let sConfirmMsg = "";
+                    //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
+                    let oPositions = new Array();
+                    //get account position info if it exists
+                    for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                        if (gAccounts[idxAccount].positions.length > 0) {
+                            for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
+                                    let oPosition = new Position();
+                                    oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                    oPosition.accountId = gAccounts[idxAccount].accountId;
+                                    oPosition.accountName = gAccounts[idxAccount].accountName;
+                                    oPosition.symbol = "";
+                                    oPositions[oPositions.length] = oPosition;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
+                        if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
+                            (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
+                            (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
+                            (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
+                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
+                                if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
+                                    if (oPositions.length > 0) {
+                                        let idxSym = -1;
+                                        let bNeedToAddPos = true;
+                                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                                            if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
+                                                idxSym = idxPos;
+                                                if (oPositions[idxPos].symbol == "") {
+                                                    bNeedToAddPos = false;
+                                                    oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if ((bNeedToAddPos) && (idxSym != -1)) {
+                                            let oPosition = new Position();
+                                            oPosition.longQuantity = oPositions[idxSym].longQuantity;
+                                            oPosition.accountId = oPositions[idxSym].accountId;
+                                            oPosition.accountName = oPositions[idxSym].accountName;
+                                            oPosition.symbol = gWatchlists[idxTmp].name;
+                                            oPositions[oPositions.length] = oPosition;
+                                        } else if (bNeedToAddPos) {
+                                            //no positions - so add one for the account containing the watchlist
+                                            let oPosition = new Position();
+                                            oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                            oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                            oPosition.symbol = gWatchlists[idxTmp].name;
+                                            oPositions[oPositions.length] = oPosition;
+                                        }
+                                    } else {
+                                        //no positions - so add one for the account containing the watchlist
+                                        let oPosition = new Position();
+                                        oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                        oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                        oPosition.symbol = gWatchlists[idxTmp].name;
+                                        oPositions[oPositions.length] = oPosition;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (oPositions.length > 0) {
+                        oPositions.sort(sortByPosAccountandSymbol);
+                        let sLastAccountName = "";
+                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                            let oPosition = oPositions[idxPos];
+                            let sWatchlistname = oPosition.symbol;
+                            if (sWatchlistname == "") {
+                                sWatchlistname = "No watchlists";
+                            }
+                            if (sLastAccountName == "") {
+                                sLastAccountName = oPosition.accountName;
+                                sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname +"\n";
+                            } else {
+                                if (oPosition.accountName == sLastAccountName) {
+                                    sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
+                                } else {
+                                    sLastAccountName = oPosition.accountName;
+                                    sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+                                }
+                            }
+                        }
+                    }
+                    if (sConfirmMsg != "") {
+                        if (!AreYouSure(sConfirmMsg + "\n")) {
+                            return;
+                        }
+                    }
+
+                    sConfirmMsg = "";
                     let iNumAlreadyOpened = 0;
                     sSymbolsToLookup = "";
                     //check to see if already in watchlist
@@ -2974,7 +3073,7 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                             sSymbolsToLookupSep = ",";
                         }
                     }
-                    let sConfirmMsg = "";
+
                     if (sSymbolsAlreadyOpen != "") {
                         if (iNumAlreadyOpened == 1) {
                             sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
@@ -3027,6 +3126,107 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                         alert("Please enter only one symbol to add.");
                         return;
                     }
+
+                    sSymbolsToLookup = vTmp[0];
+
+                    let sConfirmMsg = "";
+                    //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
+                    let oPositions = new Array();
+                    //get account position info if it exists
+                    for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                        if (gAccounts[idxAccount].positions.length > 0) {
+                            for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
+                                    let oPosition = new Position();
+                                    oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                    oPosition.accountId = gAccounts[idxAccount].accountId;
+                                    oPosition.accountName = gAccounts[idxAccount].accountName;
+                                    oPosition.symbol = "";
+                                    oPositions[oPositions.length] = oPosition;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
+                        if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
+                            (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
+                            (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
+                            (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
+                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
+                                if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
+                                    if (oPositions.length > 0) {
+                                        let idxSym = -1;
+                                        let bNeedToAddPos = true;
+                                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                                            if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
+                                                idxSym = idxPos;
+                                                if (oPositions[idxPos].symbol == "") {
+                                                    bNeedToAddPos = false;
+                                                    oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if ((bNeedToAddPos) && (idxSym != -1)) {
+                                            let oPosition = new Position();
+                                            oPosition.longQuantity = oPositions[idxSym].longQuantity;
+                                            oPosition.accountId = oPositions[idxSym].accountId;
+                                            oPosition.accountName = oPositions[idxSym].accountName;
+                                            oPosition.symbol = gWatchlists[idxTmp].name;
+                                            oPositions[oPositions.length] = oPosition;
+                                        } else if (bNeedToAddPos) {
+                                            //no positions - so add one for the account containing the watchlist
+                                            let oPosition = new Position();
+                                            oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                            oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                            oPosition.symbol = gWatchlists[idxTmp].name;
+                                            oPositions[oPositions.length] = oPosition;
+                                        }
+                                    } else {
+                                        //no positions - so add one for the account containing the watchlist
+                                        let oPosition = new Position();
+                                        oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                        oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                        oPosition.symbol = gWatchlists[idxTmp].name;
+                                        oPositions[oPositions.length] = oPosition;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (oPositions.length > 0) {
+                        oPositions.sort(sortByPosAccountandSymbol);
+                        let sLastAccountName = "";
+                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                            let oPosition = oPositions[idxPos];
+                            let sWatchlistname = oPosition.symbol;
+                            if (sWatchlistname == "") {
+                                sWatchlistname = "No watchlists";
+                            }
+                            if (sLastAccountName == "") {
+                                sLastAccountName = oPosition.accountName;
+                                sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+                            } else {
+                                if (oPosition.accountName == sLastAccountName) {
+                                    sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
+                                } else {
+                                    sLastAccountName = oPosition.accountName;
+                                    sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+                                }
+                            }
+                        }
+                    }
+                    if (sConfirmMsg != "") {
+                        if (!AreYouSure(sConfirmMsg + "\n")) {
+                            return;
+                        }
+                    }
+
+                    sConfirmMsg = "";
+
+
                     let iNumAlreadyOpened = 0;
                     sSymbolsToLookup = "";
                     //check to see if already in watchlist
@@ -3047,7 +3247,7 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                             sSymbolsToLookupSep = ",";
                         }
                     }
-                    let sConfirmMsg = "";
+
                     if (sSymbolsAlreadyOpen != "") {
                         if (iNumAlreadyOpened == 1) {
                             sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
@@ -3678,8 +3878,10 @@ function FindSymbolsInWatchlists() {
                     if (sWLExclusionList.indexOf("," + UnReplace_XMLChar(gWatchlists[idxWL].name).toUpperCase() + ",") == -1) {
                         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                             if (vTmp[idxSym] == gWatchlists[idxWL].WLItems[idxWLItem].symbol.toUpperCase()) {
-                                sWatchlists = sWatchlists + sSep + UnReplace_XMLChar(gWatchlists[idxWL].name) + " (" + gWatchlists[idxWL].accountName + ")";
-                                sSep = "\n           ";
+                                if (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) {
+                                    sWatchlists = sWatchlists + sSep + UnReplace_XMLChar(gWatchlists[idxWL].name) + " (" + gWatchlists[idxWL].accountName + ")";
+                                    sSep = "\n           ";
+                                }
                                 break;
                             }
                         }
@@ -9267,23 +9469,23 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
                                                             bFoundSubType = true;
 
 
-                                                        //    //need to get price on the transaction date
-                                                        //    let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
-                                                        //    if (gaFixedPrices.length > 0) {
-                                                        //        for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
-                                                        //            let oFP = new FixedPrice();
-                                                        //            oFP = gaFixedPrices[idxFP];
-                                                        //            if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
-                                                        //                (oFP.date == vTmp[0])) {
-                                                        //                oTrade.price = oFP.price;
-                                                        //                oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
-                                                        //                oTrade.netAmount = oTrade.cost;
-                                                        //                oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                        //                bFoundSubType = true;
-                                                        //                break;
-                                                        //            }
-                                                        //        }
-                                                        //    }
+                                                            //    //need to get price on the transaction date
+                                                            //    let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
+                                                            //    if (gaFixedPrices.length > 0) {
+                                                            //        for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
+                                                            //            let oFP = new FixedPrice();
+                                                            //            oFP = gaFixedPrices[idxFP];
+                                                            //            if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
+                                                            //                (oFP.date == vTmp[0])) {
+                                                            //                oTrade.price = oFP.price;
+                                                            //                oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
+                                                            //                oTrade.netAmount = oTrade.cost;
+                                                            //                oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                            //                bFoundSubType = true;
+                                                            //                break;
+                                                            //            }
+                                                            //        }
+                                                            //    }
                                                         } else {
                                                             bUseTradeRS = false;
                                                         }
@@ -9295,6 +9497,32 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
                                                                 GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeRS);
                                                             }
                                                             GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTrade);
+                                                        } else {
+                                                            let sThisSymbol = "";
+                                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                                sThisSymbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                            }
+
+                                                            let sConfirmMsg = "";
+                                                            sConfirmMsg = "Warning!! Possible split transaction for (" + sThisSymbol + ") missing necessary subtype. Click Ok to continue this update, or click Cancel to cancel. ";
+                                                            if (!AreYouSure(sConfirmMsg)) {
+                                                                gbDoingCreateOrders = false;
+                                                                GetTradesCanceled();
+                                                                return;
+                                                            }
+                                                        }
+                                                    } else {
+                                                        let sThisSymbol = "";
+                                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                            sThisSymbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                        }
+
+                                                        let sConfirmMsg = "";
+                                                        sConfirmMsg = "Warning!! Possible split transaction for (" + sThisSymbol + ") missing necessary subtype. Click Ok to continue this update, or click Cancel to cancel. ";
+                                                        if (!AreYouSure(sConfirmMsg)) {
+                                                            gbDoingCreateOrders = false;
+                                                            GetTradesCanceled();
+                                                            return;
                                                         }
                                                     }
                                                 }
@@ -17897,9 +18125,13 @@ function ShowAutoUpdateDates(sAccountId, sSymbol, iStartDate, iUpdateDate, dAver
         alert(sSymbol + " has not been automatically updated.");
     } else {
         let sMsg = sSymbol + " was updated on " + FormatDateWithTime(new Date(iUpdateDate), true, false) + "\nusing " + FormatDateWithTime(new Date(iStartDate), true, false) + " as the start date" +
-            ".\nThe current GL value " + FormatDecimalNumber(dAveragePrice, 5, 2, "") + " + (" + FormatIntegerNumber(dQty, 3, "") + " * " + FormatDecimalNumber(dPrice, 5, 2, "") + ") = " + FormatDecimalNumber(dGL, 5, 2, "");
+            ".\nThe accumulated GL value " + FormatDecimalNumber(dAveragePrice, 5, 2, "") + " + (" + FormatIntegerNumber(dQty, 3, "") + " * " + FormatDecimalNumber(dPrice, 5, 2, "") + ") = " + FormatDecimalNumber(dGL, 5, 2, "");
         if (!isUndefined(gSymbolsGL[sAccountId + sSymbol])) {
-            sMsg = sMsg + "\nplus an OldGL value of " + FormatDecimalNumber(gSymbolsGL[sAccountId + sSymbol].averagePrice, 5, 2, "") + " = " + FormatDecimalNumber(dGL + gSymbolsGL[sAccountId + sSymbol].averagePrice, 5, 2, "") + ".";
+            if (gSymbolsGL[sAccountId + sSymbol].averagePrice != 0) {
+                sMsg = sMsg + "\nplus an OldGL value of " + FormatDecimalNumber(gSymbolsGL[sAccountId + sSymbol].averagePrice, 5, 2, "") + " = " + FormatDecimalNumber(dGL + gSymbolsGL[sAccountId + sSymbol].averagePrice, 5, 2, "") + ".";
+            } else {
+                sMsg = sMsg + ".";
+            }
         } else {
             sMsg = sMsg + ".";
         }
@@ -17943,6 +18175,33 @@ function sortByPortfolioGain(a, b) {
     }
     if (a.gain > b.gain) {
         return -1;
+    }
+    return 0;
+}
+
+function sortByPosAccountandSymbol(a, b) {
+    let aName = a.symbol;
+    let bName = b.symbol;
+    let aAccountName = a.accountName;
+    let bAccountName = b.accountName;
+    let sX = "                                                  ";
+
+    if (aName.length < 20) {
+        aName = aName + sX.substr(0, 20 - aName.length);
+    }
+    if (bName.length < 20) {
+        bName = bName + sX.substr(0, 20 - bName.length);
+    }
+    if (aAccountName.length < 40) {
+        aAccountName = aAccountName + sX.substr(0, 40 - aAccountName.length);
+    }
+    if (bAccountName.length < 40) {
+        bAccountName = bAccountName + sX.substr(0, 40 - bAccountName.length);
+    }
+    if ((aAccountName + aName) < (bAccountName + bName)) {
+        return -1;    }
+    if ((aAccountName + aName) > (bAccountName + bName)) {
+        return 1;
     }
     return 0;
 }
@@ -18058,7 +18317,7 @@ function sortByWLAccountandWLName(a, b) {
 //        return -1;
     }
     if ((aAccountName + aName) > (bAccountName + bName)) {
-        return -11;
+        return -1;
 //        return 1;
     }
     return 0;
