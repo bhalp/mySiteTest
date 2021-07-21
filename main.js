@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.7 2021-07-18 18:39"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.7 2021-07-21 10:57"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -3055,6 +3055,7 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                     sConfirmMsg = "";
                     let iNumAlreadyOpened = 0;
                     sSymbolsToLookup = "";
+                    sSymbolsToLookupSep = "";
                     //check to see if already in watchlist
                     let bFound = false;
                     for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
@@ -3229,6 +3230,7 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
 
                     let iNumAlreadyOpened = 0;
                     sSymbolsToLookup = "";
+                    sSymbolsToLookupSep = "";
                     //check to see if already in watchlist
                     let bFound = false;
                     for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
@@ -3487,6 +3489,8 @@ function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
                                 return;
                             }
                             sOldGL = FormatDecimalNumber(dSelectNum, 5, 2, "");
+                        } else {
+                            sOldGL = "0";
                         }
 
                         if (sSymbolsToLookupTmp == "") {
