@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.9 2021-07-22 01:48"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "7.9 2021-07-22 22:53"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -681,7 +681,8 @@ var gbWLShowAllAccountsForSymbol = false;
 var gLoginRequest;
 var gQuoteRequest;
 var gbLoggedIn = false;
-var mySock;
+var mySock = new Array();
+var gimySockIdx = -1;
 var gsSysmbolsThatNeedQuotes = "";
 var giRequestId = 0;
 
@@ -7340,17 +7341,32 @@ function GetTDData(bFirstTime) {
         } else {
             document.getElementById("spanSpecialImage").style.display = "none";
         }
-        if (isUndefined(mySock)) {
+        if (bFirstTime) {
             giCurrentRefreshRate = giMarketOpenRefreshRate;
         } else {
-            if (isUndefined(mySock.readyState)) {
+            if (gimySockIdx == -1) {
                 giCurrentRefreshRate = giMarketOpenRefreshRate;
             } else {
-                if ((mySock.readyState == 1) || (mySock.readyState == 0)) {
+                if (isUndefined(mySock[gimySockIdx].readyState)) {
                     giCurrentRefreshRate = giMarketOpenRefreshRate;
+                } else {
+                    if ((mySock[gimySockIdx].readyState == 1) || (mySock[gimySockIdx].readyState == 0)) {
+                        giCurrentRefreshRate = giMarketOpenRefreshRate;
+                    }
                 }
             }
         }
+        //if (isUndefined(mySock)) {
+        //    giCurrentRefreshRate = giMarketOpenRefreshRate;
+        //} else {
+        //    if (isUndefined(mySock.readyState)) {
+        //        giCurrentRefreshRate = giMarketOpenRefreshRate;
+        //    } else {
+        //        if ((mySock.readyState == 1) || (mySock.readyState == 0)) {
+        //            giCurrentRefreshRate = giMarketOpenRefreshRate;
+        //        }
+        //    }
+        //}
         if (bFirstTime) {
             //get account user principal data
             iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/userprincipals?fields=streamerSubscriptionKeys,streamerConnectionInfo", 1);
@@ -7456,87 +7472,135 @@ function GetTDData(bFirstTime) {
                 }
             }
             if (bOkToContinue) {
-                let iSymbolLimit = 490;
+                let iSymbolLimit = 200;
                 sSymbolsThatNeedQuotes = GetUniqueListOfSymbols(sSymbolsThatNeedQuotes);
-                if (!isUndefined(mySock.readyState)) {
-                    if (mySock.readyState == 1) { //is the socket open - it could be closed if someone else logged on to the account or just not opened yet
-                        if (!isUndefined(document.getElementById("imgStopLight"))) {
-                            document.getElementById("imgStopLight").src = "TrafficLightGo16px.png";
-                        }
-                        if (gbLoggedIn) {
-                            //get the new symbols - don't care about the ones that have been removed
-                            let bDoGetQuotes = false;
-                            if (gsSysmbolsThatNeedQuotes != "") {
-                                if (gsSysmbolsThatNeedQuotes == sSymbolsThatNeedQuotes) {
-                                    sSymbolsThatNeedQuotes = "";
-                                } else {
-                                    let vTmp = sSymbolsThatNeedQuotes.split(",");
-                                    let sSep = "";
-                                    let sTmp = "," + gsSysmbolsThatNeedQuotes + ",";
-                                    sSymbolsThatNeedQuotes = "";
-                                    for (let idxSymbol = 0; idxSymbol < vTmp.length; idxSymbol++) {
-                                        if (sTmp.indexOf("," + vTmp[idxSymbol] + ",") == -1) {
-                                            sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes + sSep + vTmp[idxSymbol];
-                                            sSep = ",";
-                                        }
-                                    }
-                                    if (sSymbolsThatNeedQuotes != "") {
-                                        gsSysmbolsThatNeedQuotes = gsSysmbolsThatNeedQuotes + "," + sSymbolsThatNeedQuotes;
-                                        sSymbolsThatNeedQuotes = gsSysmbolsThatNeedQuotes;
-                                    }
-                                }
-                            } else {
-                                gsSysmbolsThatNeedQuotes = sSymbolsThatNeedQuotes;
-                                bDoGetQuotes = true;
+                if (gimySockIdx != -1) {
+                    if (!isUndefined(mySock[gimySockIdx].readyState)) {
+                        if (mySock[gimySockIdx].readyState == 1) { //is the socket open - it could be closed if someone else logged on to the account or just not opened yet
+                            if (!isUndefined(document.getElementById("imgStopLight"))) {
+                                document.getElementById("imgStopLight").src = "TrafficLightGo16px.png";
                             }
-                            if (sSymbolsThatNeedQuotes.length > 0) {
-                                if (bDoGetQuotes) {
-
-                                    let aServerUrls = new Array();
-                                    let aSymbols = sSymbolsThatNeedQuotes.split(",");
-                                    if (aSymbols.length > iSymbolLimit) {
-                                        for (let idxXXX = 0; idxXXX < aSymbols.length; idxXXX = idxXXX + iSymbolLimit) {
-                                            let iEnd = 0;
-                                            let sThisSet = "";
-                                            let sSep = "";
-                                            if (idxXXX + iSymbolLimit < aSymbols.length) {
-                                                iEnd = idxXXX + iSymbolLimit;
-                                            } else {
-                                                iEnd = aSymbols.length;
-                                            }
-                                            for (let idxSym = idxXXX; idxSym < iEnd; idxSym++) {
-                                                sThisSet = sThisSet + sSep + aSymbols[idxSym];
+                            if (gbLoggedIn) {
+                                //get the new symbols - don't care about the ones that have been removed
+                                let bDoGetQuotes = false;
+                                if (gsSysmbolsThatNeedQuotes != "") {
+                                    if (gsSysmbolsThatNeedQuotes == sSymbolsThatNeedQuotes) {
+                                        sSymbolsThatNeedQuotes = "";
+                                    } else {
+                                        let vTmp = sSymbolsThatNeedQuotes.split(",");
+                                        let sSep = "";
+                                        let sTmp = "," + gsSysmbolsThatNeedQuotes + ",";
+                                        sSymbolsThatNeedQuotes = "";
+                                        for (let idxSymbol = 0; idxSymbol < vTmp.length; idxSymbol++) {
+                                            if (sTmp.indexOf("," + vTmp[idxSymbol] + ",") == -1) {
+                                                sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes + sSep + vTmp[idxSymbol];
                                                 sSep = ",";
                                             }
-                                            aServerUrls[aServerUrls.length] = sThisSet;
                                         }
-                                    } else {
-                                        aServerUrls[aServerUrls.length] = sSymbolsThatNeedQuotes;
+                                        if (sSymbolsThatNeedQuotes != "") {
+                                            gsSysmbolsThatNeedQuotes = gsSysmbolsThatNeedQuotes + "," + sSymbolsThatNeedQuotes;
+                                            sSymbolsThatNeedQuotes = gsSysmbolsThatNeedQuotes;
+                                        }
                                     }
+                                } else {
+                                    gsSysmbolsThatNeedQuotes = sSymbolsThatNeedQuotes;
+                                    bDoGetQuotes = true;
+                                }
+                                if (sSymbolsThatNeedQuotes.length > 0) {
+                                    if (bDoGetQuotes) {
 
-                                    for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
-                                        if (idxServerURL == 0) {
-                                            iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 4);
-                                            if (iReturn != 0) {
-                                                bOkToContinue = false;
+                                        let aServerUrls = new Array();
+                                        let aSymbols = sSymbolsThatNeedQuotes.split(",");
+                                        if (aSymbols.length > iSymbolLimit) {
+                                            for (let idxXXX = 0; idxXXX < aSymbols.length; idxXXX = idxXXX + iSymbolLimit) {
+                                                let iEnd = 0;
+                                                let sThisSet = "";
+                                                let sSep = "";
+                                                if (idxXXX + iSymbolLimit < aSymbols.length) {
+                                                    iEnd = idxXXX + iSymbolLimit;
+                                                } else {
+                                                    iEnd = aSymbols.length;
+                                                }
+                                                for (let idxSym = idxXXX; idxSym < iEnd; idxSym++) {
+                                                    sThisSet = sThisSet + sSep + aSymbols[idxSym];
+                                                    sSep = ",";
+                                                }
+                                                aServerUrls[aServerUrls.length] = sThisSet;
                                             }
                                         } else {
-                                            iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 6);
-                                            if (iReturn != 0) {
-                                                bOkToContinue = false;
+                                            aServerUrls[aServerUrls.length] = sSymbolsThatNeedQuotes;
+                                        }
+
+                                        for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
+                                            if (idxServerURL == 0) {
+                                                iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 4);
+                                                if (iReturn != 0) {
+                                                    bOkToContinue = false;
+                                                }
+                                            } else {
+                                                iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 6);
+                                                if (iReturn != 0) {
+                                                    bOkToContinue = false;
+                                                }
                                             }
                                         }
+                                        //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
+                                        //    if (iReturn != 0) {
+                                        //        bOkToContinue = false;
+                                        //    }
                                     }
-                                //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
-                                //    if (iReturn != 0) {
-                                //        bOkToContinue = false;
-                                //    }
-                                }
-                                if (bOkToContinue) {
-                                    let gQuoteRequest = "";
-                                    if (("," + sSymbolsThatNeedQuotes + ",").indexOf(gsMarketsOilGasActual) != -1) {
-                                        if (sSymbolsThatNeedQuotes != gsMarketsOilGasActual) {
-                                            sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes.replace(gsMarketsOilGasActual + ",", "");
+                                    if (bOkToContinue) {
+                                        let gQuoteRequest = "";
+                                        if (("," + sSymbolsThatNeedQuotes + ",").indexOf(gsMarketsOilGasActual) != -1) {
+                                            if (sSymbolsThatNeedQuotes != gsMarketsOilGasActual) {
+                                                sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes.replace(gsMarketsOilGasActual + ",", "");
+                                                giRequestId++;
+                                                gQuoteRequest = {
+                                                    "requests": [
+                                                        {
+                                                            "service": "QUOTE",
+                                                            "requestid": giRequestId.toString(),
+                                                            "command": "SUBS",
+                                                            "account": oACCP.accounts[0].accountId,
+                                                            "source": oACCP.streamerInfo.appId,
+                                                            "parameters": {
+                                                                "keys": sSymbolsThatNeedQuotes,
+                                                                "fields": "0,1,2,3,4,5,6,7,8,9,12,13,15,16,17,18,24,26,27,28,29,30,31,32,33,34,39,40,43,44,47,48,49,50,51,52"
+                                                            }
+                                                        },
+                                                        {
+                                                            "service": "LEVELONE_FUTURES",
+                                                            "requestid": (giRequestId + 1).toString(),
+                                                            "command": "SUBS",
+                                                            "account": oACCP.accounts[0].accountId,
+                                                            "source": oACCP.streamerInfo.appId,
+                                                            "parameters": {
+                                                                "keys": gsMarketsOilGasActual,
+                                                                "fields": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35"
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                                giRequestId++;
+                                            } else {
+                                                giRequestId++;
+                                                gQuoteRequest = {
+                                                    "requests": [
+                                                        {
+                                                            "service": "LEVELONE_FUTURES",
+                                                            "requestid": giRequestId.toString(),
+                                                            "command": "SUBS",
+                                                            "account": oACCP.accounts[0].accountId,
+                                                            "source": oACCP.streamerInfo.appId,
+                                                            "parameters": {
+                                                                "keys": gsMarketsOilGasActual,
+                                                                "fields": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35"
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        } else {
                                             giRequestId++;
                                             gQuoteRequest = {
                                                 "requests": [
@@ -7550,115 +7614,14 @@ function GetTDData(bFirstTime) {
                                                             "keys": sSymbolsThatNeedQuotes,
                                                             "fields": "0,1,2,3,4,5,6,7,8,9,12,13,15,16,17,18,24,26,27,28,29,30,31,32,33,34,39,40,43,44,47,48,49,50,51,52"
                                                         }
-                                                    },
-                                                    {
-                                                        "service": "LEVELONE_FUTURES",
-                                                        "requestid": (giRequestId + 1).toString(),
-                                                        "command": "SUBS",
-                                                        "account": oACCP.accounts[0].accountId,
-                                                        "source": oACCP.streamerInfo.appId,
-                                                        "parameters": {
-                                                            "keys": gsMarketsOilGasActual,
-                                                            "fields": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35"
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                            giRequestId++;
-                                        } else {
-                                            giRequestId++;
-                                            gQuoteRequest = {
-                                                "requests": [
-                                                    {
-                                                        "service": "LEVELONE_FUTURES",
-                                                        "requestid": giRequestId.toString(),
-                                                        "command": "SUBS",
-                                                        "account": oACCP.accounts[0].accountId,
-                                                        "source": oACCP.streamerInfo.appId,
-                                                        "parameters": {
-                                                            "keys": gsMarketsOilGasActual,
-                                                            "fields": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35"
-                                                        }
                                                     }
                                                 ]
                                             }
                                         }
-                                    } else {
-                                        giRequestId++;
-                                        gQuoteRequest = {
-                                            "requests": [
-                                                {
-                                                    "service": "QUOTE",
-                                                    "requestid": giRequestId.toString(),
-                                                    "command": "SUBS",
-                                                    "account": oACCP.accounts[0].accountId,
-                                                    "source": oACCP.streamerInfo.appId,
-                                                    "parameters": {
-                                                        "keys": sSymbolsThatNeedQuotes,
-                                                        "fields": "0,1,2,3,4,5,6,7,8,9,12,13,15,16,17,18,24,26,27,28,29,30,31,32,33,34,39,40,43,44,47,48,49,50,51,52"
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    }
 
-                                    mySock.send(myJSON.stringify(gQuoteRequest));
-                                }
-                            }
-                            GetWatchlistPrices();
-                            GetIndexValues();
-                            GetWatchlistO();
-                            GetWatchlistSO();
-                            GetWatchlistSummary();
-                            GetWatchlistOGL();
-                        }
-
-                    } else if (mySock.readyState == 3) { //socket is closed or couldn't be opened
-                        //use http to get quotes
-                        //get the new symbols - don't care about the ones that have been removed
-
-                        if (!isUndefined(document.getElementById("imgStopLight"))) {
-                            document.getElementById("imgStopLight").src = "TrafficLightStop16px.png";
-                        }
-
-                        gsSysmbolsThatNeedQuotes = sSymbolsThatNeedQuotes;
-                        if (sSymbolsThatNeedQuotes.length > 0) {
-                            let aServerUrls = new Array();
-                            let aSymbols = sSymbolsThatNeedQuotes.split(",");
-                            if (aSymbols.length > iSymbolLimit) {
-                                for (let idxXXX = 0; idxXXX < aSymbols.length; idxXXX = idxXXX + iSymbolLimit) {
-                                    let iEnd = 0;
-                                    let sThisSet = "";
-                                    let sSep = "";
-                                    if (idxXXX + iSymbolLimit < aSymbols.length) {
-                                        iEnd = idxXXX + iSymbolLimit;
-                                    } else {
-                                        iEnd = aSymbols.length;
-                                    }
-                                    for (let idxSym = idxXXX; idxSym < iEnd; idxSym++) {
-                                        sThisSet = sThisSet + sSep + aSymbols[idxSym];
-                                        sSep = ",";
-                                    }
-                                    aServerUrls[aServerUrls.length] = sThisSet;
-                                }
-                            } else {
-                                aServerUrls[aServerUrls.length] = sSymbolsThatNeedQuotes;
-                            }
-
-                            for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
-                                if (idxServerURL == 0) {
-                                    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 4);
-                                    if (iReturn != 0) {
-                                        bOkToContinue = false;
-                                    }
-                                } else {
-                                    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 6);
-                                    if (iReturn != 0) {
-                                        bOkToContinue = false;
+                                        mySock[gimySockIdx].send(myJSON.stringify(gQuoteRequest));
                                     }
                                 }
-                            }
-                            if (bOkToContinue) {
                                 GetWatchlistPrices();
                                 GetIndexValues();
                                 GetWatchlistO();
@@ -7666,17 +7629,87 @@ function GetTDData(bFirstTime) {
                                 GetWatchlistSummary();
                                 GetWatchlistOGL();
                             }
-                        //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
-                        //    if (iReturn == 0) {
-                        //        GetWatchlistPrices();
-                        //        GetIndexValues();
-                        //        GetWatchlistSO();
-                        //        GetWatchlistSummary();
-                        //    } else {
-                        //        bOkToContinue = false;
-                        //    }
+
+                        } else if (mySock[gimySockIdx].readyState == 3) { //socket is closed or couldn't be opened
+                            //use http to get quotes
+                            //get the new symbols - don't care about the ones that have been removed
+
+                            if (!isUndefined(document.getElementById("imgStopLight"))) {
+                                document.getElementById("imgStopLight").src = "TrafficLightStop16px.png";
+                            }
+
+                            gsSysmbolsThatNeedQuotes = sSymbolsThatNeedQuotes;
+                            if (sSymbolsThatNeedQuotes.length > 0) {
+                                let aServerUrls = new Array();
+                                let aSymbols = sSymbolsThatNeedQuotes.split(",");
+                                if (aSymbols.length > iSymbolLimit) {
+                                    for (let idxXXX = 0; idxXXX < aSymbols.length; idxXXX = idxXXX + iSymbolLimit) {
+                                        let iEnd = 0;
+                                        let sThisSet = "";
+                                        let sSep = "";
+                                        if (idxXXX + iSymbolLimit < aSymbols.length) {
+                                            iEnd = idxXXX + iSymbolLimit;
+                                        } else {
+                                            iEnd = aSymbols.length;
+                                        }
+                                        for (let idxSym = idxXXX; idxSym < iEnd; idxSym++) {
+                                            sThisSet = sThisSet + sSep + aSymbols[idxSym];
+                                            sSep = ",";
+                                        }
+                                        aServerUrls[aServerUrls.length] = sThisSet;
+                                    }
+                                } else {
+                                    aServerUrls[aServerUrls.length] = sSymbolsThatNeedQuotes;
+                                }
+
+                                for (let idxServerURL = 0; idxServerURL < aServerUrls.length; idxServerURL++) {
+                                    if (idxServerURL == 0) {
+                                        iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 4);
+                                        if (iReturn != 0) {
+                                            bOkToContinue = false;
+                                        }
+                                    } else {
+                                        iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(aServerUrls[idxServerURL]), 6);
+                                        if (iReturn != 0) {
+                                            bOkToContinue = false;
+                                        }
+                                    }
+                                }
+
+                                if (document.getElementById("spanDebug").innerHTML != "Stock prices no longer being streamed due to logon to the same account.") {
+                                    if (gimySockIdx < 10) {
+                                        OpenSocket();
+                                        giCurrentRefreshRate = giMarketOpenRefreshRate;
+                                        gsSysmbolsThatNeedQuotes = "";
+                                    } else {
+                                        document.getElementById("spanDebug").innerHTML = "Open socket limit reached.";
+                                    }
+                                }
+
+                                if (bOkToContinue) {
+                                    GetWatchlistPrices();
+                                    GetIndexValues();
+                                    GetWatchlistO();
+                                    GetWatchlistSO();
+                                    GetWatchlistSummary();
+                                    GetWatchlistOGL();
+                                }
+                                //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
+                                //    if (iReturn == 0) {
+                                //        GetWatchlistPrices();
+                                //        GetIndexValues();
+                                //        GetWatchlistSO();
+                                //        GetWatchlistSummary();
+                                //    } else {
+                                //        bOkToContinue = false;
+                                //    }
+                            }
                         }
                     }
+
+
+                //} else {
+
                 }
             }
         }
@@ -10800,6 +10833,26 @@ function GetWatchlistPrices() {
                 for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
                     if (gWatchlists[idxWLMain].WLItems[idxWLItem].bSelected) {
                         let sSymbol = gWatchlists[idxWLMain].WLItems[idxWLItem].symbol;
+
+                        //get account position info if it exists
+                        let oPositions = new Array();
+                        for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                            if ((gAccounts[idxAccount].positions.length > 0) &&
+                                (gAccounts[idxAccount].accountId == gWatchlists[idxWLMain].accountId)) {
+                                for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                    if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
+                                        let oPosition = new Position();
+                                        oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                        oPosition.accountId = gAccounts[idxAccount].accountId;
+                                        oPosition.accountName = gAccounts[idxAccount].accountName;
+                                        oPositions[oPositions.length] = oPosition;
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+
                         if (isUndefined(oMDQ[sSymbol])) {
                             sInvalidSymbols = sInvalidSymbols + sInvalidSymbolsSep + sSymbol;
                             sInvalidSymbolsSep = ", "
@@ -10807,8 +10860,38 @@ function GetWatchlistPrices() {
                             oWLDisplayed.symbol = sSymbol;
                             oWLDisplayed.assetType = "EQUITY";
                             oWLItemDetail = new WLItemDetail();
-                            oWLItemDetail.accountId = gWatchlists[idxWLMain].accountId;
-                            oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
+
+                            if (oPositions.length > 0) {
+                                for (let idxPositions = 0; idxPositions < oPositions.length; idxPositions++) {
+                                    let oPosition = new Position();
+                                    oPosition = oPositions[idxPositions];
+
+                                    oWLItemDetail.shares = 0;
+                                    oWLItemDetail.dayGain = 0.0;
+                                    oWLItemDetail.costPerShare = 0.0;
+                                    oWLItemDetail.gain = 0.0;
+                                    oWLItemDetail.gainPercent = 0.0;
+                                    oWLItemDetail.accountId = "";
+                                    oWLItemDetail.marketValue = oPosition.marketValue;
+
+                                    oWLItemDetail.accountId = oPosition.accountId;
+                                    oWLItemDetail.accountName = oPosition.accountName;
+                                    oWLItemDetail.shares = oPosition.longQuantity;
+                                    oWLItemDetail.dayGain = oPosition.currentDayProfitLoss;
+                                    oWLItemDetail.costPerShare = oPosition.averagePrice;
+                                    if ((oWLItemDetail.shares > 0) || (oWLItemDetail.shares < 0)) {
+                                        oWLItemDetail.gain = oWLItemDetail.shares * (oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare);
+                                        if (oWLItemDetail.costPerShare != 0.0) {
+                                            oWLItemDetail.gainPercent = ((oWLItemDetail.regularMarketLastPrice - oWLItemDetail.costPerShare) / oWLItemDetail.costPerShare) * 100.0;
+                                        }
+                                    }
+                                    oWLItemDetail.accountId = gWatchlists[idxWLMain].accountId;
+                                    oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
+                                }
+                            } else {
+                                oWLItemDetail.accountId = gWatchlists[idxWLMain].accountId;
+                                oWLDisplayed.WLItemDetails[oWLDisplayed.WLItemDetails.length] = oWLItemDetail;
+                            }
                             oWLDisplayed.sSortOrderFields = gWatchlists[idxWLMain].sSortOrderFields;
                             oWLDisplayed.iSortOrderAscDesc = gWatchlists[idxWLMain].iSortOrderAscDesc;
                             gWLDisplayed[gWLDisplayed.length] = oWLDisplayed;
@@ -10816,25 +10899,6 @@ function GetWatchlistPrices() {
                             let oWLDisplayed = new WLDisplayed();
                             oWLDisplayed.symbol = sSymbol;
                             oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
-
-                            //get account position info if it exists
-                            let oPositions = new Array();
-                            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                                if ((gAccounts[idxAccount].positions.length > 0) &&
-                                    (gAccounts[idxAccount].accountId == gWatchlists[idxWLMain].accountId)) {
-                                    for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
-                                        if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbol) {
-                                            let oPosition = new Position();
-                                            oPosition = gAccounts[idxAccount].positions[idxPositions];
-                                            oPosition.accountId = gAccounts[idxAccount].accountId;
-                                            oPosition.accountName = gAccounts[idxAccount].accountName;
-                                            oPositions[oPositions.length] = oPosition;
-                                            break;
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
 
                             oWLItemDetail = new WLItemDetail();
                             if (oWLDisplayed.assetType == "OPTION") {
@@ -14796,8 +14860,13 @@ function OpenSocket() {
         ]
     }
 
-    mySock = new WebSocket("wss://" + userPrincipalsResponse.streamerInfo.streamerSocketUrl + "/ws");
-    mySock.onmessage = function (evt) {
+    if (gimySockIdx != -1) {
+        mySock[gimySockIdx] = null;
+    }
+    mySock[mySock.length] = new WebSocket("wss://" + userPrincipalsResponse.streamerInfo.streamerSocketUrl + "/ws");
+    gimySockIdx = mySock.length - 1;
+    document.getElementById("spanDebug").innerHTML = "";
+    mySock[gimySockIdx].onmessage = function (evt) {
         if (evt.data != "") {
             let oData = myJSON.parse(evt.data);
             if (!isUndefined(oData.response)) {
@@ -14805,16 +14874,16 @@ function OpenSocket() {
                     if (oData.response[0].service == "ADMIN") {
                         if (oData.response[0].command == "LOGIN") {
                             if (oData.response[0].content.code == 0) {
-                                //document.getElementById("spanDebug").innerHTML = "Login Success";
                                 gbLoggedIn = true;
                             } else {
-                                //document.getElementById("spanDebug").innerHTML = oData.response[0].content.msg;
-                                showTDAPIError(oData.response[0].content.msg);
+                                document.getElementById("spanDebug").innerHTML = "Streaming login error - (" + oData.response[0].content.msg;
+                                //showTDAPIError(oData.response[0].content.msg);
                             }
                         }
                     } else {
                         if (oData.response[0].content.code != 0) {
-                            showTDAPIError("(" + oData.response[0].content.code + ")" + oData.response[0].content.msg);
+                            document.getElementById("spanDebug").innerHTML = "Streaming error - (" + oData.response[0].content.code + ")" + oData.response[0].content.msg;
+                            //showTDAPIError("(" + oData.response[0].content.code + ")" + oData.response[0].content.msg);
                         }
                         //document.getElementById("spanDebug").innerHTML = oData.response[0].content.msg;
                     }
@@ -14828,7 +14897,8 @@ function OpenSocket() {
                             if (oData.notify[0].content.code == 12) {
                                 document.getElementById("spanDebug").innerHTML = "Stock prices no longer being streamed due to logon to the same account.";
                             } else {
-                                showTDAPIError("Notify - (" + oData.notify[0].content.code + ") " + oData.notify[0].content.msg);
+                                document.getElementById("spanDebug").innerHTML = "Notify - (" + oData.notify[0].content.code + ") " + oData.notify[0].content.msg;
+                                //showTDAPIError("Notify - (" + oData.notify[0].content.code + ") " + oData.notify[0].content.msg);
                             }
                         }
                     }
@@ -15398,12 +15468,12 @@ function OpenSocket() {
             }
         }
     };
-    mySock.onclose = function () {
+    mySock[gimySockIdx].onclose = function () {
         //document.getElementById("spanDebug").innerHTML = "Socket closed";
     };
-    mySock.onopen = function () {
+    mySock[gimySockIdx].onopen = function () {
         //document.getElementById("spanDebug").innerHTML = "Socket opened";
-        mySock.send(myJSON.stringify(gLoginRequest));
+        mySock[gimySockIdx].send(myJSON.stringify(gLoginRequest));
     };
 
 }
