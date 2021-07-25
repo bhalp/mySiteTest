@@ -1,4 +1,4 @@
-var gsCurrentVersion = "7.9 2021-07-22 22:53"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.0 2021-07-24 20:30"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -88,6 +88,7 @@ var giProgressIntervalId = 0;
 var giProgress = 0;
 var gbStopProgress = false;
 var gsSaveOrdersSummaryMsg = "";
+var gdAccountMinimumLiquidationValue = 1000.00;
 
 var gsNegativeColor = "darkred";
 
@@ -528,6 +529,8 @@ function GetTradesContext() {
     this.sStartDate = "";
     this.sEndDate = "";
     this.iLastUpdateDateTime = 0;
+    this.bUseOnlySelectAccount = false;
+    this.sFilter = ""; //will contain <span>&nbsp;(Filter - account name)</span>
     this.OldGLAccountId = "";
     this.OldGLAccountName = "";
 
@@ -2818,22 +2821,52 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
             //}
             let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
 
+            let stxtwlacquired = "";
+            if (!((document.getElementById("txtwlacquired" + sThisId) == null) || (isUndefined(document.getElementById("txtwlacquired" + sThisId))))) {
+                stxtwlacquired = TrimLikeVB(document.getElementById("txtwlacquired" + sThisId).value);
+            }
+
+            let dtEndDate = new Date();
+            let iEndDate = dtEndDate.getTime();
+            let sEndDate = FormatDateForTD(dtEndDate);
+
             if (sDollars != "") {
+
+                if (stxtwlacquired != "") {
+                    if (window.confirm("Use the acquired date as the end date for the initialization?")) {
+                        if (!ValidateTDDate(stxtwlacquired, true)) {
+                            alert("Please enter an initialization end date as yyyy-mm-dd.");
+                            return;
+                        } else {
+                            let aEndDate = stxtwlacquired.split("-");
+                            dtEndDate = new Date(parseInt(aEndDate[0]), parseInt(aEndDate[1] - 1), parseInt(aEndDate[2]), 23, 59, 59);
+
+                            let dCurrentDate = new Date();
+                            if (DateDiff.inDays(dtEndDate, dCurrentDate) == 0) {
+                                dtEndDate = dCurrentDate;
+                            }
+
+                            iEndDate = dtEndDate.getTime();
+                            sEndDate = FormatDateForTD(dtEndDate);
+                        }
+                    }
+                }
+
                 //treat as date
                 if (ValidateTDDate(sDollars, false)) {
-                    let sEndDate = FormatCurrentDateForTD();
                     if (sEndDate < sDollars) {
-                        alert("Invalid initialization start date. Please enter a start date less than or equal to today.");
+                        alert("Invalid initialization start date. Please enter a start date less than or equal to " + sEndDate + ".");
                         return;
                     }
                     let sConfirmMsg = "";
-                    sConfirmMsg = "Initializing the G/L for all of the symbols in the watchlist. ";
+                    sConfirmMsg = "Initializing the G/L for all of the symbols in the watchlist using " + sDollars +  " as the start date and "  + sEndDate +  " as the end date. ";
                     if (AreYouSure(sConfirmMsg)) {
                         //get the trade info for the selected symbols
                         let aStartDate = sDollars.split("-");
                         let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
 
-                        window.setTimeout("GetTradesAuto(true, " + iStartDate + ", " + idxWL + ", true)", 10);
+                        window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", true, '', " + iEndDate +  ", '')", 10);
+                        //window.setTimeout("GetTradesAuto(true, " + iStartDate + ", " + idxWL + ", true)", 10);
                     }
                     //bDoingAutoUpdate = true;
                 } else {
@@ -2861,7 +2894,8 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
                         }
                     }
                     //get the trade info for the selected symbols
-                    window.setTimeout("GetTradesAuto(true, " + iHighestUpdateDate + ", " + idxWL + ", false)", 10);
+                    window.setTimeout("GetTradesAutoBase(true, " + iHighestUpdateDate + ", " + idxWL + ", false, '', " + iEndDate + ", '')", 10);
+                    //window.setTimeout("GetTradesAuto(true, " + iHighestUpdateDate + ", " + idxWL + ", false)", 10);
                 }
                 return;
             }
@@ -3935,7 +3969,7 @@ function FormatDateForTD(d) {
     return s;
 }
 
-function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL, bInitializing) {
+function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL, bInitializing, iEndDate) {
     //debugger
     gTDWLOrders.length = 0;
     //let sTodaysDate = FormatCurrentDateForTD();
@@ -3943,14 +3977,16 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL,
     //let aStartDate = sStartDate.split("-");
     //let iQuantity = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
     //let sQuantity = (iQuantity / 100000).toString();
+    //let iAveragePrice = new Date(parseInt(aTodaysDate[0]), parseInt(aTodaysDate[1] - 1), parseInt(aTodaysDate[2])).getTime();
+    //let sAveragePrice = (iAveragePrice / 100000).toString();
 
     let iQuantity = iLastUpdateDateTime;
     let sQuantity = ((iQuantity / 1000) - 1000000000).toString();
 
-    //let iAveragePrice = new Date(parseInt(aTodaysDate[0]), parseInt(aTodaysDate[1] - 1), parseInt(aTodaysDate[2])).getTime();
-    //let sAveragePrice = (iAveragePrice / 100000).toString();
+    //let iAveragePrice = new Date().getTime(); //current update date and time
+    //let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
 
-    let iAveragePrice = new Date().getTime(); //current update date and time
+    let iAveragePrice = iEndDate; //current update date and time
     let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
 
     //find the OldGLx watchlist to add the symbol to - each watchlist can have up to 200 symbols
@@ -7729,6 +7765,28 @@ function GetTDData(bFirstTime) {
     //        document.getElementById("spanOldGLAccount").style.display = "block";
     //    }
     //}
+
+    if (gAccounts.length > 1) { //if more than one account then allow selecting an account to use to setup Old GL symbols
+        if ((document.getElementById("spanOldGLAccount") != null) && (!isUndefined(document.getElementById("spanOldGLAccount")))) {
+            if (document.getElementById("spanOldGLAccount").style.display == "none") {
+                let sSelect = "<br>Account name to use as a filter during Get Trades:" + "<select id=\"optOldGLAccount\">";
+                let bFirstLine = true;
+                for (let idx = 0; idx < gAccounts.length; idx++) {
+                    if (gAccounts[idx].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
+                        if (bFirstLine) {
+                            bFirstLine = false;
+                            sSelect = sSelect + "<option selected value=\"\">&nbsp;</option>";
+                        }
+                        sSelect = sSelect + "<option value=\"" + gAccounts[idx].accountId + "\">" + gAccounts[idx].accountName + "</option>";
+                    }
+                }
+                sSelect = sSelect + "</select>";
+                document.getElementById("spanOldGLAccount").innerHTML = sSelect;
+            }
+            document.getElementById("spanOldGLAccount").style.display = "block";
+        }
+    }
+
     giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", giCurrentRefreshRate);
     gbDoingGetTDData = false;
 }
@@ -8028,7 +8086,6 @@ function GetTrades(bFirstTime) {
     let bDoneGettingSymbolData = false;
     let idxStart = 0;
 
-
     if (bFirstTime) {
         gbDoingGetTrades = true;
         gGetTradesContext = new GetTradesContext();
@@ -8039,6 +8096,10 @@ function GetTrades(bFirstTime) {
                 if (document.getElementById("spanOldGLAccount").style.display != "none") {
                     gGetTradesContext.OldGLAccountId = document.getElementById("optOldGLAccount").options[document.getElementById("optOldGLAccount").selectedIndex].value;
                     gGetTradesContext.OldGLAccountName = document.getElementById("optOldGLAccount").options[document.getElementById("optOldGLAccount").selectedIndex].text;
+                    if (gGetTradesContext.OldGLAccountId != "") {
+                        gGetTradesContext.bUseOnlySelectAccount = true;
+                        gGetTradesContext.sFilter = "<span>&nbsp;(Only&nbsp;-&nbsp;" + MyHTMLEncode(gGetTradesContext.OldGLAccountName) +  ")</span>"
+                    }
                 }
             }
         }
@@ -8081,9 +8142,13 @@ function GetTrades(bFirstTime) {
         idxDatesStart = gsStartDates.length - 1;
 
         let iAccountCnt = 0;
-        for (let idx = 0; idx < gAccounts.length; idx++) {
-            if (gAccounts[idx].CBliquidationValue >= 1000.0) {
-                iAccountCnt++;
+        if (gGetTradesContext.bUseOnlySelectAccount) {
+            iAccountCnt = 1;
+        } else {
+            for (let idx = 0; idx < gAccounts.length; idx++) {
+                if (gAccounts[idx].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
+                    iAccountCnt++;
+                }
             }
         }
 
@@ -8130,101 +8195,318 @@ function GetTrades(bFirstTime) {
                     GetTradesCanceled();
                     return;
                 }
-                //ignore accounts with less than $1000 liquidation value
-                if (gAccounts[idx].CBliquidationValue >= 1000.0) {
-                    if (giProgress < 100) {
-                        giProgress = giProgress + gGetTradesContext.iProgressIncrement;
-                    }
-                    iTryCount = 0;
-                    while (iTryCount < 2) {
-                        let sServerUrl = "";
-                        if (sSymbolsToLookupServer == "ALLSYMBOLS") {
-                            sServerUrl = sServerUrlBaseAllSymbols.replace("xxxxx", gAccounts[idx].accountId);
-                        } else {
-                            sServerUrl = sServerUrlBase.replace("aaaaaaa", sSymbolsToLookupServer);
-                            sServerUrl = sServerUrl.replace("xxxxx", gAccounts[idx].accountId);
+                if ((!gGetTradesContext.bUseOnlySelectAccount) || (gGetTradesContext.bUseOnlySelectAccount && (gAccounts[idx].accountId == gGetTradesContext.OldGLAccountId))) {
+                    //ignore accounts with less than $1000 liquidation value
+                    if (gAccounts[idx].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
+                        if (giProgress < 100) {
+                            giProgress = giProgress + gGetTradesContext.iProgressIncrement;
                         }
-                        sServerUrl = sServerUrl.replace("yyyyy", sStartDate);
-                        sServerUrl = sServerUrl.replace("zzzzz", sEndDate);
+                        iTryCount = 0;
+                        while (iTryCount < 2) {
+                            let sServerUrl = "";
+                            if (sSymbolsToLookupServer == "ALLSYMBOLS") {
+                                sServerUrl = sServerUrlBaseAllSymbols.replace("xxxxx", gAccounts[idx].accountId);
+                            } else {
+                                sServerUrl = sServerUrlBase.replace("aaaaaaa", sSymbolsToLookupServer);
+                                sServerUrl = sServerUrl.replace("xxxxx", gAccounts[idx].accountId);
+                            }
+                            sServerUrl = sServerUrl.replace("yyyyy", sStartDate);
+                            sServerUrl = sServerUrl.replace("zzzzz", sEndDate);
 
-                        let xhttp = null;
-                        let iInnerTryCount = 0;
-                        xhttp = oHTTP();
-                        while ((xhttp == null) && (iInnerTryCount < 5)) {
+                            let xhttp = null;
+                            let iInnerTryCount = 0;
                             xhttp = oHTTP();
-                            iInnerTryCount = iInnerTryCount + 1;
-                        }
-                        iInnerTryCount = 0;
-                        if (CheckHTTPOpenGet(xhttp, sServerUrl, "Error during xhttp.open to " + sServerUrl, false, false, "", "")) {
-                            // set the request header
-                            xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+                            while ((xhttp == null) && (iInnerTryCount < 5)) {
+                                xhttp = oHTTP();
+                                iInnerTryCount = iInnerTryCount + 1;
+                            }
+                            iInnerTryCount = 0;
+                            if (CheckHTTPOpenGet(xhttp, sServerUrl, "Error during xhttp.open to " + sServerUrl, false, false, "", "")) {
+                                // set the request header
+                                xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
 
-                            // send the request
-                            try {
-                                //                                    debugger
-                                xhttp.send();
-                                if (xhttp.responseText != null) {
-                                    if (xhttp.responseText != "") {
-                                        //alert("GetTrades xhttp.responseText length = " + xhttp.responseText.length);
+                                // send the request
+                                try {
+                                    //                                    debugger
+                                    xhttp.send();
+                                    if (xhttp.responseText != null) {
+                                        if (xhttp.responseText != "") {
+                                            //alert("GetTrades xhttp.responseText length = " + xhttp.responseText.length);
 
-                                        let oCMLength = 0;
-                                        oCM = myJSON.parse(xhttp.responseText);
-                                        switch (checkTDAPIError(oCM)) {
-                                            case 0: //no error
-                                                {
-                                                    try {
-                                                        oCMLength = oCM.length;
-                                                    } catch (e2) {
-                                                        oCMLength = 0;
+                                            let oCMLength = 0;
+                                            oCM = myJSON.parse(xhttp.responseText);
+                                            switch (checkTDAPIError(oCM)) {
+                                                case 0: //no error
+                                                    {
+                                                        try {
+                                                            oCMLength = oCM.length;
+                                                        } catch (e2) {
+                                                            oCMLength = 0;
+                                                        }
+                                                        break;
                                                     }
-                                                    break;
-                                                }
-                                            case 1: //acces code expired
-                                                {
-                                                    xhttp = null;
-                                                    if (GetAccessCodeUsingRefreshToken()) {
-                                                        oCMLength = -1;
-                                                    } else {
-                                                        alert("An error occurred attempting to refresh the access code. Please logoff or reload the app.");
+                                                case 1: //acces code expired
+                                                    {
+                                                        xhttp = null;
+                                                        if (GetAccessCodeUsingRefreshToken()) {
+                                                            oCMLength = -1;
+                                                        } else {
+                                                            alert("An error occurred attempting to refresh the access code. Please logoff or reload the app.");
+                                                            GetTradesCanceled();
+                                                            return;
+                                                        }
+                                                        break;
+                                                    }
+                                                case 2: //other error
+                                                    {
+                                                        oCMLength = 0;
+                                                        break;
+                                                    }
+                                                default:
+                                                    {
+                                                        oCMLength = 0;
+                                                        break;
+                                                    }
+                                            }
+
+                                            if (oCMLength > 0) {
+                                                let bUseTradeRS = false;
+                                                let oTradeRS = new Trade();
+                                                for (let idxTrade = 0; idxTrade < oCM.length; idxTrade++) {
+                                                    if (gbStopGetTrades) {
                                                         GetTradesCanceled();
                                                         return;
                                                     }
-                                                    break;
-                                                }
-                                            case 2: //other error
-                                                {
-                                                    oCMLength = 0;
-                                                    break;
-                                                }
-                                            default:
-                                                {
-                                                    oCMLength = 0;
-                                                    break;
-                                                }
-                                        }
+                                                    if (oCM[idxTrade].type == "DIVIDEND_OR_INTEREST") {
+                                                        bUseTradeRS = false;
+                                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                            gAccounts[0].totalTrades++;
 
-                                        if (oCMLength > 0) {
-                                            let bUseTradeRS = false;
-                                            let oTradeRS = new Trade();
-                                            for (let idxTrade = 0; idxTrade < oCM.length; idxTrade++) {
-                                                if (gbStopGetTrades) {
-                                                    GetTradesCanceled();
-                                                    return;
-                                                }
-                                                if (oCM[idxTrade].type == "DIVIDEND_OR_INTEREST") {
-                                                    bUseTradeRS = false;
-                                                    if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                            let oTrade = new Trade();
+                                                            oTrade.accountId = gAccounts[idx].accountId;
+                                                            oTrade.accountName = gAccounts[idx].accountName;
+                                                            oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                            oTrade.date = oCM[idxTrade].transactionDate;
+                                                            oTrade.amount = 0;
+                                                            oTrade.price = 0;
+                                                            oTrade.cost = 0;
+                                                            oTrade.netAmount = oCM[idxTrade].netAmount;
+                                                            if (isUndefined(oCM[idxTrade].transactionSubType)) {
+                                                                oTrade.transactionSubType = "";
+                                                            } else {
+                                                                oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                            }
+                                                            oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
+                                                            //gTrades[gTrades.length] = oTrade;
+
+                                                            //now update the Symbols
+                                                            if (!isUndefined(oCM[idxTrade].transactionItem)) {
+                                                                if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                                    if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                                        bNeedToAddSymbol = false;
+                                                                        if ((sSymbolsToLookup.indexOf("," + oCM[idxTrade].transactionItem.instrument.symbol.toUpperCase() + ",") != -1) ||
+                                                                            (sSymbolsToLookup == "ALLSYMBOLS")) {
+                                                                            bNeedToAddSymbol = true;
+                                                                            if (gSymbols.length > 0) {
+                                                                                for (let idxTmp = 0; idxTmp < gSymbols.length; idxTmp++) {
+                                                                                    if ((gSymbols[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) &&
+                                                                                        (gSymbols[idxTmp].accountId == gAccounts[idx].accountId)) {
+                                                                                        bNeedToAddSymbol = false;
+                                                                                        gSymbols[idxTmp].sell = gSymbols[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                                        gSymbols[idxTmp].trades[gSymbols[idxTmp].trades.length] = oTrade;
+                                                                                        gSymbols[idxTmp].fees = gSymbols[idxTmp].fees + oTrade.fees;
+                                                                                        break;
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        if (bNeedToAddSymbol) {
+                                                                            let oSymbol = new Symbol();
+                                                                            oSymbol.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                                            oSymbol.accountId = gAccounts[idx].accountId;
+                                                                            oSymbol.accountName = gAccounts[idx].accountName;
+                                                                            oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                            oSymbol.sell = oCM[idxTrade].netAmount;
+                                                                            oSymbol.trades[oSymbol.trades.length] = oTrade;
+                                                                            oSymbol.fees = oTrade.fees;
+                                                                            gSymbols[gSymbols.length] = oSymbol;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } else if (oCM[idxTrade].type == "RECEIVE_AND_DELIVER") {
+                                                        if (!isUndefined(oCM[idxTrade].transactionItem)) {
+                                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
+                                                                if (!isUndefined(oCM[idxTrade].transactionSubType)) {
+                                                                    let bFoundSubType = false;
+                                                                    let oTrade = new Trade();
+                                                                    let sRADSymbol = "";
+                                                                    oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                                    if (oCM[idxTrade].transactionSubType == "TI") {
+                                                                        bUseTradeRS = false;
+                                                                        //TRANSFER OF SECURITY OR OPTION IN
+                                                                        oTrade.accountId = gAccounts[idx].accountId;
+                                                                        oTrade.accountName = gAccounts[idx].accountName;
+                                                                        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                                        sRADSymbol = oTrade.symbol;
+                                                                        oTrade.date = oCM[idxTrade].transactionDate;
+                                                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                        oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
+                                                                        //need to get price on the transaction date
+                                                                        let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
+                                                                        if (gaFixedPrices.length > 0) {
+                                                                            for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
+                                                                                let oFP = new FixedPrice();
+                                                                                oFP = gaFixedPrices[idxFP];
+                                                                                if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
+                                                                                    (oFP.date == vTmp[0])) {
+                                                                                    oTrade.price = oFP.price;
+                                                                                    oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
+                                                                                    oTrade.netAmount = oTrade.cost;
+                                                                                    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                                    bFoundSubType = true;
+                                                                                    break;
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    } else if (oCM[idxTrade].transactionSubType == "RS") {
+                                                                        //MANDATORY REVERSE SPLIT
+                                                                        oTrade.accountId = gAccounts[idx].accountId;
+                                                                        oTrade.accountName = gAccounts[idx].accountName;
+                                                                        oTrade.date = oCM[idxTrade].transactionDate;
+                                                                        oTrade.price = 0.0;
+                                                                        oTrade.cost = 0.0;
+                                                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                        oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
+                                                                        if (isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                                            //decreasing number of shares - cost 0
+                                                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                            oTrade.netAmount = 0.0;
+                                                                            //need to lookup cusip to get symbol
+                                                                            let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/instruments?symbol=" + oCM[idxTrade].transactionItem.instrument.cusip + "&projection=symbol-search", 0);
+                                                                            if (iReturn == 0) {
+                                                                                if (!isUndefined(oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip])) {
+                                                                                    oTrade.symbol = oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip].symbol;
+                                                                                    sRADSymbol = oTrade.symbol;
+                                                                                    bFoundSubType = true;
+                                                                                    bUseTradeRS = false;
+                                                                                } else {
+                                                                                    oTradeRS = new Trade();
+                                                                                    oTradeRS.accountId = oTrade.accountId
+                                                                                    oTradeRS.accountName = oTrade.accountName;
+                                                                                    oTradeRS.amount = oTrade.amount;
+                                                                                    oTradeRS.assetType = oTrade.assetType;
+                                                                                    oTradeRS.cost = oTrade.cost;
+                                                                                    oTradeRS.date = oTrade.date;
+                                                                                    oTradeRS.netAmount = oTrade.netAmount;
+                                                                                    oTradeRS.fees = oTrade.fees;
+                                                                                    oTradeRS.price = oTrade.price;
+                                                                                    oTradeRS.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                                                    bUseTradeRS = true;
+                                                                                }
+                                                                            }
+                                                                        } else {
+                                                                            //increasing number of shares - cost 0
+                                                                            oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                            oTrade.netAmount = -0.00001;
+                                                                            oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                                            sRADSymbol = oTrade.symbol;
+                                                                            bFoundSubType = true;
+                                                                        }
+                                                                    } else if (oCM[idxTrade].transactionSubType == "SP") {
+                                                                        //STOCK SPLIT
+                                                                        bUseTradeRS = false;
+                                                                        oTrade.accountId = gAccounts[idx].accountId;
+                                                                        oTrade.accountName = gAccounts[idx].accountName;
+                                                                        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                                        sRADSymbol = oTrade.symbol;
+                                                                        oTrade.date = oCM[idxTrade].transactionDate;
+                                                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                        oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
+
+                                                                        oTrade.price = 0.00001;
+                                                                        oTrade.cost = -0.00001; //negative because a buy trade
+                                                                        oTrade.netAmount = oTrade.cost;
+                                                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                        bFoundSubType = true;
+
+                                                                        //    //need to get price on the transaction date
+                                                                        //    let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
+                                                                        //    if (gaFixedPrices.length > 0) {
+                                                                        //        for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
+                                                                        //            let oFP = new FixedPrice();
+                                                                        //            oFP = gaFixedPrices[idxFP];
+                                                                        //            if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
+                                                                        //                (oFP.date == vTmp[0])) {
+                                                                        //                oTrade.price = oFP.price;
+                                                                        //                oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
+                                                                        //                oTrade.netAmount = oTrade.cost;
+                                                                        //                oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                        //                bFoundSubType = true;
+                                                                        //                break;
+                                                                        //            }
+                                                                        //        }
+                                                                        //    }
+                                                                    } else {
+                                                                        bUseTradeRS = false;
+                                                                    }
+
+                                                                    //if (oCM[idxTrade].transactionSubType == "RS") {
+                                                                    //    //MANDATORY REVERSE SPLIT
+                                                                    //    oTrade.accountId = gAccounts[idx].accountId;
+                                                                    //    oTrade.accountName = gAccounts[idx].accountName;
+                                                                    //    oTrade.date = oCM[idxTrade].transactionDate;
+                                                                    //    oTrade.price = 0.0;
+                                                                    //    oTrade.cost = 0.0;
+                                                                    //    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
+                                                                    //    if (isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                                    //        //decreasing number of shares - cost 0
+                                                                    //        oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                    //        oTrade.netAmount = 0.0;
+                                                                    //        //need to lookup cusip to get symbol
+                                                                    //        let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/instruments?symbol=" + oCM[idxTrade].transactionItem.instrument.cusip + "&projection=symbol-search", 0);
+                                                                    //        if (iReturn == 0) {
+                                                                    //            if (!isUndefined(oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip])) {
+                                                                    //                oTrade.symbol = oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip].symbol;
+                                                                    //                sRADSymbol = oTrade.symbol;
+                                                                    //                bFoundSubType = true;
+                                                                    //            }
+                                                                    //        }
+                                                                    //    } else {
+                                                                    //        //increasing number of shares - cost 0
+                                                                    //        oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                                    //        oTrade.netAmount = -0.00001;
+                                                                    //        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                                    //        sRADSymbol = oTrade.symbol;
+                                                                    //        bFoundSubType = true;
+                                                                    //    }
+                                                                    //}
+                                                                    if (bFoundSubType) {
+                                                                        if (bUseTradeRS) {
+                                                                            bUseTradeRS = false;
+                                                                            oTradeRS.symbol = sRADSymbol;
+                                                                            GetTradesAddSymbol(idx, sSymbolsToLookup, sRADSymbol, oTradeRS);
+                                                                        }
+                                                                        GetTradesAddSymbol(idx, sSymbolsToLookup, sRADSymbol, oTrade);
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                    } else if (oCM[idxTrade].type == "TRADE") {
+                                                        bUseTradeRS = false;
                                                         gAccounts[0].totalTrades++;
-
                                                         let oTrade = new Trade();
                                                         oTrade.accountId = gAccounts[idx].accountId;
                                                         oTrade.accountName = gAccounts[idx].accountName;
                                                         oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
                                                         oTrade.date = oCM[idxTrade].transactionDate;
-                                                        oTrade.amount = 0;
-                                                        oTrade.price = 0;
-                                                        oTrade.cost = 0;
+                                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
+                                                        oTrade.price = oCM[idxTrade].transactionItem.price;
+                                                        oTrade.cost = oCM[idxTrade].transactionItem.cost;
                                                         oTrade.netAmount = oCM[idxTrade].netAmount;
+                                                        oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
                                                         if (isUndefined(oCM[idxTrade].transactionSubType)) {
                                                             oTrade.transactionSubType = "";
                                                         } else {
@@ -8246,7 +8528,15 @@ function GetTrades(bFirstTime) {
                                                                                 if ((gSymbols[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) &&
                                                                                     (gSymbols[idxTmp].accountId == gAccounts[idx].accountId)) {
                                                                                     bNeedToAddSymbol = false;
-                                                                                    gSymbols[idxTmp].sell = gSymbols[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                                    if (oCM[idxTrade].netAmount < 0.0) {
+                                                                                        //buy
+                                                                                        gSymbols[idxTmp].shares = gSymbols[idxTmp].shares + oCM[idxTrade].transactionItem.amount;
+                                                                                        gSymbols[idxTmp].buy = gSymbols[idxTmp].buy - oCM[idxTrade].netAmount;
+                                                                                    } else {
+                                                                                        //sell
+                                                                                        gSymbols[idxTmp].shares = gSymbols[idxTmp].shares - oCM[idxTrade].transactionItem.amount;
+                                                                                        gSymbols[idxTmp].sell = gSymbols[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                                    }
                                                                                     gSymbols[idxTmp].trades[gSymbols[idxTmp].trades.length] = oTrade;
                                                                                     gSymbols[idxTmp].fees = gSymbols[idxTmp].fees + oTrade.fees;
                                                                                     break;
@@ -8260,254 +8550,40 @@ function GetTrades(bFirstTime) {
                                                                         oSymbol.accountId = gAccounts[idx].accountId;
                                                                         oSymbol.accountName = gAccounts[idx].accountName;
                                                                         oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                        oSymbol.sell = oCM[idxTrade].netAmount;
+                                                                        if (oCM[idxTrade].netAmount < 0.0) {
+                                                                            //buy
+                                                                            oSymbol.shares = oCM[idxTrade].transactionItem.amount;
+                                                                            oSymbol.buy = -1 * oCM[idxTrade].netAmount;
+                                                                        } else {
+                                                                            //sell
+                                                                            oSymbol.shares = -1 * oCM[idxTrade].transactionItem.amount;
+                                                                            oSymbol.sell = oCM[idxTrade].netAmount;
+                                                                        }
                                                                         oSymbol.trades[oSymbol.trades.length] = oTrade;
                                                                         oSymbol.fees = oTrade.fees;
                                                                         gSymbols[gSymbols.length] = oSymbol;
                                                                     }
+
                                                                 }
                                                             }
                                                         }
-                                                    }
-                                                } else if (oCM[idxTrade].type == "RECEIVE_AND_DELIVER") {
-                                                    if (!isUndefined(oCM[idxTrade].transactionItem)) {
-                                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
-                                                            if (!isUndefined(oCM[idxTrade].transactionSubType)) {
-                                                                let bFoundSubType = false;
-                                                                let oTrade = new Trade();
-                                                                let sRADSymbol = "";
-                                                                oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
-                                                                if (oCM[idxTrade].transactionSubType == "TI") {
-                                                                    bUseTradeRS = false;
-                                                                    //TRANSFER OF SECURITY OR OPTION IN
-                                                                    oTrade.accountId = gAccounts[idx].accountId;
-                                                                    oTrade.accountName = gAccounts[idx].accountName;
-                                                                    oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                                    sRADSymbol = oTrade.symbol;
-                                                                    oTrade.date = oCM[idxTrade].transactionDate;
-                                                                    oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                                    oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
-                                                                    //need to get price on the transaction date
-                                                                    let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
-                                                                    if (gaFixedPrices.length > 0) {
-                                                                        for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
-                                                                            let oFP = new FixedPrice();
-                                                                            oFP = gaFixedPrices[idxFP];
-                                                                            if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
-                                                                                (oFP.date == vTmp[0])) {
-                                                                                oTrade.price = oFP.price;
-                                                                                oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
-                                                                                oTrade.netAmount = oTrade.cost;
-                                                                                oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                                bFoundSubType = true;
-                                                                                break;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                } else if (oCM[idxTrade].transactionSubType == "RS") {
-                                                                    //MANDATORY REVERSE SPLIT
-                                                                    oTrade.accountId = gAccounts[idx].accountId;
-                                                                    oTrade.accountName = gAccounts[idx].accountName;
-                                                                    oTrade.date = oCM[idxTrade].transactionDate;
-                                                                    oTrade.price = 0.0;
-                                                                    oTrade.cost = 0.0;
-                                                                    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                    oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
-                                                                    if (isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
-                                                                        //decreasing number of shares - cost 0
-                                                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                                        oTrade.netAmount = 0.0;
-                                                                        //need to lookup cusip to get symbol
-                                                                        let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/instruments?symbol=" + oCM[idxTrade].transactionItem.instrument.cusip + "&projection=symbol-search", 0);
-                                                                        if (iReturn == 0) {
-                                                                            if (!isUndefined(oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip])) {
-                                                                                oTrade.symbol = oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip].symbol;
-                                                                                sRADSymbol = oTrade.symbol;
-                                                                                bFoundSubType = true;
-                                                                                bUseTradeRS = false;
-                                                                            } else {
-                                                                                oTradeRS = new Trade();
-                                                                                oTradeRS.accountId = oTrade.accountId
-                                                                                oTradeRS.accountName = oTrade.accountName;
-                                                                                oTradeRS.amount = oTrade.amount;
-                                                                                oTradeRS.assetType = oTrade.assetType;
-                                                                                oTradeRS.cost = oTrade.cost;
-                                                                                oTradeRS.date = oTrade.date;
-                                                                                oTradeRS.netAmount = oTrade.netAmount;
-                                                                                oTradeRS.fees = oTrade.fees;
-                                                                                oTradeRS.price = oTrade.price;
-                                                                                oTradeRS.transactionSubType = oCM[idxTrade].transactionSubType;
-                                                                                bUseTradeRS = true;
-                                                                            }
-                                                                        }
-                                                                    } else {
-                                                                        //increasing number of shares - cost 0
-                                                                        oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                                        oTrade.netAmount = -0.00001;
-                                                                        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                                        sRADSymbol = oTrade.symbol;
-                                                                        bFoundSubType = true;
-                                                                    }
-                                                                } else if (oCM[idxTrade].transactionSubType == "SP") {
-                                                                    //STOCK SPLIT
-                                                                    bUseTradeRS = false;
-                                                                    oTrade.accountId = gAccounts[idx].accountId;
-                                                                    oTrade.accountName = gAccounts[idx].accountName;
-                                                                    oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                                    sRADSymbol = oTrade.symbol;
-                                                                    oTrade.date = oCM[idxTrade].transactionDate;
-                                                                    oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                                    oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
-
-                                                                    oTrade.price = 0.00001;
-                                                                    oTrade.cost = -0.00001; //negative because a buy trade
-                                                                    oTrade.netAmount = oTrade.cost;
-                                                                    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                    bFoundSubType = true;
-
-                                                                //    //need to get price on the transaction date
-                                                                //    let vTmp = oTrade.date.split("T"); //"2020-04-13T12:48:34+0000"
-                                                                //    if (gaFixedPrices.length > 0) {
-                                                                //        for (let idxFP = 0; idxFP < gaFixedPrices.length; idxFP++) {
-                                                                //            let oFP = new FixedPrice();
-                                                                //            oFP = gaFixedPrices[idxFP];
-                                                                //            if ((oFP.symbol == sRADSymbol.toUpperCase()) &&
-                                                                //                (oFP.date == vTmp[0])) {
-                                                                //                oTrade.price = oFP.price;
-                                                                //                oTrade.cost = -1 * (oTrade.price * oTrade.amount); //negative because a buy trade
-                                                                //                oTrade.netAmount = oTrade.cost;
-                                                                //                oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                //                bFoundSubType = true;
-                                                                //                break;
-                                                                //            }
-                                                                //        }
-                                                                //    }
-                                                                } else {
-                                                                    bUseTradeRS = false;
-                                                                }
-
-                                                                //if (oCM[idxTrade].transactionSubType == "RS") {
-                                                                //    //MANDATORY REVERSE SPLIT
-                                                                //    oTrade.accountId = gAccounts[idx].accountId;
-                                                                //    oTrade.accountName = gAccounts[idx].accountName;
-                                                                //    oTrade.date = oCM[idxTrade].transactionDate;
-                                                                //    oTrade.price = 0.0;
-                                                                //    oTrade.cost = 0.0;
-                                                                //    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                //    if (isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
-                                                                //        //decreasing number of shares - cost 0
-                                                                //        oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                                //        oTrade.netAmount = 0.0;
-                                                                //        //need to lookup cusip to get symbol
-                                                                //        let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/instruments?symbol=" + oCM[idxTrade].transactionItem.instrument.cusip + "&projection=symbol-search", 0);
-                                                                //        if (iReturn == 0) {
-                                                                //            if (!isUndefined(oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip])) {
-                                                                //                oTrade.symbol = oCMTemp[oCM[idxTrade].transactionItem.instrument.cusip].symbol;
-                                                                //                sRADSymbol = oTrade.symbol;
-                                                                //                bFoundSubType = true;
-                                                                //            }
-                                                                //        }
-                                                                //    } else {
-                                                                //        //increasing number of shares - cost 0
-                                                                //        oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                                //        oTrade.netAmount = -0.00001;
-                                                                //        oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                                //        sRADSymbol = oTrade.symbol;
-                                                                //        bFoundSubType = true;
-                                                                //    }
-                                                                //}
-                                                                if (bFoundSubType) {
-                                                                    if (bUseTradeRS) {
-                                                                        bUseTradeRS = false;
-                                                                        oTradeRS.symbol = sRADSymbol;
-                                                                        GetTradesAddSymbol(idx, sSymbolsToLookup, sRADSymbol, oTradeRS);
-                                                                    }
-                                                                    GetTradesAddSymbol(idx, sSymbolsToLookup, sRADSymbol, oTrade);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-
-                                                } else if (oCM[idxTrade].type == "TRADE") {
-                                                    bUseTradeRS = false;
-                                                    gAccounts[0].totalTrades++;
-                                                    let oTrade = new Trade();
-                                                    oTrade.accountId = gAccounts[idx].accountId;
-                                                    oTrade.accountName = gAccounts[idx].accountName;
-                                                    oTrade.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                    oTrade.date = oCM[idxTrade].transactionDate;
-                                                    oTrade.amount = oCM[idxTrade].transactionItem.amount;
-                                                    oTrade.price = oCM[idxTrade].transactionItem.price;
-                                                    oTrade.cost = oCM[idxTrade].transactionItem.cost;
-                                                    oTrade.netAmount = oCM[idxTrade].netAmount;
-                                                    oTrade.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                    if (isUndefined(oCM[idxTrade].transactionSubType)) {
-                                                        oTrade.transactionSubType = "";
                                                     } else {
-                                                        oTrade.transactionSubType = oCM[idxTrade].transactionSubType;
+                                                        bUseTradeRS = false;
                                                     }
-                                                    oTrade.fees = GetTradeFees(oCM, idxTrade); //get the fees associated with the trade
-                                                    //gTrades[gTrades.length] = oTrade;
-
-                                                    //now update the Symbols
-                                                    if (!isUndefined(oCM[idxTrade].transactionItem)) {
-                                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
-                                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
-                                                                bNeedToAddSymbol = false;
-                                                                if ((sSymbolsToLookup.indexOf("," + oCM[idxTrade].transactionItem.instrument.symbol.toUpperCase() + ",") != -1) ||
-                                                                    (sSymbolsToLookup == "ALLSYMBOLS")) {
-                                                                    bNeedToAddSymbol = true;
-                                                                    if (gSymbols.length > 0) {
-                                                                        for (let idxTmp = 0; idxTmp < gSymbols.length; idxTmp++) {
-                                                                            if ((gSymbols[idxTmp].symbol == oCM[idxTrade].transactionItem.instrument.symbol) &&
-                                                                                (gSymbols[idxTmp].accountId == gAccounts[idx].accountId)) {
-                                                                                bNeedToAddSymbol = false;
-                                                                                if (oCM[idxTrade].netAmount < 0.0) {
-                                                                                    //buy
-                                                                                    gSymbols[idxTmp].shares = gSymbols[idxTmp].shares + oCM[idxTrade].transactionItem.amount;
-                                                                                    gSymbols[idxTmp].buy = gSymbols[idxTmp].buy - oCM[idxTrade].netAmount;
-                                                                                } else {
-                                                                                    //sell
-                                                                                    gSymbols[idxTmp].shares = gSymbols[idxTmp].shares - oCM[idxTrade].transactionItem.amount;
-                                                                                    gSymbols[idxTmp].sell = gSymbols[idxTmp].sell + oCM[idxTrade].netAmount;
-                                                                                }
-                                                                                gSymbols[idxTmp].trades[gSymbols[idxTmp].trades.length] = oTrade;
-                                                                                gSymbols[idxTmp].fees = gSymbols[idxTmp].fees + oTrade.fees;
-                                                                                break;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                if (bNeedToAddSymbol) {
-                                                                    let oSymbol = new Symbol();
-                                                                    oSymbol.symbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                                    oSymbol.accountId = gAccounts[idx].accountId;
-                                                                    oSymbol.accountName = gAccounts[idx].accountName;
-                                                                    oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
-                                                                    if (oCM[idxTrade].netAmount < 0.0) {
-                                                                        //buy
-                                                                        oSymbol.shares = oCM[idxTrade].transactionItem.amount;
-                                                                        oSymbol.buy = -1 * oCM[idxTrade].netAmount;
-                                                                    } else {
-                                                                        //sell
-                                                                        oSymbol.shares = -1 * oCM[idxTrade].transactionItem.amount;
-                                                                        oSymbol.sell = oCM[idxTrade].netAmount;
-                                                                    }
-                                                                    oSymbol.trades[oSymbol.trades.length] = oTrade;
-                                                                    oSymbol.fees = oTrade.fees;
-                                                                    gSymbols[gSymbols.length] = oSymbol;
-                                                                }
-
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-                                                    bUseTradeRS = false;
                                                 }
                                             }
+                                            if (oCMLength != -1) {
+                                                iTryCount = 2;
+                                            }
                                         }
-                                        if (oCMLength != -1) {
-                                            iTryCount = 2;
+                                        else {
+                                            iTryCount++;
+                                            if (iTryCount < 2) {
+                                                xhttp = null;
+                                            }
+                                            else {
+                                                //alert ("GetTrades Error - HTTP response is blank." + " (" + iTryCount.toString() + ")");
+                                            }
                                         }
                                     }
                                     else {
@@ -8516,57 +8592,48 @@ function GetTrades(bFirstTime) {
                                             xhttp = null;
                                         }
                                         else {
-                                            //alert ("GetTrades Error - HTTP response is blank." + " (" + iTryCount.toString() + ")");
+                                            //alert ("GetTrades Error - HTTP response is null." + " (" + iTryCount.toString() + ")");
                                         }
                                     }
                                 }
-                                else {
+                                catch (e1) {
+                                    //debugger
                                     iTryCount++;
                                     if (iTryCount < 2) {
                                         xhttp = null;
                                     }
                                     else {
-                                        //alert ("GetTrades Error - HTTP response is null." + " (" + iTryCount.toString() + ")");
+                                        alert("GetTrades Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                                        bOk = false;
                                     }
                                 }
                             }
-                            catch (e1) {
-                                //debugger
-                                iTryCount++;
-                                if (iTryCount < 2) {
-                                    xhttp = null;
-                                }
-                                else {
-                                    alert("GetTrades Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
-                                    bOk = false;
-                                }
+                            else {
+                                break;
                             }
                         }
-                        else {
-                            break;
-                        }
+                        gGetTradesContext.sServerUrlBase = sServerUrlBase;
+                        gGetTradesContext.sServerUrlBaseAllSymbols = sServerUrlBaseAllSymbols;
+                        gGetTradesContext.sStartDate = sStartDate;
+                        gGetTradesContext.sEndDate = sEndDate;
+
+                        gGetTradesContext.sSymbolToLookup = sSymbolToLookup;
+                        gGetTradesContext.sSymbolsToLookupTmp = sSymbolsToLookupTmp;
+
+                        gGetTradesContext.sSymbolsToLookup = sSymbolsToLookup;
+                        gGetTradesContext.sSymbolsToLookupServer = sSymbolsToLookupServer;
+
+                        gGetTradesContext.bEndDateISTodaysDate = bEndDateISTodaysDate;
+                        gGetTradesContext.idxDatesStart = idxDates;
+
+                        gGetTradesContext.bOk = bOk;
+                        gGetTradesContext.bDoneGettingSymbolData = bDoneGettingSymbolData;
+                        gGetTradesContext.bNeedToAddSymbol = bNeedToAddSymbol;
+                        gGetTradesContext.idxStart = idx + 1;
+
+                        window.setTimeout("GetTrades(false)", 100);
+                        return;
                     }
-                    gGetTradesContext.sServerUrlBase = sServerUrlBase;
-                    gGetTradesContext.sServerUrlBaseAllSymbols = sServerUrlBaseAllSymbols;
-                    gGetTradesContext.sStartDate = sStartDate;
-                    gGetTradesContext.sEndDate = sEndDate;
-
-                    gGetTradesContext.sSymbolToLookup = sSymbolToLookup;
-                    gGetTradesContext.sSymbolsToLookupTmp = sSymbolsToLookupTmp;
-
-                    gGetTradesContext.sSymbolsToLookup = sSymbolsToLookup;
-                    gGetTradesContext.sSymbolsToLookupServer = sSymbolsToLookupServer;
-
-                    gGetTradesContext.bEndDateISTodaysDate = bEndDateISTodaysDate;
-                    gGetTradesContext.idxDatesStart = idxDates;
-
-                    gGetTradesContext.bOk = bOk;
-                    gGetTradesContext.bDoneGettingSymbolData = bDoneGettingSymbolData;
-                    gGetTradesContext.bNeedToAddSymbol = bNeedToAddSymbol;
-                    gGetTradesContext.idxStart = idx + 1;
-
-                    window.setTimeout("GetTrades(false)", 100);
-                    return;
                 }
             }
         }
@@ -8623,7 +8690,7 @@ function GetTrades(bFirstTime) {
             document.getElementById("detailTitle").style.width = "500px";
             document.getElementById("tblDetail").style.visibility = "hidden";
             gSymbols.sort(sortBySymbolAndAccountname);
-            document.getElementById("nameTitle").innerHTML = "Symbols";
+            document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
             //                document.getElementById("nameTitle2").innerHTML = "<span style='color: red;'>*</span>&nbsp;=&nbsp;option";
             let sSymbolDisplay = "<table style=\"width:100%;border-width:0px;\">";
             let s = "";
@@ -8738,12 +8805,12 @@ function GetTrades(bFirstTime) {
                         }
 
                         let sOnclick = "";
-                        if (gGetTradesContext.OldGLAccountId != "") {
-                            if (gSymbols[idx].accountId != gGetTradesContext.OldGLAccountId) {
-                                sOnclick = " onclick=\"DoWLUpdateOGLSymbols(1, '" + gGetTradesContext.OldGLAccountId + "','" + sSymbol + "','" + sTmp + "') \" ";
-                                sTmp = "<U>" + sTmp + "</U>";
-                            }
-                        }
+                        //if (gGetTradesContext.OldGLAccountId != "") {
+                        //    if (gSymbols[idx].accountId != gGetTradesContext.OldGLAccountId) {
+                        //        sOnclick = " onclick=\"DoWLUpdateOGLSymbols(1, '" + gGetTradesContext.OldGLAccountId + "','" + sSymbol + "','" + sTmp + "') \" ";
+                        //        sTmp = "<U>" + sTmp + "</U>";
+                        //    }
+                        //}
 
                         if (sTmp.indexOf("-") != -1) {
                             s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
@@ -8937,12 +9004,12 @@ function GetTrades(bFirstTime) {
                         }
 
                         let sOnclick = "";
-                        if (gGetTradesContext.OldGLAccountId != "") {
-                            if (gSymbols[idx].accountId != gGetTradesContext.OldGLAccountId) {
-                                sOnclick = " onclick=\"DoWLUpdateOGLSymbols(1, '" + gGetTradesContext.OldGLAccountId + "','" + sSymbol + "','" + sTmp + "') \" ";
-                                sTmp = "<U>" + sTmp + "</U>";
-                            }
-                        }
+                        //if (gGetTradesContext.OldGLAccountId != "") {
+                        //    if (gSymbols[idx].accountId != gGetTradesContext.OldGLAccountId) {
+                        //        sOnclick = " onclick=\"DoWLUpdateOGLSymbols(1, '" + gGetTradesContext.OldGLAccountId + "','" + sSymbol + "','" + sTmp + "') \" ";
+                        //        sTmp = "<U>" + sTmp + "</U>";
+                        //    }
+                        //}
 
                         if (sTmp.indexOf("-") != -1) {
                             s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
@@ -9544,33 +9611,41 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
                                                                 GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeRS);
                                                             }
                                                             GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTrade);
-                                                        } else {
-                                                            let sThisSymbol = "";
-                                                            if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
-                                                                sThisSymbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                            }
+                                                        //} else {
+                                                        //    let sThisSymbol = "";
+                                                        //    if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                        //        sThisSymbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                        //    }
 
-                                                            let sConfirmMsg = "";
-                                                            sConfirmMsg = "Warning!! Possible split transaction for (" + sThisSymbol + ") missing necessary subtype. Click Ok to continue this update, or click Cancel to cancel. ";
-                                                            if (!AreYouSure(sConfirmMsg)) {
-                                                                gbDoingCreateOrders = false;
-                                                                GetTradesCanceled();
-                                                                return;
-                                                            }
+                                                        //    if (sThisSymbol != "") {
+                                                        //        if (sSymbolsToLookup.indexOf("," + sThisSymbol.toUpperCase() + ",") != -1) {
+                                                        //            let sConfirmMsg = "";
+                                                        //            sConfirmMsg = "Warning!! Possible split transaction for (" + sThisSymbol + ") missing necessary subtype. Click Ok to continue this update, or click Cancel to cancel. ";
+                                                        //            if (!AreYouSure(sConfirmMsg)) {
+                                                        //                gbDoingCreateOrders = false;
+                                                        //                GetTradesCanceled();
+                                                        //                return;
+                                                        //            }
+                                                        //        }
+                                                        //    }
                                                         }
-                                                    } else {
-                                                        let sThisSymbol = "";
-                                                        if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
-                                                            sThisSymbol = oCM[idxTrade].transactionItem.instrument.symbol;
-                                                        }
+                                                    //} else {
+                                                    //    let sThisSymbol = "";
+                                                    //    if (!isUndefined(oCM[idxTrade].transactionItem.instrument.symbol)) {
+                                                    //        sThisSymbol = oCM[idxTrade].transactionItem.instrument.symbol;
+                                                    //    }
 
-                                                        let sConfirmMsg = "";
-                                                        sConfirmMsg = "Warning!! Possible split transaction for (" + sThisSymbol + ") missing necessary subtype. Click Ok to continue this update, or click Cancel to cancel. ";
-                                                        if (!AreYouSure(sConfirmMsg)) {
-                                                            gbDoingCreateOrders = false;
-                                                            GetTradesCanceled();
-                                                            return;
-                                                        }
+                                                    //    if (sThisSymbol != "") {
+                                                    //        if (sSymbolsToLookup.indexOf("," + sThisSymbol.toUpperCase() + ",") != -1) {
+                                                    //            let sConfirmMsg = "";
+                                                    //            sConfirmMsg = "Warning!! Possible split transaction for (" + sThisSymbol + ") missing necessary subtype. Click Ok to continue this update, or click Cancel to cancel. ";
+                                                    //            if (!AreYouSure(sConfirmMsg)) {
+                                                    //                gbDoingCreateOrders = false;
+                                                    //                GetTradesCanceled();
+                                                    //                return;
+                                                    //            }
+                                                    //        }
+                                                    //    }
                                                     }
                                                 }
                                             }
@@ -9744,7 +9819,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
             if (gSymbolsAuto.length > 0) {
                 //GetCurrentPricesAuto();
                 gSymbolsAuto.sort(sortBySymbol);
-                window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ")", 10);
+                window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ", " + iEndDateIn + ")", 10);
             } else {
                 if (sSymbolsToLookupTmp.split(",").length == 1) {
                     alert("No trades found for the selected symbol.");
@@ -12820,7 +12895,7 @@ function GetWatchlists(bDoingReset) {
                         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                             if (oWL.accountId == gAccounts[idxAccounts].accountId) {
                                 oWL.accountName = gAccounts[idxAccounts].accountName;
-                                if (gAccounts[idxAccounts].CBliquidationValue < dAccountValueLimit) {
+                                if (gAccounts[idxAccounts].CBliquidationValue < gdAccountMinimumLiquidationValue) {
                                     bOKToUse = false;
                                 }
                                 break;
@@ -12909,7 +12984,7 @@ function GetWatchlists(bDoingReset) {
                         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                             if (oWL.accountId == gAccounts[idxAccounts].accountId) {
                                 oWL.accountName = gAccounts[idxAccounts].accountName;
-                                if (gAccounts[idxAccounts].CBliquidationValue < dAccountValueLimit) {
+                                if (gAccounts[idxAccounts].CBliquidationValue < gdAccountMinimumLiquidationValue) {
                                     bOKToUse = false;
                                 }
                                 break;
@@ -12960,7 +13035,7 @@ function GetWatchlists(bDoingReset) {
             for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                 oAccount = new Account();
                 oAccount = gAccounts[idxAccounts];
-                if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                if (gAccounts[idxAccounts].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
                     if (gWatchlists.length > 0) {
                         for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                             if ((gWatchlists[idxWL].accountId == oAccount.accountId) &&
@@ -13000,7 +13075,7 @@ function GetWatchlists(bDoingReset) {
                 let bAddWLForThisAccount = false;
                 oAccount = new Account();
                 oAccount = gAccounts[idxAccounts];
-                if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                if (gAccounts[idxAccounts].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
                     if (oAccount.positions.length > 0) {
                         for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
                             let oPosition = new Position();
@@ -13071,7 +13146,7 @@ function GetWatchlists(bDoingReset) {
         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
             oAccount = new Account();
             oAccount = gAccounts[idxAccounts];
-            if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+            if (gAccounts[idxAccounts].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
                 if (gWatchlists.length > 0) {
                     let sSymbols = [];
                     for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
@@ -13185,7 +13260,7 @@ function GetWatchlists(bDoingReset) {
                 for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                     oAccount = new Account();
                     oAccount = gAccounts[idxAccounts];
-                    if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                    if (gAccounts[idxAccounts].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
                         let oWL = new WLWatchList();
                         oWL.accountId = oAccount.accountId;
                         oWL.accountName = oAccount.accountName;
@@ -13252,7 +13327,7 @@ function GetWatchlists(bDoingReset) {
                 for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
                     oAccount = new Account();
                     oAccount = gAccounts[idxAccounts];
-                    if (gAccounts[idxAccounts].CBliquidationValue >= dAccountValueLimit) {
+                    if (gAccounts[idxAccounts].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
                         let oWL = new WLWatchList();
                         oWL.accountId = oAccount.accountId;
                         oWL.accountName = oAccount.accountName;
