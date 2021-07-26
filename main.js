@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.0 2021-07-24 20:30"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.0 2021-07-25 18:11"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -7769,7 +7769,8 @@ function GetTDData(bFirstTime) {
     if (gAccounts.length > 1) { //if more than one account then allow selecting an account to use to setup Old GL symbols
         if ((document.getElementById("spanOldGLAccount") != null) && (!isUndefined(document.getElementById("spanOldGLAccount")))) {
             if (document.getElementById("spanOldGLAccount").style.display == "none") {
-                let sSelect = "<br>Account name to use as a filter during Get Trades:" + "<select id=\"optOldGLAccount\">";
+                //let sSelect = "<br>Account name to use as a filter during Get Trades:" + "<select id=\"optOldGLAccount\">";
+                let sSelect = "<br>Get Trades from the following account ONLY:&nbsp;" + "<select id=\"optOldGLAccount\">";
                 let bFirstLine = true;
                 for (let idx = 0; idx < gAccounts.length; idx++) {
                     if (gAccounts[idx].CBliquidationValue >= gdAccountMinimumLiquidationValue) {
@@ -11149,6 +11150,8 @@ function GetWatchlistPrices() {
                     "DivDate": "<b><I><U>Div&nbsp;Date</U></I></b>",
                     "PE": "<b><I>P/E</I></b>",
                     "Price": "<b><I><U>Price</U></I></b>",
+                    "Bid": "<b><I>Bid</I></b>",
+                    "Ask": "<b><I>Ask</I></b>",
                     "ChgPercent": "<b><I><U>Chg(%)</U></I></b>",
                     "ChgDollar": "<b><I><U>Chg($)</U></I></b>",
                     "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I></b>",
@@ -11169,6 +11172,8 @@ function GetWatchlistPrices() {
                     "DivDate": "<b><I><U>Div&nbsp;Date</U></I>xxx</b>",
                     "PE": "<b><I><U>P/E</U></I>xxx</b>",
                     "Price": "<b><I><U>Price</U></I>xxx</b>",
+                    "Bid": "<b><I><U>Bid</U></I>xxx</b>",
+                    "Ask": "<b><I><U>Ask</U></I>xxx</b>",
                     "ChgPercent": "<b><I><U>Chg(%)</U></I>xxx</b>",
                     "ChgDollar": "<b><I><U>Chg($)</U></I>xxx</b>",
                     "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I>xxx</b>",
@@ -11426,18 +11431,22 @@ function GetWatchlistPrices() {
 
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivPercent);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivPercent + "</td>";
-                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivDollar);
-                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDollar + "</td>";
+                        //sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivDollar);
+                        //sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDollar + "</td>";
 
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Amt);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Amt + "</td>";
 
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DivDate);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.DivDate + "</td>";
-                        sonClickChangeOrder = "";
-                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.PE + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Qty + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Price + "</td>";
+                        sonClickChangeOrder = "";
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Bid + "</td>";
+                        sonClickChangeOrder = "";
+                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Ask + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgPercent);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.ChgPercent + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgDollar);
@@ -11448,8 +11457,6 @@ function GetWatchlistPrices() {
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainDollar + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainPercent);
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.GainPercent + "</td>";
-                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
-                        sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.Qty + "</td>";
                         sonClickChangeOrder = "";
                         sThisTable = sThisTable + "<td " + sonClickChangeOrder + " style=\"text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleDividend.CostPerShare + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.MktValue);
@@ -11625,14 +11632,14 @@ function GetWatchlistPrices() {
                                         goWLDisplayed[sThisId + sSymbol].divYield = oWLItemDetail.divYield;
                                     }
 
-                                    //Div Amount
-                                    sTmp = "&nbsp;&nbsp;" + FormatDecimalNumber(oWLItemDetail.divAmount, 5, 2, "");
-                                    if (goWLDisplayed[sThisId + sSymbol].divAmount == oWLItemDetail.divAmount) {
-                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                    } else {
-                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                        goWLDisplayed[sThisId + sSymbol].divAmount = oWLItemDetail.divAmount;
-                                    }
+                                    ////Div Amount
+                                    //sTmp = "&nbsp;&nbsp;" + FormatDecimalNumber(oWLItemDetail.divAmount, 5, 2, "");
+                                    //if (goWLDisplayed[sThisId + sSymbol].divAmount == oWLItemDetail.divAmount) {
+                                    //    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                    //} else {
+                                    //    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                    //    goWLDisplayed[sThisId + sSymbol].divAmount = oWLItemDetail.divAmount;
+                                    //}
 
                                     //Amt
                                     sTmp = FormatDecimalNumber((oWLItemDetail.divAmount * oWLItemDetail.shares), 5, 2, "");
@@ -11676,26 +11683,26 @@ function GetWatchlistPrices() {
                                         goWLDisplayed[sThisId + sSymbol].divDate = oWLItemDetail.divDate;
                                     }
 
-                                    //P/E
-                                    sTmp = FormatDecimalNumber(oWLItemDetail.peRatio, 5, 0, "");
-                                    if (goWLDisplayed[sThisId + sSymbol].peRatio == oWLItemDetail.peRatio) {
-                                        if (parseFloat(sTmp) < 0.0) {
-                                            sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                        } else if (parseFloat(sTmp) > 0.0) {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                        } else {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                                        }
-                                    } else {
-                                        if (parseFloat(sTmp) < 0.0) {
-                                            sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                        } else if (parseFloat(sTmp) > 0.0) {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                        } else {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                                        }
-                                        goWLDisplayed[sThisId + sSymbol].peRatio = oWLItemDetail.peRatio;
-                                    }
+                                //    //P/E
+                                //    sTmp = FormatDecimalNumber(oWLItemDetail.peRatio, 5, 0, "");
+                                //    if (goWLDisplayed[sThisId + sSymbol].peRatio == oWLItemDetail.peRatio) {
+                                //        if (parseFloat(sTmp) < 0.0) {
+                                //            sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                //        } else if (parseFloat(sTmp) > 0.0) {
+                                //            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                //        } else {
+                                //            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                //        }
+                                //    } else {
+                                //        if (parseFloat(sTmp) < 0.0) {
+                                //            sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                //        } else if (parseFloat(sTmp) > 0.0) {
+                                //            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                //        } else {
+                                //            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                //        }
+                                //        goWLDisplayed[sThisId + sSymbol].peRatio = oWLItemDetail.peRatio;
+                                //    }
                                 }
 
                                 if (!bDoingDividendWL) {
@@ -11727,28 +11734,25 @@ function GetWatchlistPrices() {
                                 sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
                                 dQty = parseFloat(sTmp);
 
-                                if (!bDoingDividendWL) {
-                                    if (dQty == 0.0) {
-                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                if (dQty == 0.0) {
+                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
+                                } else {
+                                    if (oWLItemDetail.shares < 0.0) {
+                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                         goWLDisplayed[sThisId + sSymbol].shares = dQty;
                                     } else {
-                                        if (oWLItemDetail.shares < 0.0) {
+                                        if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
+                                            if (oWLItemDetail.shares < 0.0) {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            }
+                                        } else {
                                             sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                             goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                                        } else {
-                                            if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
-                                                if (oWLItemDetail.shares < 0.0) {
-                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                                } else {
-                                                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                                }
-                                            } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                                goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                                            }
                                         }
                                     }
-
                                 }
 
                                 sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketLastPrice, 5, 2, "");
@@ -11757,6 +11761,24 @@ function GetWatchlistPrices() {
                                 } else {
                                     sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
                                     goWLDisplayed[sThisId + sSymbol].regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
+                                }
+
+                                if (bDoingDividendWL) {
+                                    sTmp = FormatDecimalNumber(oWLItemDetail.bidPrice, 5, 2, "");
+                                    if (goWLDisplayed[sThisId + sSymbol].bidPrice == oWLItemDetail.bidPrice) {
+                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                    } else {
+                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                        goWLDisplayed[sThisId + sSymbol].bidPrice = oWLItemDetail.bidPrice;
+                                    }
+
+                                    sTmp = FormatDecimalNumber(oWLItemDetail.askPrice, 5, 2, "");
+                                    if (goWLDisplayed[sThisId + sSymbol].askPrice == oWLItemDetail.askPrice) {
+                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                    } else {
+                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                        goWLDisplayed[sThisId + sSymbol].askPrice = oWLItemDetail.askPrice;
+                                    }
                                 }
 
                                 sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketPercentChangeInDouble, 5, 2, "") + "%";
@@ -11904,26 +11926,26 @@ function GetWatchlistPrices() {
                                     goWLDisplayed[sThisId + sSymbol].gainPercent = oWLItemDetail.gainPercent;
                                 }
 
-                                if (bDoingDividendWL) {
-                                    sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
-                                    dQty = parseFloat(sTmp);
-                                    if (dQty == 0.0) {
-                                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                                        goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                                    } else {
-                                        if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
-                                            if (oWLItemDetail.shares < 0.0) {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                            } else {
-                                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                                            }
-                                        } else {
-                                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                                            goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                                        }
-                                    }
+                                //if (bDoingDividendWL) {
+                                //    sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
+                                //    dQty = parseFloat(sTmp);
+                                //    if (dQty == 0.0) {
+                                //        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                //        goWLDisplayed[sThisId + sSymbol].shares = dQty;
+                                //    } else {
+                                //        if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
+                                //            if (oWLItemDetail.shares < 0.0) {
+                                //                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                //            } else {
+                                //                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                //            }
+                                //        } else {
+                                //            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                //            goWLDisplayed[sThisId + sSymbol].shares = dQty;
+                                //        }
+                                //    }
 
-                                }
+                                //}
 
                                 //Cost
                                 sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
@@ -12091,589 +12113,6 @@ function GetWatchlistPrices() {
                                 //    iLineCnt++;
                             }
                         }
-
-
-
-                        //if (sSymbolsThisWL.indexOf("," + sSymbol + ",") != -1) {
-                        //    for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                        //        oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-                        //        dLastPrice = oWLItemDetail.lastPrice;
-                        //        let bOkToShowThisDetail = false;
-                        //        if ((gWatchlists[idxWLMain].accountId == oWLItemDetail.accountId) ||
-                        //            (oWLItemDetail.accountId == "")) {
-                        //            bOkToShowThisDetail = true;
-                        //        }
-
-                        //        if (bOkToShowThisDetail) {
-
-                        //            iLineCnt++;
-                        //            //let sCurrentPurchasedDate = "";
-                        //            //let dCurrentAveragePrice = 0.0;
-                        //            //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                        //            //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                        //            //        sCurrentPurchasedDate = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
-                        //            //        dCurrentAveragePrice = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-                        //            //        break;
-                        //            //    }
-                        //            //}
-
-                        //            let sChecked = "";
-                        //            let sThisidxWLItem = "";
-                        //            let idxThisSymbol = sSymbolsSelectedForOrderThisWL.indexOf("|" + sSymbol + ",");
-                        //            let idxThisSymbolidxWLItem = sSymbolsSelectedForOrderThisWL.substring(idxThisSymbol + 1, sSymbolsSelectedForOrderThisWL.length - 1).indexOf(",");
-                        //            let idxThisSymbolselected = sSymbolsSelectedForOrderThisWL.substring(idxThisSymbolidxWLItem + idxThisSymbol + 2, sSymbolsSelectedForOrderThisWL.length - 1).indexOf(",");
-                        //            sThisidxWLItem = sSymbolsSelectedForOrderThisWL.substr(idxThisSymbol + idxThisSymbolidxWLItem + 2, idxThisSymbolselected);
-
-
-                        //            if (sSymbolsSelectedForOrderThisWL.substr(idxThisSymbol + idxThisSymbolidxWLItem + idxThisSymbolselected + 3, 4).toUpperCase() == "TRUE") {
-                        //                sChecked = "checked";
-                        //            } else {
-                        //                bEverythingIsChecked = false;
-                        //            }
-
-                        //            let sThisTRId = "TR" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
-                        //            if (sChecked == "checked") {
-                        //                sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableSelectedRowBackgroundColor + ";\">";
-                        //            } else {
-                        //                if ((iLineCnt % 2) == 0) {
-                        //                    sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableEvenRowBackgroundColor + ";\">";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableOddRowBackgroundColor + ";\">";
-                        //                }
-                        //            }
-
-                        //            sTmp = "";
-                        //            //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                        //            //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                        //            //        sTmp = "&nbsp;(" + gWatchlists[idxWLMain].WLItems[idxTmp].sequenceId + ")";
-                        //            //        break;
-                        //            //    }
-                        //            //}
-
-                        //            let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
-
-                        //            if (oWLItemDetail.shares < 0.0) {
-                        //                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
-                        //                    "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
-                        //                    "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-                        //                    "<b>" + sSymbol + "</b>" + sTmp + "</span></td>";
-                        //            } else {
-                        //                sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
-                        //                    "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
-                        //                    "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-                        //                    sSymbol + sTmp + "</span></td>";
-                        //            }
-
-                        //            if ((isUndefined(goWLDisplayed)) || (isUndefined(goWLDisplayed[sThisId + sSymbol]))) {
-                        //                let oT = {
-                        //                    "symbol": sSymbol,
-                        //                    "assetType": oWLDisplayed.assetType,
-                        //                    "accountId": sLastWLAccountId,
-                        //                    "accountName": "",
-                        //                    "purchasedDate": oWLItemDetail.purchasedDate,
-                        //                    "askPrice": oWLItemDetail.askPrice,
-                        //                    "bidPrice": oWLItemDetail.bidPrice,
-                        //                    "highPrice": oWLItemDetail.highPrice,
-                        //                    "lowPrice": oWLItemDetail.lowPrice,
-                        //                    "lastPrice": oWLItemDetail.lastPrice,
-                        //                    "netChange": oWLItemDetail.netChange,
-                        //                    "netPercentChangeInDouble": oWLItemDetail.netPercentChangeInDouble,
-                        //                    "regularMarketLastPrice": oWLItemDetail.regularMarketLastPrice,
-                        //                    "regularMarketNetChange": oWLItemDetail.regularMarketNetChange,
-                        //                    "regularMarketPercentChangeInDouble": oWLItemDetail.regularMarketPercentChangeInDouble,
-                        //                    "shares": oWLItemDetail.shares,
-                        //                    "dayGain": oWLItemDetail.dayGain,
-                        //                    "costPerShare": oWLItemDetail.costPerShare,
-                        //                    "marketValue": oWLItemDetail.marketValue,
-                        //                    "gain": oWLItemDetail.gain,
-                        //                    "gainPercent": oWLItemDetail.gainPercent,
-                        //                    "averagePrice": oWLItemDetail.averagePrice,
-                        //                    "peRatio": oWLItemDetail.peRatio,
-                        //                    "divAmount": oWLItemDetail.divAmount,
-                        //                    "divDate": oWLItemDetail.divDate,
-                        //                    "divYield": oWLItemDetail.divYield
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol] = oT;
-                        //            }
-
-                        //            if (bDoingDividendWL) {
-                        //                //Div Yield
-                        //                sTmp = FormatDecimalNumber(oWLItemDetail.divYield, 5, 2, "") + "%";
-                        //                if (goWLDisplayed[sThisId + sSymbol].divYield == oWLItemDetail.divYield) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].divYield = oWLItemDetail.divYield;
-                        //                }
-
-                        //                //Div Amount
-                        //                sTmp = "&nbsp;&nbsp;" + FormatDecimalNumber(oWLItemDetail.divAmount, 5, 2, "");
-                        //                if (goWLDisplayed[sThisId + sSymbol].divAmount == oWLItemDetail.divAmount) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].divAmount = oWLItemDetail.divAmount;
-                        //                }
-
-                        //                //Amt
-                        //                sTmp = FormatDecimalNumber((oWLItemDetail.divAmount * oWLItemDetail.shares), 5, 2, "");
-                        //                let dAmt = parseFloat(sTmp);
-                        //                dTotalAmt = dTotalAmt + dAmt;
-                        //                if (dAmt == 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                }
-
-                        //                //Div Date
-                        //                sTmp = oWLItemDetail.divDate;
-                        //                let sTodayTD = FormatCurrentDateForTD()
-                        //                let sDivDate = sTmp.split(' ')[0];
-                        //                let dtToday = new Date(sTodayTD);
-                        //                let dtDiv = new Date(sDivDate);
-                        //                let sDivDateColor = "";
-                        //                if (dtDiv < dtToday) {
-                        //                    dtDiv.setDate(dtDiv.getDate() + 90);
-                        //                }
-                        //                let iDiffDays = DateDiff.inDays(dtToday, dtDiv);
-                        //                if (iDiffDays == 0) {
-                        //                    sDivDateColor = "font-weight: bold;color:white; background-color:" + gsNegativeColor + ";";
-                        //                } else if (iDiffDays == 1) {
-                        //                    sDivDateColor = "font-weight: bold;color:white; background-color:" + gsNegativeColor + ";";
-                        //                } else if ((iDiffDays >= 2) && (iDiffDays <= 5)) {
-                        //                    sDivDateColor = "font-weight: bold;color:white; background-color:blue;";
-                        //                } else if ((iDiffDays > 0) && (iDiffDays < 30)) {
-                        //                    sDivDateColor = "font-weight: bold;color:white; background-color:green;";
-                        //                }
-
-                        //                if (sTmp != "") {
-                        //                    sTmp = "&nbsp;&nbsp;&nbsp;&nbsp;" + sTmp.split(" ")[0];
-                        //                }
-                        //                if (goWLDisplayed[sThisId + sSymbol].divDate == oWLItemDetail.divDate) {
-                        //                    sThisTable = sThisTable + "<td style=\"" + sDivDateColor + "text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"" + sDivDateColor + "text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].divDate = oWLItemDetail.divDate;
-                        //                }
-
-                        //                //P/E
-                        //                sTmp = FormatDecimalNumber(oWLItemDetail.peRatio, 5, 0, "");
-                        //                if (goWLDisplayed[sThisId + sSymbol].peRatio == oWLItemDetail.peRatio) {
-                        //                    if (parseFloat(sTmp) < 0.0) {
-                        //                        sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                    } else if (parseFloat(sTmp) > 0.0) {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    }
-                        //                } else {
-                        //                    if (parseFloat(sTmp) < 0.0) {
-                        //                        sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    } else if (parseFloat(sTmp) > 0.0) {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    }
-                        //                    goWLDisplayed[sThisId + sSymbol].peRatio = oWLItemDetail.peRatio;
-                        //                }
-                        //            }
-
-                        //            if (!bDoingDividendWL) {
-                        //                //Acquired
-                        //                sTmp = "";
-                        //                for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                        //                    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                        //                        sTmp = gWatchlists[idxWLMain].WLItems[idxTmp].purchasedDate;
-                        //                        break;
-                        //                    }
-                        //                }
-                        //                if (goWLDisplayed[sThisId + sSymbol].purchasedDate == sTmp) {
-                        //                    if (sTmp == "") {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + sTmp + "</td>";
-                        //                    }
-                        //                } else {
-                        //                    if (sTmp == "") {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sAcquiredSpaces + sTmp + "</b></td>";
-                        //                    }
-                        //                    goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
-                        //                }
-                        //            }
-
-                        //            //Qty
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
-                        //            dQty = parseFloat(sTmp);
-
-                        //            if (!bDoingDividendWL) {
-                        //                if (dQty == 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                        //                } else {
-                        //                    if (oWLItemDetail.shares < 0.0) {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                        goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                        //                    } else {
-                        //                        if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
-                        //                            if (oWLItemDetail.shares < 0.0) {
-                        //                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                            } else {
-                        //                                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                            }
-                        //                        } else {
-                        //                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                            goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                        //                        }
-                        //                    }
-                        //                }
-
-                        //            }
-
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketLastPrice, 5, 2, "");
-                        //            if (goWLDisplayed[sThisId + sSymbol].regularMarketLastPrice == oWLItemDetail.regularMarketLastPrice) {
-                        //                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //            } else {
-                        //                sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                goWLDisplayed[sThisId + sSymbol].regularMarketLastPrice = oWLItemDetail.regularMarketLastPrice;
-                        //            }
-
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketPercentChangeInDouble, 5, 2, "") + "%";
-                        //            if (goWLDisplayed[sThisId + sSymbol].regularMarketPercentChangeInDouble == oWLItemDetail.regularMarketPercentChangeInDouble) {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //            } else {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol].regularMarketPercentChangeInDouble = oWLItemDetail.regularMarketPercentChangeInDouble;
-                        //            }
-
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.regularMarketNetChange, 5, 2, "");
-                        //            if (goWLDisplayed[sThisId + sSymbol].regularMarketNetChange == oWLItemDetail.regularMarketNetChange) {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //            } else {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol].regularMarketNetChange = oWLItemDetail.regularMarketNetChange;
-                        //            }
-
-                        //            if (!bDoingDividendWL) {
-                        //                sTmp = FormatDecimalNumber(oWLItemDetail.bidPrice, 5, 2, "");
-                        //                if (goWLDisplayed[sThisId + sSymbol].bidPrice == oWLItemDetail.bidPrice) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].bidPrice = oWLItemDetail.bidPrice;
-                        //                }
-
-                        //                sTmp = FormatDecimalNumber(oWLItemDetail.askPrice, 5, 2, "");
-                        //                if (goWLDisplayed[sThisId + sSymbol].askPrice == oWLItemDetail.askPrice) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].askPrice = oWLItemDetail.askPrice;
-                        //                }
-                        //            }
-
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.dayGain, 5, 2, "");
-                        //            dTotalDayGain = dTotalDayGain + parseFloat(sTmp);
-                        //            if (goWLDisplayed[sThisId + sSymbol].dayGain == oWLItemDetail.dayGain) {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsDownDay++;
-                        //                    }
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsUpDay++;
-                        //                    }
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //            } else {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsDownDay++;
-                        //                    }
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsUpDay++;
-                        //                    }
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol].dayGain = oWLItemDetail.dayGain;
-                        //            }
-
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.gain, 5, 2, "");
-                        //            if (goWLDisplayed[sThisId + sSymbol].gain == oWLItemDetail.gain) {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsDown++;
-                        //                    }
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsUp++;
-                        //                    }
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //            } else {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsDown++;
-                        //                    }
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                    if ((oWLItemDetail.shares > 0.0) || (oWLItemDetail.shares < 0.0)) {
-                        //                        iTotalSymbolsUp++;
-                        //                    }
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol].gain = oWLItemDetail.gain;
-                        //            }
-                        //            //dTotalGain = dTotalGain + parseFloat(sTmp);
-                        //            dTotalHoldingsGain = dTotalHoldingsGain + parseFloat(sTmp);
-
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.gainPercent, 5, 2, "") + "%";
-                        //            if (goWLDisplayed[sThisId + sSymbol].gainPercent == oWLItemDetail.gainPercent) {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //            } else {
-                        //                if (parseFloat(sTmp) < 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                } else if (parseFloat(sTmp) > 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol].gainPercent = oWLItemDetail.gainPercent;
-                        //            }
-
-                        //            if (bDoingDividendWL) {
-                        //                sTmp = FormatDecimalNumber(oWLItemDetail.shares, 5, 0, "");
-                        //                dQty = parseFloat(sTmp);
-                        //                if (dQty == 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                        //                } else {
-                        //                    if (goWLDisplayed[sThisId + sSymbol].shares == sTmp) {
-                        //                        if (oWLItemDetail.shares < 0.0) {
-                        //                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                        } else {
-                        //                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                        }
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                        goWLDisplayed[sThisId + sSymbol].shares = dQty;
-                        //                    }
-                        //                }
-
-                        //            }
-
-                        //            //Cost
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.costPerShare, 5, 2, "");
-                        //            dCost = parseFloat(sTmp);
-                        //            if (goWLDisplayed[sThisId + sSymbol].costPerShare == oWLItemDetail.costPerShare) {
-                        //                if (dCost == 0.0) {
-                        //                    if (dQty == 0.0) {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">???</td>";
-                        //                    }
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                }
-                        //            } else {
-                        //                if (dCost == 0.0) {
-                        //                    if (dQty == 0.0) {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>???</b></td>";
-                        //                    }
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol].costPerShare = oWLItemDetail.costPerShare;
-                        //            }
-                        //            dTotalCost = dTotalCost + (dCost * dQty);
-
-                        //            if (!bDoingDividendWL) {
-                        //                //G/L
-                        //                if (bDoingAccountWL) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                } else {
-                        //                    let sGLOnclick = "onclick=\"ShowAutoUpdateDates('" + gWatchlists[idxWLMain].accountId + "', '" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ", " + oWLItemDetail.averagePrice.toString() + ", " + dQty.toString() + ", " + dLastPrice.toString() + ") \" ";
-
-                        //                    let dTmpOrig = 0.0;
-                        //                    dTmpOrig = oWLItemDetail.averagePrice;
-                        //                    if (dQty > 0) {
-                        //                        dTmpOrig = dTmpOrig + (dQty * dLastPrice);
-                        //                    }
-
-                        //                    if (!isUndefined(gSymbolsGL[oWLItemDetail.accountId + sSymbol])) {
-                        //                        dTmpOrig = dTmpOrig + gSymbolsGL[oWLItemDetail.accountId + sSymbol].averagePrice;
-                        //                    }
-
-                        //                    //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                        //                    //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                        //                    //        dTmpOrig = gWatchlists[idxWLMain].WLItems[idxTmp].priceInfo.averagePrice;
-                        //                    //        break;
-                        //                    //    }
-                        //                    //}
-                        //                    sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-                        //                    let dTmp = parseFloat(sTmp);
-                        //                    dTotalGain = dTotalGain + dTmp;
-                        //                    if (dTmp == 0) {
-                        //                        sTmp = "";
-                        //                    }
-                        //                    if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
-                        //                        if (dTmp < 0.0) {
-                        //                            sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                            iTotalSymbolsDownRealized++;
-                        //                        } else if (dTmp > 0.0) {
-                        //                            sThisTable = sThisTable + "<td " + sGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                            iTotalSymbolsUpRealized++;
-                        //                        } else {
-                        //                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                        }
-                        //                    } else {
-                        //                        if (dTmp < 0.0) {
-                        //                            sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                            iTotalSymbolsDownRealized++;
-                        //                        } else if (dTmp > 0.0) {
-                        //                            sThisTable = sThisTable + "<td  " + sGLOnclick + "style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                            iTotalSymbolsUpRealized++;
-                        //                        } else {
-                        //                            sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                        }
-                        //                        goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
-                        //                    }
-
-                        //                }
-
-                        //            }
-
-                        //            //Mkt Value
-                        //            sTmp = FormatDecimalNumber(oWLItemDetail.marketValue, 5, 2, "");
-                        //            if (goWLDisplayed[sThisId + sSymbol].marketValue == oWLItemDetail.marketValue) {
-                        //                if (parseFloat(sTmp) == 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                }
-                        //            } else {
-                        //                if (parseFloat(sTmp) == 0.0) {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                } else {
-                        //                    sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                }
-                        //                goWLDisplayed[sThisId + sSymbol].marketValue = oWLItemDetail.marketValue;
-                        //            }
-
-                        //            if (bDoingDividendWL) {
-                        //                //G/L
-
-                        //                let sGLOnclick = "onclick=\"ShowAutoUpdateDates('" + gWatchlists[idxWLMain].accountId + "', '" + sSymbol + "', " + oWLItemDetail.GLUpdateStartDate.toString() + ", " + oWLItemDetail.GLUpdateDate.toString() + ", " + oWLItemDetail.averagePrice.toString() + ", " + dQty.toString() + ", " + dLastPrice.toString() + ") \" ";
-
-                        //                let dTmpOrig = 0.0;
-                        //                dTmpOrig = oWLItemDetail.averagePrice;
-                        //                if (dQty > 0) {
-                        //                    dTmpOrig = dTmpOrig + (dQty * dLastPrice);
-                        //                }
-
-                        //                if (!isUndefined(gSymbolsGL[oWLItemDetail.accountId + sSymbol])) {
-                        //                    dTmpOrig = dTmpOrig + gSymbolsGL[oWLItemDetail.accountId + sSymbol].averagePrice;
-                        //                }
-
-                        //                sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
-                        //                let dTmp = parseFloat(sTmp);
-                        //                dTotalGain = dTotalGain + dTmp;
-                        //                if (dTmp == 0) {
-                        //                    sTmp = "";
-                        //                }
-                        //                if (goWLDisplayed[sThisId + sSymbol].averagePrice == dTmpOrig) {
-                        //                    if (dTmp < 0.0) {
-                        //                        sThisTable = sThisTable + "<td " + sGLOnclick + " style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                        iTotalSymbolsDownRealized++;
-                        //                    } else if (dTmp > 0.0) {
-                        //                        sThisTable = sThisTable + "<td " + sGLOnclick + " style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
-                        //                        iTotalSymbolsUpRealized++;
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    }
-                        //                } else {
-                        //                    if (dTmp < 0.0) {
-                        //                        sThisTable = sThisTable + "<td " + sGLOnclick + " style=\"color:" + gsNegativeColor + ";text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                        iTotalSymbolsDownRealized++;
-                        //                    } else if (dTmp > 0.0) {
-                        //                        sThisTable = sThisTable + "<td " + sGLOnclick + " style=\"color:green;text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
-                        //                        iTotalSymbolsUpRealized++;
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
-                        //                    }
-                        //                    goWLDisplayed[sThisId + sSymbol].averagePrice = dTmpOrig;
-                        //                }
-
-                        //                //Acquired
-                        //                sTmp = oWLItemDetail.purchasedDate;
-                        //                if (goWLDisplayed[sThisId + sSymbol].purchasedDate == sTmp) {
-                        //                    if (sTmp == "") {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + sTmp + "</td>";
-                        //                    }
-                        //                } else {
-                        //                    if (sTmp == "") {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAcquiredSpaces + "&nbsp;</td>";
-                        //                    } else {
-                        //                        sThisTable = sThisTable + "<td style=\"text-align:" + sBodyTextAlign + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sAcquiredSpaces + sTmp + "</b></td>";
-                        //                    }
-                        //                    goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
-                        //                }
-                        //            }
-
-                        //            sThisTable = sThisTable + "</tr>";
-                        //            //    iLineCnt++;
-                        //        }
-                        //    }
-                        //}
-
                     }
                     if (sThisTable != "") {
                         let sPrecedingSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -15554,7 +14993,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    //debugger
+    debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
