@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.1 2021-07-28 22:46"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.1 2021-07-29 16:14"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -15294,6 +15294,16 @@ function PageLoad() {
     };
 
     let sTmp = ""
+    let soptMinLines = "<select id=\"optMinLines\">";
+    for (let idx = 10; idx < 41; idx++) {
+        if (idx == 10) {
+            soptMinLines = soptMinLines + "<option selected value=\"" + idx.toString() + "\">" + idx.toString() + "</option>";
+        } else {
+            soptMinLines = soptMinLines + "<option value=\"" + idx.toString() + "\">" + idx.toString() + "</option>";
+        }
+    }
+    soptMinLines = soptMinLines + "</select>";
+
     if (gbUsingCell) {
         document.getElementById("spanInfo").style.display = "inline";
         sTmp = "<table style=\"border-collapse:collapse; border: 0px solid black; width:400px;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
@@ -15331,8 +15341,7 @@ function PageLoad() {
             "<input type=\"button\" style=\"vertical-align:middle; border-radius:15px; visibility:visible;\" id=\"btnWLSelect\" name=\"btnWLSelect\" value=\"Select Watchlists\" onclick=\"SelectWatchlist()\">" +
             "&nbsp;" +
             "<input type=\"button\" style=\"vertical-align:middle; border-radius:15px;\" id=\"btnWLReset\" name=\"btnWLReset\" value=\"Reset Watchlists\" onclick=\"ResetWatchlist()\">" +
-            "&nbsp;Display Lines (10-40):&nbsp;" +
-            "<input type=\"text\" id=\"txtMinLines\" name=\"txtMinLines\" maxlength=\"2\" style=\"width:30px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\" value=\"30\">" +
+            "&nbsp;Display&nbsp;Lines:&nbsp;" + soptMinLines +
             "</td>" +
             "</tr>" +
             "</table>" + 
@@ -15365,9 +15374,9 @@ function PageLoad() {
             "<label for=\"chkIndexSmallBio\"> Small Bio</label>" + "</td>" +
             "<td><input type=\"checkbox\" id=\"chkIndexRussell2000\" name=\"chkIndexRussell2000\" value=\"\" onclick=\"chkIndexChanged(event)\">" +
             "<label for=\"chkIndexRussell2000\"> Russell 2K</label>" + "</td>" + 
-            "<td style=\"text-align:right;\">" + "Display Lines (10-40):" + "</td>" +
+            "<td style=\"text-align:right;\">" + "Display Lines:" + "</td>" +
             "<td>" +
-            "<input type=\"text\" id=\"txtMinLines\" name=\"txtMinLines\" maxlength=\"2\" style=\"width:30px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\" value=\"30\">" +
+            soptMinLines +
             "</td>" +
             "</tr>" +
             "<tr height =\"20\">" +
@@ -18199,27 +18208,27 @@ function ShowProgress(bStart, bStop) {
 }
 
 function SetLineCnt() {
-    if (!isUndefined(document.getElementById("txtMinLines"))) {
-        let sTmp = TrimLikeVB(document.getElementById("txtMinLines").value);
-        let iTmp = 30;
-        let bNeedChange = true;
-        if (sTmp == "") {
-            iTmp = 30;
-        } else {
-            iTmp = parseInt(sTmp);
-            if (iTmp == 0) {
-                iTmp = 30;
-            } else if (iTmp < 10) {
-                iTmp = 10;
-            } else if (iTmp > 40) {
-                iTmp = 40;
-            } else {
-                bNeedChange = false;
-            }
-        }
-        if (bNeedChange) {
-            document.getElementById("txtMinLines").value = iTmp.toString();
-        }
+    if (!isUndefined(document.getElementById("optMinLines"))) {
+        let sTmp = TrimLikeVB(document.getElementById("optMinLines").value);
+        let iTmp = parseInt(sTmp);
+        //let bNeedChange = true;
+        //if (sTmp == "") {
+        //    iTmp = 30;
+        //} else {
+        //    iTmp = parseInt(sTmp);
+        //    if (iTmp == 0) {
+        //        iTmp = 30;
+        //    } else if (iTmp < 10) {
+        //        iTmp = 10;
+        //    } else if (iTmp > 40) {
+        //        iTmp = 40;
+        //    } else {
+        //        bNeedChange = false;
+        //    }
+        //}
+        //if (bNeedChange) {
+        //    document.getElementById("txtMinLines").value = iTmp.toString();
+        //}
         giLineLimit = iTmp;
         gsTableHeightWithScrollbar = (giLineLimit * giLineHeight).toString() + "px";
         gsTableHeightOverflow = "height:" + (giLineLimit * giLineHeight).toString() + "px; overflow: auto; ";
