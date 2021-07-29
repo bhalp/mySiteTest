@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.1 2021-07-28 16:23"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.1 2021-07-28 22:46"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -8730,8 +8730,20 @@ function GetTrades(bFirstTime) {
             document.getElementById("detailTitle").style.width = "500px";
             document.getElementById("tblDetail").style.visibility = "hidden";
             gSymbols.sort(sortBySymbolAndAccountname);
-            document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
-            //                document.getElementById("nameTitle2").innerHTML = "<span style='color: red;'>*</span>&nbsp;=&nbsp;option";
+            if (gSymbols.length > 4) {
+//                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
+                document.getElementById("nameTitle").innerHTML = "Symbols" +
+                    "&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
+                    gGetTradesContext.sFilter;
+                document.getElementById("tblSymbols").style.height = "400px";
+                document.getElementById("tblSymbols").style.overflowY = "auto";
+                document.getElementById("tblSymbols").isMaximized = false;
+            } else {
+                document.getElementById("tblSymbols").style.height = "";
+                document.getElementById("tblSymbols").style.overflowY = "hidden";
+                document.getElementById("tblSymbols").isMaximized = true;
+                document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
+            }
             let sSymbolDisplay = "<table style=\"width:100%;border-width:0px;\">";
             let s = "";
             let sLastSymbol = "";
@@ -15275,7 +15287,12 @@ function PageLoad() {
         gsTDAPIKey = "";
     }
 //    gbUsingCell = true;
-    document.getElementById("TheBody").style.backgroundColor = gsBodyBackgroundColor;
+    let x = document.getElementById("TheBody");
+    x.style.backgroundColor = gsBodyBackgroundColor;
+    x.onmouseup = function () {
+        window.setTimeout("wlResetIsDownAllWatchlists()", 100);
+    };
+
     let sTmp = ""
     if (gbUsingCell) {
         document.getElementById("spanInfo").style.display = "inline";
@@ -19391,6 +19408,26 @@ function wlDoMaximizeRestore(sLastWLAccountId, watchlistId) {
     }
 }
 
+function wlDoMaximizeRestoreTblSymbols() {
+    let x = document.getElementById("tblSymbols");
+    if (!isUndefined(x)) {
+        if (isUndefined(x.isMaximized)) {
+            x.isMaximized = false;
+        } else {
+            x.isMaximized = !x.isMaximized;
+        }
+        if (x.isMaximized) {
+            document.getElementById("tblSymbols").style.height = "";
+            document.getElementById("tblSymbols").style.overflowY = "hidden";
+            document.getElementById("tblSymbolsMaxRestore").src = gsRestoreWindowImg;
+        } else {
+            document.getElementById("tblSymbols").style.height = "400px";
+            document.getElementById("tblSymbols").style.overflowY = "auto";
+            document.getElementById("tblSymbolsMaxRestore").src = gsMaximizeWindowImg;
+        }
+    }
+}
+
 function wlDoRemoveDiv(watchlistId, sLastWLAccountId) {
     let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
     if (idxWL != -1) {
@@ -19722,6 +19759,7 @@ function wlResetDragAllWatchlists() {
                 if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary) || (gWatchlists[idxWL].bSelectedOGL)) {
                     if (!isUndefined(document.getElementById(gWatchlists[idxWL].spanName))) {
                         let x = document.getElementById(gWatchlists[idxWL].spanName);
+                        x.isDown = false;
                         let sSpanId = gWatchlists[idxWL].spanName;
                         wlSetupDragDiv(gWatchlists[idxWL].spanName);
                         x.onclick = function () {
@@ -19730,6 +19768,21 @@ function wlResetDragAllWatchlists() {
                                 document.getElementById(sSpanId).style.zIndex = giZIndex.toString();
                             }
                         };
+                    }
+                }
+            }
+        }
+    }
+}
+
+function wlResetIsDownAllWatchlists() {
+    if (gWatchlists.length > 0) {
+        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+            if (gWatchlists[idxWL].spanName != "") {
+                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary) || (gWatchlists[idxWL].bSelectedOGL)) {
+                    if (!isUndefined(document.getElementById(gWatchlists[idxWL].spanName))) {
+                        let x = document.getElementById(gWatchlists[idxWL].spanName);
+                        x.isDown = false;
                     }
                 }
             }
