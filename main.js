@@ -463,7 +463,7 @@ var gsReplaceTableHeightOverflowTitle = "xxxxtableheight";
 
 
 const lengthsWL = {
-    WLWidth: "920px",
+    WLWidth: "930px",
     WLWidthDiv: "1120px",
     WLTrailingstopPercentWidth: "40px",
     WLColOpenLabelWidth: 80,
@@ -479,7 +479,7 @@ const lengthsWL = {
 var lengthsWLWLCol1Width = lengthsWL.WLColOpenLabelWidth + lengthsWL.WLColOpenEntryWidth + lengthsWL.WLColAcquiredDateEntryWidth + lengthsWL.WLColTitleWidth + lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth + 40;
 
 var gsFieldWidthsWL = {
-    "Symbol": "width:85px;",
+    "Symbol": "width:90px;",
     "Qty": "width:50px;",
     "Price": "width:60px;",
     "ChgDollar": "width:60px;",
