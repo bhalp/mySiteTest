@@ -479,7 +479,7 @@ const lengthsWL = {
 var lengthsWLWLCol1Width = lengthsWL.WLColOpenLabelWidth + lengthsWL.WLColOpenEntryWidth + lengthsWL.WLColAcquiredDateEntryWidth + lengthsWL.WLColTitleWidth + lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth + 40;
 
 var gsFieldWidthsWL = {
-    "Symbol": "width:80px;",
+    "Symbol": "width:85px;",
     "Qty": "width:50px;",
     "Price": "width:60px;",
     "ChgDollar": "width:60px;",
