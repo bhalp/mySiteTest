@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.1 2021-07-29 16:14"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.1 2021-07-29 23:43"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -425,7 +425,7 @@ function WLWatchList() {
     this.bSelectedWLSummary = false;
     this.bSelectedWLSummaryTemp = false;
     this.bShowAllAccountsForEachSymbol = false;
-    this.bShowMaximized = true;
+    this.bShowMaximized = false;
     this.sSortOrderFields = gsSortOrderFields.Symbol; //look at gsSortOrderFields
     this.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending
     this.spanName = "";
@@ -456,10 +456,18 @@ var gsRestoreWindowImg = "restore-window-19.png";
 var gsMaximizeWindowImg = "maximize-window-19.png";
 var gsTableHeightWithScrollbar = (giLineLimit * giLineHeight).toString() + "px";
 var gsTableHeightWithScrollbarTitle = giTitleHeight.toString() + "px";
-var gsTableHeightOverflow = "height:" + (giLineLimit * giLineHeight).toString() + "px; overflow: auto; ";
+var gsTableHeightOverflow = "height:" + (giLineLimit * giLineHeight).toString() + "px; overflow-y: scroll; ";
 var gsTableHeightOverflowTitle = "height:" + giTitleHeight.toString() + "px; overflow-y: scroll; ";
-var gsReplaceTableHeightOverflow = "xxxxtableheight";
-var gsReplaceTableHeightOverflowTitle = "xxxxtableheight";
+var gsReplaceTableHeightOverflow = "xxxxtableheightinside";
+var gsReplaceTableHeightOverflowTitle = "xxxxtableheighttitle";
+
+var gsReplaceTableHeightOverflowSymbolsLong = "xxxxtableheightlong";
+var gsReplaceTableHeightOverflowSymbolsShort = "xxxxtableheightshort";
+var gsReplaceImgSymbolsLong = "xxxxImgSymbolsLong";
+var gsReplaceImgSymbolsShort = "xxxxImgSymbolsShort";
+
+var gsImgSymbolsLong = "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"divSymbolsLongImg\" onclick=\"wlDoMaximizeRestoreTblSymbols('divSymbolsLong')\">";
+var gsImgSymbolsShort = "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"divSymbolsShortImg\" onclick=\"wlDoMaximizeRestoreTblSymbols('divSymbolsShort')\">";
 
 
 const lengthsWL = {
@@ -8730,21 +8738,26 @@ function GetTrades(bFirstTime) {
             document.getElementById("detailTitle").style.width = "500px";
             document.getElementById("tblDetail").style.visibility = "hidden";
             gSymbols.sort(sortBySymbolAndAccountname);
-            if (gSymbols.length > 4) {
-//                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
-                document.getElementById("nameTitle").innerHTML = "Symbols" +
-                    "&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
-                    gGetTradesContext.sFilter;
-                document.getElementById("tblSymbols").style.height = "400px";
-                document.getElementById("tblSymbols").style.overflowY = "auto";
-                document.getElementById("tblSymbols").isMaximized = false;
-            } else {
-                document.getElementById("tblSymbols").style.height = "";
-                document.getElementById("tblSymbols").style.overflowY = "hidden";
-                document.getElementById("tblSymbols").isMaximized = true;
-                document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
-            }
-            let sSymbolDisplay = "<table style=\"width:100%;border-width:0px;\">";
+//            if (gSymbols.length > 4) {
+////                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
+//                document.getElementById("nameTitle").innerHTML = "Symbols" +
+//                    "&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
+//                    gGetTradesContext.sFilter;
+//                document.getElementById("tblSymbols").style.height = "400px";
+//                document.getElementById("tblSymbols").style.overflowY = "auto";
+//                document.getElementById("tblSymbols").isMaximized = false;
+//            } else {
+//                document.getElementById("tblSymbols").style.height = "";
+//                document.getElementById("tblSymbols").style.overflowY = "hidden";
+//                document.getElementById("tblSymbols").isMaximized = true;
+//                document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
+//            }
+
+            document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
+
+
+            //let sSymbolDisplay = "<table style=\"width:100%;border-width:0px;\">";
+            let sSymbolDisplay = "";
             let s = "";
             let sLastSymbol = "";
             let sSymbol = "";
@@ -8775,15 +8788,26 @@ function GetTrades(bFirstTime) {
             for (let idxLongShort = 0; idxLongShort < 2; idxLongShort++) {
                 sLastSymbol = "";
                 s = "";
-                iTotalLongShortSymbols = 0;
                 if (idxLongShort == 0) {
-                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"6\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt; height: 30px; width: 100 %; vertical - align: middle; border - width: 0px; border - style: solid; border - spacing: 1px; border - color: White\"><b>Long Symbols</b></td></tr>";
+                    sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
+                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"6\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt;height:30px;width:100%;vertical-align:middle;border-width:0px;border-style: solid;border-spacing:1px;border-color: White\"><b>Long Symbols</b>&nbsp;&nbsp;" + gsReplaceImgSymbolsLong + "</td></tr>";
+                    sSymbolDisplay = sSymbolDisplay + "</table>"
+                    sSymbolDisplay = sSymbolDisplay + "<div id =\"divSymbolsLong\" name=\"divSymbolsLong\" style=\"" + gsReplaceTableHeightOverflowSymbolsLong + "\">";
+                    sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
+                    iTotalLongShortSymbols = 0;
                     bDoingLong = true;
                 } else {
                     dTotalLongShort = 0.0;
                     dTotalLongShortFees = 0.0;
                     bNeedTotalLongShort = false;
-                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"6\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt; height:30px; width:100%; vertical-align:middle;border-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>Short Symbols</b></td></tr>";
+                    gsReplaceTableHeightOverflow
+                    sSymbolDisplay = sSymbolDisplay + "</table></div>";
+                    sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
+                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"6\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt;height:30px;width:100%;vertical-align:middle;border-width:0px;border-style:solid;border-spacing:1px;border-color:White\"><b>Short Symbols</b>&nbsp;&nbsp;" + gsReplaceImgSymbolsShort + "</td></tr>";
+                    sSymbolDisplay = sSymbolDisplay + "</table>"
+                    sSymbolDisplay = sSymbolDisplay + "<div id =\"divSymbolsShort\" name=\"divSymbolsShort\" style=\"" + gsReplaceTableHeightOverflowSymbolsShort + "\">";
+                    sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
+                    iTotalLongShortSymbols = 0;
                     bDoingLong = false;
                 }
                 for (let idx = 0; idx < gSymbols.length; idx++) {
@@ -9120,9 +9144,9 @@ function GetTrades(bFirstTime) {
                             dTotalLongShort = dTotalLongShort + ((-1 * dTotalBuy) + dTotalSell + (dTotalShares * dCurrentPrice));
                         }
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";width:15%;text-align:" + sBodyTextAlign + "; vertical - align: top; border - width: 0px; \">" + sTmp + "</td>";
+                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";width:15%;text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px; \">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorGain + ";width:15%;text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         }
 
                         s = s + "</tr>";
@@ -9131,26 +9155,45 @@ function GetTrades(bFirstTime) {
                     }
                 }
                 if (bNeedTotalLongShort) {
-                    s = "<tr style=\"background-color:" + totalBackgroundColor + "; \">";
+                    s = "</table></div><div><table style=\"border-collapse:collapse; border:0px solid black;width:100%;border-width:0px;\"><tr style=\"background-color:darkgray; \">";
 
                     if (bDoingLong) {
                         s = s + "<td colspan=\"5\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Total Long --- Total Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
+                        if (iTotalLongShortSymbols > 3) {
+                            sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsLong, gsImgSymbolsLong);
+                            sSymbolDisplay = sSymbolDisplay.replace(gsReplaceTableHeightOverflowSymbolsLong, "height:400px;overflow-Y:auto;");
+                        } else {
+                            sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsLong, "");
+
+                        }
                     } else {
                         s = s + "<td colspan=\"5\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Total Short --- Total Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I></td > ";
+                        if (iTotalLongShortSymbols > 3) {
+                            sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsShort, gsImgSymbolsShort);
+                            sSymbolDisplay = sSymbolDisplay.replace(gsReplaceTableHeightOverflowSymbolsShort, "height:400px;overflow-Y:auto;");
+                        } else {
+                            sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsShort, "");
+                        }
                     }
                     sTmp = FormatDecimalNumber(dTotalLongShort, 3, 2, "");
                     if (sTmp.indexOf("-") != -1) {
-                        s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\"><b>" + sTmp + "</b></td>";
                     } else {
-                        s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorGain + ";text-align:right;vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"color: " + sTotalsColorGain + ";text-align:right;vertical-align:top;border-width:0px;\"><b>" + sTmp + "</b></td>";
                     }
 
                     s = s + "</tr>";
                     sSymbolDisplay = sSymbolDisplay + s;
+                } else {
+                    if (bDoingLong) {
+                        sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsLong, "");
+                    } else {
+                        sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsShort, "");
+                    }
                 }
 
             }
-            sSymbolDisplay = sSymbolDisplay + "</table>";
+            sSymbolDisplay = sSymbolDisplay + "</table></div>";
             document.getElementById("name").innerHTML = sSymbolDisplay;
 
         } else {
@@ -10928,10 +10971,10 @@ function GetWatchlistOGL() {
                     } else {
                         if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWLMain].bShowMaximized)) {
                             document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
-                            document.getElementById("divtableInside" + sThisId).style.overflow = "auto";
+                            document.getElementById("divtableInside" + sThisId).style.overflowY = "auto";
                             document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
                             document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
-                            document.getElementById("divtableTitle" + sThisId).style.overflow = "scrollY";
+                            document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
                         } else {
                             document.getElementById("divtableInside" + sThisId).style.height = "";
                             document.getElementById("divtableTitle" + sThisId).style.overflowY = "hidden";
@@ -12419,9 +12462,9 @@ function GetWatchlistPrices() {
                         } else {
                             if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWLMain].bShowMaximized)) {
                                 document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
-                                document.getElementById("divtableInside" + sThisId).style.overflow = "auto";
+                                document.getElementById("divtableInside" + sThisId).style.overflowY = "scroll";
                                 document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
-                                document.getElementById("divtableTitle" + sThisId).style.overflow = "scrollY";
+                                document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
                                 document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
                             } else {
                                 document.getElementById("divtableInside" + sThisId).style.height = "";
@@ -19409,7 +19452,7 @@ function wlDoMaximizeRestore(sLastWLAccountId, watchlistId) {
             document.getElementById("spanMaxRestore" + sThisId).src = gsRestoreWindowImg;
         } else {
             document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
-            document.getElementById("divtableInside" + sThisId).style.overflow = "auto";
+            document.getElementById("divtableInside" + sThisId).style.overflowY = "scroll";
             document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
             document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
             document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
@@ -19417,22 +19460,24 @@ function wlDoMaximizeRestore(sLastWLAccountId, watchlistId) {
     }
 }
 
-function wlDoMaximizeRestoreTblSymbols() {
-    let x = document.getElementById("tblSymbols");
+function wlDoMaximizeRestoreTblSymbols(sDivId) {
+    let x = document.getElementById(sDivId);
     if (!isUndefined(x)) {
-        if (isUndefined(x.isMaximized)) {
-            x.isMaximized = false;
-        } else {
-            x.isMaximized = !x.isMaximized;
-        }
-        if (x.isMaximized) {
-            document.getElementById("tblSymbols").style.height = "";
-            document.getElementById("tblSymbols").style.overflowY = "hidden";
-            document.getElementById("tblSymbolsMaxRestore").src = gsRestoreWindowImg;
-        } else {
-            document.getElementById("tblSymbols").style.height = "400px";
-            document.getElementById("tblSymbols").style.overflowY = "auto";
-            document.getElementById("tblSymbolsMaxRestore").src = gsMaximizeWindowImg;
+        if (!isUndefined(document.getElementById(sDivId + "Img"))) {
+            if (isUndefined(x.isMaximized)) {
+                x.isMaximized = true;
+            } else {
+                x.isMaximized = !x.isMaximized;
+            }
+            if (x.isMaximized) {
+                document.getElementById(sDivId).style.height = "";
+                document.getElementById(sDivId).style.overflowY = "hidden";
+                document.getElementById(sDivId + "Img").src = gsRestoreWindowImg;
+            } else {
+                document.getElementById(sDivId).style.height = "400px";
+                document.getElementById(sDivId).style.overflowY = "auto";
+                document.getElementById(sDivId + "Img").src = gsMaximizeWindowImg;
+            }
         }
     }
 }
