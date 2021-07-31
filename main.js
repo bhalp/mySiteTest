@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.1 2021-07-29 23:43"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.1 2021-07-30 20:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -449,6 +449,8 @@ var giWLCol1Width = giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcqui
 var giWLCol2Width = 18;
 
 //maximize/restore variables
+var giLineLimitInitial = 30;
+var giLineLimitInitialCell = 10;
 var giLineLimit = 30;
 var giLineHeight = 21;
 var giTitleHeight = 30;
@@ -2390,12 +2392,12 @@ function DoGetTrades() {
     }
 }
 
-function DoGetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idxSymbol) {
+function DoGetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idxSymbol, sCurrentDiv) {
     document.getElementById("tblDetail").style.visibility = "visible";
     document.getElementById("miscname").innerHTML = "";
     document.getElementById("mischead").innerHTML = "";
     document.getElementById("misc").innerHTML = "";
-    window.setTimeout("GetTradesBySymbol('" + sSymbolToLookup + "','" + sAccountID + "','" + sAccountName + "','" + sTRId + "', " + idxSymbol.toString() + ")", 50);
+    window.setTimeout("GetTradesBySymbol('" + sSymbolToLookup + "','" + sAccountID + "','" + sAccountName + "','" + sTRId + "', " + idxSymbol.toString() + ",'" + sCurrentDiv + "')", 50);
 }
 
 function DoHideDiv(sDiv) {
@@ -8788,6 +8790,7 @@ function GetTrades(bFirstTime) {
             for (let idxLongShort = 0; idxLongShort < 2; idxLongShort++) {
                 sLastSymbol = "";
                 s = "";
+                let sCurrentDiv = "";
                 if (idxLongShort == 0) {
                     sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
                     sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"6\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt;height:30px;width:100%;vertical-align:middle;border-width:0px;border-style: solid;border-spacing:1px;border-color: White\"><b>Long Symbols</b>&nbsp;&nbsp;" + gsReplaceImgSymbolsLong + "</td></tr>";
@@ -8796,6 +8799,7 @@ function GetTrades(bFirstTime) {
                     sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
                     iTotalLongShortSymbols = 0;
                     bDoingLong = true;
+                    sCurrentDiv = "divSymbolsLong";
                 } else {
                     dTotalLongShort = 0.0;
                     dTotalLongShortFees = 0.0;
@@ -8809,6 +8813,7 @@ function GetTrades(bFirstTime) {
                     sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
                     iTotalLongShortSymbols = 0;
                     bDoingLong = false;
+                    sCurrentDiv = "divSymbolsShort";
                 }
                 for (let idx = 0; idx < gSymbols.length; idx++) {
                     if (sLastSymbol == "") {
@@ -8832,7 +8837,7 @@ function GetTrades(bFirstTime) {
 
                         iTRId++;
                         sTRId = "TDSym" + iTRId.toString();
-                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ") \">" + sAccountName + "</a></td > ";
+                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
 
                         //                        sTmp = FormatMoney(gSymbols[idx].buy);
                         sTmp = FormatDecimalNumber(gSymbols[idx].buy, 5, 2, "");
@@ -8905,7 +8910,7 @@ function GetTrades(bFirstTime) {
 
                         iTRId++;
                         sTRId = "TDSym" + iTRId.toString();
-                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ") \">" + sAccountName + "</a></td > ";
+                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
                         //                        sTmp = FormatMoney(gSymbols[idx].buy);
                         sTmp = FormatDecimalNumber(gSymbols[idx].buy, 5, 2, "");
                         s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
@@ -9031,7 +9036,7 @@ function GetTrades(bFirstTime) {
 
                         iTRId++;
                         sTRId = "TDSym" + iTRId.toString();
-                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ") \">" + sAccountName + "</a></td > ";
+                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
 
                         //                        sTmp = FormatMoney(gSymbols[idx].buy);
                         sTmp = FormatDecimalNumber(gSymbols[idx].buy, 5, 2, "");
@@ -9938,7 +9943,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
 //    GetTradesCanceled();
 }
 
-function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idxSymbol) {
+function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idxSymbol, sCurrentDiv) {
     let sBodyTextAlign = "right";
     let sTotalsBackcolor = gsBodyBackgroundColor;
     let sTotalsColorGain = "green";
@@ -9955,7 +9960,10 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
     SetWait();
 
     let iPwdFormHeight = document.getElementById("pwdForm").clientHeight + 10;
-    let iDetailTop = document.getElementById(sTRId).offsetTop + iPwdFormHeight;
+    //let iDetailTop = document.getElementById(sTRId).offsetTop + iPwdFormHeight;
+
+    let iDetailTop = iPwdFormHeight + document.getElementById(sCurrentDiv).offsetTop + document.getElementById(sTRId).offsetTop - document.getElementById(sCurrentDiv).scrollTop;
+
     document.getElementById("tblDetail").style.top = iDetailTop.toString() + "px";
 
     giZIndex++;
@@ -15338,8 +15346,12 @@ function PageLoad() {
 
     let sTmp = ""
     let soptMinLines = "<select id=\"optMinLines\">";
+    let iLineLimit = giLineLimitInitial;
+    if (gbUsingCell) {
+        iLineLimit = giLineLimitInitialCell;
+    }
     for (let idx = 10; idx < 41; idx++) {
-        if (idx == 10) {
+        if (idx == iLineLimit) {
             soptMinLines = soptMinLines + "<option selected value=\"" + idx.toString() + "\">" + idx.toString() + "</option>";
         } else {
             soptMinLines = soptMinLines + "<option value=\"" + idx.toString() + "\">" + idx.toString() + "</option>";
@@ -18248,6 +18260,26 @@ function ShowProgress(bStart, bStop) {
         gbStopProgress = false;
         elem.style.width = "0%";
     }
+}
+
+function SetFeeIndicator(idx) {
+    let tmpoSymbol = new Symbol();
+    tmpoSymbol = gSymbols[idx];
+    let sFeeIndicator = "";
+    if (tmpoSymbol.fees > 0) {
+        if (tmpoSymbol.fees < 0.1) {
+            sFeeIndicator = "<span title=\"Fees less than $0.10\" style=\"color:blue;\">&nbsp;*</span>";
+        } else if (tmpoSymbol.fees < 0.5) {
+            sFeeIndicator = "<span title=\"Fees less than $0.50\" style=\"color:crimson;\">&nbsp;*</span>";
+        } else if (tmpoSymbol.fees < 0.75) {
+            sFeeIndicator = "<span title=\"Fees less than $0.75\" style=\"color:cyan;\">&nbsp;*</span>";
+        } else if (tmpoSymbol.fees < 1.0) {
+            sFeeIndicator = "<span title=\"Fees less than $1.00\" style=\"color:Chartreuse;\">&nbsp;*</span>";
+        } else {
+            sFeeIndicator = "<span title=\"Fees greater than $1.00\" style=\"color:DeepPink;\">&nbsp;*</span>";
+        }
+    }
+    return sFeeIndicator;
 }
 
 function SetLineCnt() {
