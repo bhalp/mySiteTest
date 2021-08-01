@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.1 2021-07-30 20:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.1 2021-07-31 22:18"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -471,6 +471,7 @@ var gsReplaceImgSymbolsShort = "xxxxImgSymbolsShort";
 var gsImgSymbolsLong = "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"divSymbolsLongImg\" onclick=\"wlDoMaximizeRestoreTblSymbols('divSymbolsLong')\">";
 var gsImgSymbolsShort = "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"divSymbolsShortImg\" onclick=\"wlDoMaximizeRestoreTblSymbols('divSymbolsShort')\">";
 
+var gsSymbolDetailSpanPrefix = "symboldetail";
 
 const lengthsWL = {
     WLWidth: "930px",
@@ -1699,6 +1700,32 @@ var DateDiff =
 //document.write("<br />Number of <b>months</b> since "+dString+": "+DateDiff.inMonths(d1, d2));
 //document.write("<br />Number of <b>years</b> since "+dString+": "+DateDiff.inYears(d1
 
+function AddDiv(sSpanId, sDiv, iTop, iLeft) {
+    if ((document.getElementById(sSpanId) == null) || (isUndefined(document.getElementById(sSpanId)))) {
+        giZIndex++;
+        let x = document.createElement("SPAN");                     // Create a <span> element
+        x.id = sSpanId;
+        x.style.left = iLeft.toString() + "px";
+        x.style.top = iTop.toString() + "px";
+        x.style.fontFamily = "Arial, Helvetica, sans-serif";
+        x.style.fontSize = "10pt";
+        x.style.position = "absolute";
+        x.style.zIndex = giZIndex.toString();
+        x.onclick = function () {
+            giZIndex++;
+            if ((document.getElementById(sSpanId) != null) && (!isUndefined(document.getElementById(sSpanId)))) {
+                document.getElementById(sSpanId).style.zIndex = giZIndex.toString();
+            }
+        };
+        x.innerHTML = sDiv;
+
+        document.body.appendChild(x);
+        drag_divPH(sSpanId);
+    } else {
+        document.getElementById(sSpanId).innerHTML = sDiv;
+    }
+}
+
 function AttemptOpen(xhttp, sWhereTo, bAsync) {
     let bOK = false;
     try {
@@ -2339,6 +2366,9 @@ function DoGetStockPriceHistory() {
         document.getElementById("misc").innerHTML = "";
         document.getElementById("name").innerHTML = "";
         document.getElementById("nameTitle").innerHTML = "&nbsp;";
+
+        RemoveAllSymbolDetailDivs();
+
         SetWait();
         window.setTimeout("GetStockPriceHistory()", 50);
     }
@@ -2386,6 +2416,9 @@ function DoGetTrades() {
         document.getElementById("misc").innerHTML = "";
         document.getElementById("name").innerHTML = "";
         document.getElementById("nameTitle").innerHTML = "&nbsp;";
+
+        RemoveAllSymbolDetailDivs();
+
         gbDoingGetTrades = true;
         SetWait();
         window.setTimeout("GetTrades(true)", 50);
@@ -2393,10 +2426,10 @@ function DoGetTrades() {
 }
 
 function DoGetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idxSymbol, sCurrentDiv) {
-    document.getElementById("tblDetail").style.visibility = "visible";
-    document.getElementById("miscname").innerHTML = "";
-    document.getElementById("mischead").innerHTML = "";
-    document.getElementById("misc").innerHTML = "";
+    //document.getElementById("tblDetail").style.visibility = "visible";
+    //document.getElementById("miscname").innerHTML = "";
+    //document.getElementById("mischead").innerHTML = "";
+    //document.getElementById("misc").innerHTML = "";
     window.setTimeout("GetTradesBySymbol('" + sSymbolToLookup + "','" + sAccountID + "','" + sAccountName + "','" + sTRId + "', " + idxSymbol.toString() + ",'" + sCurrentDiv + "')", 50);
 }
 
@@ -8734,26 +8767,12 @@ function GetTrades(bFirstTime) {
             giZIndex++;
             document.getElementById("tblSymbols").style.zIndex = giZIndex.toString();
 
-            document.getElementById("tblDetail").style.top = iPwdFormHeight.toString() + "px";
-            document.getElementById("tblDetail").style.left = "510px";
-            document.getElementById("tblDetail").style.width = "520px";
-            document.getElementById("detailTitle").style.width = "500px";
+            //document.getElementById("tblDetail").style.top = iPwdFormHeight.toString() + "px";
+            //document.getElementById("tblDetail").style.left = "510px";
+            //document.getElementById("tblDetail").style.width = "520px";
+            //document.getElementById("detailTitle").style.width = "500px";
             document.getElementById("tblDetail").style.visibility = "hidden";
             gSymbols.sort(sortBySymbolAndAccountname);
-//            if (gSymbols.length > 4) {
-////                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
-//                document.getElementById("nameTitle").innerHTML = "Symbols" +
-//                    "&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"" + gsMaximizeWindowImg + "\" id=\"tblSymbolsMaxRestore\" onclick=\"wlDoMaximizeRestoreTblSymbols()\">" +
-//                    gGetTradesContext.sFilter;
-//                document.getElementById("tblSymbols").style.height = "400px";
-//                document.getElementById("tblSymbols").style.overflowY = "auto";
-//                document.getElementById("tblSymbols").isMaximized = false;
-//            } else {
-//                document.getElementById("tblSymbols").style.height = "";
-//                document.getElementById("tblSymbols").style.overflowY = "hidden";
-//                document.getElementById("tblSymbols").isMaximized = true;
-//                document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
-//            }
 
             document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
 
@@ -9959,22 +9978,67 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
     gTrades.length = 0;
     SetWait();
 
+    /*
+
+        "<div id=\"tblDetail" + sAccountID + sSymbolToLookup + "\" style=\"background-color: #99CCFF; position:absolute; top:" + iDetailTop.toString() + "px; left:" + iDetailLeft.toString() + "px; width: 500px;\">"
+            "<table style=\"width:100%; border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">"
+                <tr>
+                    <!--
+                        <th style="font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:100%; vertical-align:top; border-width:1px; border-style:solid;border-spacing:1px;border-color:White">Detail</th>
+                    -->
+                    "<th style=\"width:480px; font-family:Arial, Helvetica, sans-serif; font-size:12pt; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:White\">Detail</th>"
+                    "<th style=\"width:18px; text-align:right; font-family:Arial, Helvetica, sans-serif; font-size:12pt; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White;\" onclick=\"DoHideDiv('tblDetail')\">X&nbsp;&nbsp;</th>"
+                </tr>
+                <!--  -->
+                <tr>
+                    "<td colspan=\"2\" style=\"font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:100%; vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">" +
+                        "<DIV STYLE=\"width:100%; overflow:hidden\">xxxxmiscname</DIV>" + 
+                        "<DIV STYLE=\"border-width:0px; width:100%; overflow:hidden\">xxxxmischead</DIV>"
+                        "<DIV STYLE=\"width:100%; overflow: auto\">xxxxmiscmisc</DIV>" +
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+
+    */
+
+
     let iPwdFormHeight = document.getElementById("pwdForm").clientHeight + 10;
-    //let iDetailTop = document.getElementById(sTRId).offsetTop + iPwdFormHeight;
 
-    let iDetailTop = iPwdFormHeight + document.getElementById(sCurrentDiv).offsetTop + document.getElementById(sTRId).offsetTop - document.getElementById(sCurrentDiv).scrollTop;
+    //let iDetailTop = iPwdFormHeight + document.getElementById(sCurrentDiv).offsetTop + document.getElementById(sTRId).offsetTop - document.getElementById(sCurrentDiv).scrollTop;
+    let iDetailTop = document.getElementById("tblSymbols").offsetTop + document.getElementById(sCurrentDiv).offsetTop + document.getElementById(sTRId).offsetTop - document.getElementById(sCurrentDiv).scrollTop;
+    let iDetailLeft = document.getElementById("tblSymbols").clientWidth + document.getElementById("tblSymbols").offsetLeft + 10;
 
-    document.getElementById("tblDetail").style.top = iDetailTop.toString() + "px";
+    let spanName = gsSymbolDetailSpanPrefix + sAccountID + sSymbolToLookup;
+    let sDetailDiv = "<div style=\"background-color: #99CCFF; width: 500px;\">" +
+        "<table style=\"width:100%; border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">" +
+        "<tr>" +
+        "<th style=\"width:480px; font-family:Arial, Helvetica, sans-serif; font-size:12pt; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid;border-spacing:1px;border-color:White\">Detail</th>" +
+        "<th style=\"width:18px; text-align:right; font-family:Arial, Helvetica, sans-serif; font-size:12pt; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid;border-spacing:1px;border-color:White;\" onclick=\"RemoveDiv('" + spanName + "')\">X&nbsp;&nbsp;</th>" +
+        "</tr>" +
+        "<tr>" +
+        "<td colspan=\"2\" style=\"font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:100%; vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">" +
+        "<DIV STYLE=\"width:100%; overflow:hidden\">xxxxmiscname</DIV> " +
+        "<DIV STYLE=\"border-width:0px; width:100%; overflow:hidden\">xxxxmischead</DIV>" +
+        "<DIV STYLE=\"width:100%; overflow: auto\">xxxxmiscmisc</DIV>" +
+        "</td>" +
+        "</tr>" +
+        "</table>" +
+        "</div>";
 
-    giZIndex++;
-    document.getElementById("tblDetail").style.zIndex = giZIndex.toString();
+    //document.getElementById("tblDetail").style.top = iDetailTop.toString() + "px";
+    //document.getElementById("tblDetail").style.left = iDetailLeft.toString() + "px";
 
-    document.getElementById("misc").innerHTML = "";
-    document.getElementById("miscname").innerHTML = "";
-    document.getElementById("mischead").innerHTML = "";
+    //giZIndex++;
+    //document.getElementById("tblDetail").style.zIndex = giZIndex.toString();
+
+    //document.getElementById("misc").innerHTML = "";
+    //document.getElementById("miscname").innerHTML = "";
+    //document.getElementById("mischead").innerHTML = "";
 
     //now show in table
-    let s = "<table style=\"width:100%;border-width:0px;\">";
+    let s = "";
     let sTmp = "";
     let iTotalShares = 0;
     let dTotalFees = 0.0;
@@ -9986,6 +10050,13 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
     for (let idx = 0; idx < oTrades.length; idx++) {
         oTrade = oTrades[idx];
 
+        if (idx == 0) {
+            if (oTrades.length > 10) {
+                s = "<div style=\"height:300px;overflow-y:scroll;width:100%;border-width:0px;\"><table style=\"width:100%;border-width:0px;\">";
+            } else {
+                s = "<div style=\"width:100%;border-width:0px;\"><table style=\"width:100%;border-width:0px;\">";
+            }
+        }
         s = s + "<tr>";
 
         let d = new Date(oTrade.date.split("+")[0] + "+00:00");
@@ -10067,8 +10138,9 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
 
     s = s + "</tr>";
 
-    s = s + "</table>";
-    document.getElementById("misc").innerHTML = s;
+    s = s + "</table></div>";
+    sDetailDiv = sDetailDiv.replace("xxxxmiscmisc", s);
+//    document.getElementById("misc").innerHTML = s;
 
     s = "<table style=\"border-width:0px; border-style:solid;border-spacing:0px;border-color:White;width:100%\"><tr><th style=\"height:18px;border-width:1px;border-style:solid;border-spacing:1px;border-color:White;\">";
 
@@ -10076,7 +10148,8 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
 
     s = s + "</th></tr></table>";
 
-    document.getElementById("miscname").innerHTML = s;
+    sDetailDiv = sDetailDiv.replace("xxxxmiscname", s);
+//    document.getElementById("miscname").innerHTML = s;
 
     s = "<table style=\"border-width:0px;width:100%\">";
     s = s + "<tr>";
@@ -10086,7 +10159,10 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
     s = s + "<th style=\"width:18%; text-align:center;vertical-align:top;border-width:0px;\"><I>Fees</I></th>";
     s = s + "<th style=\"width:18%; text-align:center;vertical-align:top;border-width:0px;\"><I>Net</I></th>";
     s = s + "</tr></table>";
-    document.getElementById("mischead").innerHTML = s;
+    sDetailDiv = sDetailDiv.replace("xxxxmischead", s);
+//    document.getElementById("mischead").innerHTML = s;
+
+    AddDiv(spanName, sDetailDiv, iDetailTop, iDetailLeft);
 
     SetDefault();
 }
@@ -14489,8 +14565,21 @@ function MoveDivs(bMoveDown) {
     let iAmountToChange = 38;
     let iLeftLimit = 770;
     //        debugger
-    let oDiv = document.getElementById("tblSymbols");
     let oDivs = new Array();
+
+    let oBody = document.body;
+    if (oBody.childNodes.length > 0) {
+        for (let idx = 0; idx < oBody.childNodes.length; idx++) {
+            let oDiv = oBody.childNodes[idx];
+            if (!isUndefined(oDiv.id)) {
+                if (oDiv.id.substr(0, gsSymbolDetailSpanPrefix.length) == gsSymbolDetailSpanPrefix) {
+                    oDivs[oDivs.length] = oDiv;
+                }
+            }
+        }
+    }
+
+    let oDiv = document.getElementById("tblSymbols");
     if (oDiv.style.visibility.toString().toUpperCase() == "VISIBLE") {
         if (oDiv.offsetLeft < iLeftLimit) {
             oDivs[oDivs.length] = oDiv;
@@ -15342,6 +15431,7 @@ function PageLoad() {
     x.style.backgroundColor = gsBodyBackgroundColor;
     x.onmouseup = function () {
         window.setTimeout("wlResetIsDownAllWatchlists()", 100);
+        window.setTimeout("ResetIsDownAllSymbolDetailDivs()", 100);
     };
 
     let sTmp = ""
@@ -17868,6 +17958,35 @@ function printdiv_do(printdivname) {
     window.setTimeout("wlResetDragAllWatchlists()", 1000);
 }
 
+function RemoveAllSymbolDetailDivs() {
+    let oDivs = new Array();
+    let oBody = document.body;
+    if (oBody.childNodes.length > 0) {
+        for (let idx = 0; idx < oBody.childNodes.length; idx++) {
+            let oDiv = oBody.childNodes[idx];
+            if (!isUndefined(oDiv.id)) {
+                if (oDiv.id.substr(0, gsSymbolDetailSpanPrefix.length) == gsSymbolDetailSpanPrefix) {
+                    oDivs[oDivs.length] = oDiv.id;
+                }
+            }
+        }
+        if (oDivs.length > 0) {
+            for (let idx = 0; idx < oDivs.length; idx++) {
+                RemoveDiv(oDivs[idx]);
+            }
+        }
+    }
+}
+
+function RemoveDiv(sDivId) {
+    try {
+        let item = document.getElementById(sDivId);
+        item.parentNode.removeChild(item);
+    } catch (e) {
+
+    }
+}
+
 function ReportTimeOut() {
     bTimedOut = true;
     window.clearInterval(iTimerID);
@@ -17876,6 +17995,35 @@ function ReportTimeOut() {
     alert("Timeout");
     bDoingLookup = false;
 }
+
+function ResetIsDownAllSymbolDetailDivs() {
+    let oBody = document.body;
+    if (oBody.childNodes.length > 0) {
+        for (let idx = 0; idx < oBody.childNodes.length; idx++) {
+            let oDiv = oBody.childNodes[idx];
+            if (!isUndefined(oDiv.id)) {
+                if (oDiv.id.substr(0, gsSymbolDetailSpanPrefix.length) == gsSymbolDetailSpanPrefix) {
+                    let x = document.getElementById(oDiv.id);
+                    x.isDown = false;
+                }
+            }
+        }
+    }
+
+    if (gWatchlists.length > 0) {
+        for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
+            if (gWatchlists[idxWL].spanName != "") {
+                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary) || (gWatchlists[idxWL].bSelectedOGL)) {
+                    if (!isUndefined(document.getElementById(gWatchlists[idxWL].spanName))) {
+                        let x = document.getElementById(gWatchlists[idxWL].spanName);
+                        x.isDown = false;
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 function ResetWatchlist() {
     SetWait();
