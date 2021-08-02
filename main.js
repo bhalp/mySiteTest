@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.1 2021-08-02 06:19"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.1 2021-08-02 11:14"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -1771,8 +1771,10 @@ function AttemptOpenPatch(xhttp, sWhereTo, bAsync) {
     return (bOK);
 }
 
-function BuildStartEndDates(sStartDate, sEndDate) {
+function BuildStartEndDates(sStartDateIn, sEndDateIn) {
     //sStartDate - yyyy-mm-dd, sEndDate - yyyy-mm-dd
+    let sStartDate = sStartDateIn;
+    let sEndDate = sEndDateIn;
     let bEndDateIsCurrentDate = false;
     //build start and end date sets - max of 1 year per set
     let vTmp = sStartDate.split("-");
@@ -1783,8 +1785,23 @@ function BuildStartEndDates(sStartDate, sEndDate) {
     let dEndDate = new Date(sTmp);
 
     vTmp = FormatDateForTD(new Date()).split("-");
-    sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
-    let dCurrentDate = new Date(sTmp);
+    sCurrentDate = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+    let dCurrentDate = new Date(sCurrentDate);
+
+    if (dStartDate.getTime() > dEndDate.getTime()) {
+        dStartDate = new Date(dEndDate.getTime());
+        sStartDate = FormatDateForTD(dStartDate);
+    }
+
+    if (dStartDate.getTime() > dCurrentDate.getTime()) {
+        dStartDate = new Date(dCurrentDate.getTime());
+        sStartDate = FormatDateForTD(dStartDate);
+    }
+
+    if (dEndDate.getTime() > dCurrentDate.getTime()) {
+        dEndDate = new Date(dCurrentDate.getTime());
+        sEndDate = FormatDateForTD(dStartDate);
+    }
 
     let iMonthRange = 1; //6/16/21 changed from 3 to 1 
 
@@ -1832,6 +1849,7 @@ function BuildStartEndDates(sStartDate, sEndDate) {
     } else {
         gsStartDates[gsStartDates.length] = sStartDate;
         gsEndDates[gsEndDates.length] = sEndDate;
+
     }
     //if (DateDiff.inYears(dStartDate, dEndDate) > 0) {
     //    let bDone = false;
@@ -2401,22 +2419,57 @@ function DoGetTrades() {
     if (gbDoingGetTrades) {
         gbStopGetTrades = true;
     } else {
-        document.pwdForm.btnGetTrades.value = "Stop";
+        let sStartDate = document.getElementById("txtStartDate").value;
+        let sEndDate = document.getElementById("txtEndDate").value;
+        if (!ValidateTDDate(sStartDate, true) || !ValidateTDDate(sEndDate, true)) {
+            return;
+        }
+        //if (sEndDate < sStartDate) {
+        //    alert("Invalid TD date. Please enter an end date greater than or equal to the start date.");
+        //    return;
+        //}
+
+        let vTmp = sStartDate.split("-");
+        let sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+        let dStartDate = new Date(sTmp);
+        vTmp = sEndDate.split("-");
+        sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+        let dEndDate = new Date(sTmp);
+
+        vTmp = FormatDateForTD(new Date()).split("-");
+        sCurrentDate = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+        let dCurrentDate = new Date(sCurrentDate);
+
+        if ((dStartDate.getTime() > dCurrentDate.getTime()) && (dEndDate.getTime() > dCurrentDate.getTime())) {
+            if (dStartDate.getTime() > dEndDate.getTime()) {
+                alert("Invalid TD dates. Please enter a start date less than or equal to the end date and both the start and end dates less than or equal to " + FormatDateForTD(dCurrentDate) + ".");
+                return;
+            } else {
+                alert("Invalid TD date. Please enter start and end dates less than or equal to " + FormatDateForTD(dCurrentDate) + ".");
+                return;
+            }
+        } else if (dEndDate.getTime() > dCurrentDate.getTime()) {
+            alert("Invalid TD date. Please enter an end date less than or equal to " + FormatDateForTD(dCurrentDate) + ".");
+            return;
+        } else if (dStartDate.getTime() > dEndDate.getTime()) {
+            alert("Invalid TD date. Please enter a start date less than or equal to the end date.");
+            return;
+        }
+
         let iMarketOpen = IsMarketOpen();
         if (iMarketOpen == 2) {
             if (GetAccessCodeUsingRefreshToken()) {
                 iMarketOpen = IsMarketOpen();
                 if (iMarketOpen == 2) {
                     alert("An error occurred attempting to refresh the access code. Please reload the app.");
-                    GetTradesCanceled();
                     return;
                 }
             } else {
                 alert("An error occurred attempting to refresh the access code. Please reload the app.");
-                GetTradesCanceled();
                 return;
             }
         }
+        document.pwdForm.btnGetTrades.value = "Stop";
         //debugger
         document.getElementById("tblDetail").style.visibility = "hidden";
         document.getElementById("miscname").innerHTML = "";
@@ -2918,6 +2971,7 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
             let dtEndDate = new Date();
             let iEndDate = dtEndDate.getTime();
             let sEndDate = FormatDateForTD(dtEndDate);
+            let sCurrentDate = sEndDate;
 
             if (sDollars != "") {
 
@@ -2943,8 +2997,12 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
 
                 //treat as date
                 if (ValidateTDDate(sDollars, false)) {
-                    if (sEndDate < sDollars) {
+                    if (sDollars > sEndDate) {
                         alert("Invalid initialization start date. Please enter a start date less than or equal to " + sEndDate + ".");
+                        return;
+                    }
+                    if (sEndDate > sCurrentDate) {
+                        alert("Invalid initialization end date. Please enter an end date less than or equal to " + sCurrentDate + ".");
                         return;
                     }
                     let sConfirmMsg = "";
