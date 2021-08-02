@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.1 2021-07-31 22:18"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.1 2021-08-02 06:19"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -575,9 +575,10 @@ var gsEndDates = new Array();
 function GetTradesContext() {
     this.sServerUrlBase = "";
     this.sServerUrlBaseAllSymbols = "";
-    this.sStartDate = "";
-    this.sEndDate = "";
-    this.iLastUpdateDateTime = 0;
+    this.sStartDate = ""; //just date
+    this.sEndDate = ""; //just date
+    this.iEndDate = 0; //sEndDate with seconds
+    this.iLastUpdateDateTime = 0; //sStartDate with seconds
     this.bUseOnlySelectAccount = false;
     this.sFilter = ""; //will contain <span>&nbsp;(Filter - account name)</span>
     this.OldGLAccountId = "";
@@ -1780,7 +1781,10 @@ function BuildStartEndDates(sStartDate, sEndDate) {
     vTmp = sEndDate.split("-");
     sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
     let dEndDate = new Date(sTmp);
-    let dCurrentDate = new Date();
+
+    vTmp = FormatDateForTD(new Date()).split("-");
+    sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+    let dCurrentDate = new Date(sTmp);
 
     let iMonthRange = 1; //6/16/21 changed from 3 to 1 
 
@@ -1797,7 +1801,11 @@ function BuildStartEndDates(sStartDate, sEndDate) {
         dTmpEndDate.setMonth(dTmpEndDate.getMonth() + iMonthRange);
         dTmpEndDate.setDate(dTmpEndDate.getDate() - 1);
         gsStartDates[gsStartDates.length] = FormatDateForTD(dStartDate);
-        gsEndDates[gsEndDates.length] = FormatDateForTD(dTmpEndDate);
+        if (dTmpEndDate > dEndDate) {
+            gsEndDates[gsEndDates.length] = FormatDateForTD(dEndDate);
+        } else {
+            gsEndDates[gsEndDates.length] = FormatDateForTD(dTmpEndDate);
+        }
         while (!bDone) {
             dStartDate = new Date(dTmpEndDate);
             dStartDate.setDate(dStartDate.getDate() + 1);
@@ -9380,6 +9388,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
     let sStartDate = FormatDateForTD(new Date(iStartDateIn));
     let iLastUpdateDateTime = iStartDateIn;
     let sEndDate = "";
+    let iEndDate = iEndDateIn;
 
     let sSymbolToLookup = "";
     let sSymbolsToLookupTmp = "";
@@ -9418,11 +9427,10 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
         }
         sSymbolsToLookup = "," + sSymbolsToLookupTmp.toUpperCase() + ",";
 
-        if (iEndDateIn != 0) {
-            sEndDate = FormatDateForTD(new Date(iEndDateIn));
-        } else {
-            sEndDate = FormatCurrentDateForTD();
+        if (iEndDate == 0) {
+            iEndDate = new Date(iEndDate).getTime();
         }
+        sEndDate = FormatDateForTD(new Date(iEndDate));
 
         bEndDateISTodaysDate = BuildStartEndDates(sStartDate, sEndDate);
 
@@ -9438,6 +9446,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
 
         gGetTradesContextAuto.iProgressIncrement = 100 / gsStartDates.length;
         gGetTradesContextAuto.iLastUpdateDateTime = iLastUpdateDateTime;
+        gGetTradesContextAuto.iEndDate = iEndDate;
 
         idxStart = 0;
     } else {
@@ -9550,7 +9559,8 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
                                     //    GetTradesCanceled();
                                     //    return;
                                     //}
-                                    if ((new Date(oCM[idxTrade].transactionDate.split("+")[0] + "+00:00").getTime()) > iLastUpdateDateTime) {
+                                    let iTxDate = new Date(oCM[idxTrade].transactionDate.split("+")[0] + "+00:00").getTime();
+                                    if ((iTxDate > iLastUpdateDateTime) && (iTxDate <= iEndDate)) {
                                         if (oCM[idxTrade].type == "DIVIDEND_OR_INTEREST") {
                                             bUseTradeRS = false;
                                             if (!isUndefined(oCM[idxTrade].transactionItem.instrument)) {
@@ -9910,7 +9920,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
         gGetTradesContextAuto.bNeedToAddSymbol = bNeedToAddSymbol;
         gGetTradesContextAuto.idxStart = 0;
 
-        window.setTimeout("GetTradesAutoBase(false, " + iLastUpdateDateTime.toString() + ", " + idxWL.toString() + ", " + bInitializing + ", '" + sSymbolIn + "', " + iEndDateIn + ", '" + sPurchasedDateIn + "')", 100);
+        window.setTimeout("GetTradesAutoBase(false, " + iLastUpdateDateTime.toString() + ", " + idxWL.toString() + ", " + bInitializing + ", '" + sSymbolIn + "', " + iEndDate + ", '" + sPurchasedDateIn + "')", 100);
         return;
 
     }
@@ -9926,11 +9936,11 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
                 if (dSelectNum < 0.0) {
                     dSelectNum = (-1 * dSelectNum) + 1000000.0;
                 }
-                window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '" + FormatDecimalNumber(dSelectNum, 3, 2, "") + "', " + iStartDateIn + ", " + iEndDateIn + ")", 10);
+                window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '" + FormatDecimalNumber(dSelectNum, 3, 2, "") + "', " + iStartDateIn + ", " + iEndDate + ")", 10);
                 gbDoingGetTrades = false;
                 gbStopGetTrades = false;
             } else {
-                window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '0', " + iStartDateIn + ", " + iEndDateIn + ")", 10);
+                window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '0', " + iStartDateIn + ", " + iEndDate + ")", 10);
                 gbDoingGetTrades = false;
                 gbStopGetTrades = false;
             }
@@ -9938,7 +9948,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
             if (gSymbolsAuto.length > 0) {
                 //GetCurrentPricesAuto();
                 gSymbolsAuto.sort(sortBySymbol);
-                window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ", " + iEndDateIn + ")", 10);
+                window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ", " + iEndDate + ")", 10);
             } else {
                 if (sSymbolsToLookupTmp.split(",").length == 1) {
                     alert("No trades found for the selected symbol.");
@@ -9951,7 +9961,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
         }
     } else {
         if (sSymbolIn != "") {
-            window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '0', " + iStartDateIn + ", " + iEndDateIn + ")", 10);
+            window.setTimeout("GenerateWLOpenSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + idxWL + ", '" + sSymbolIn + "', '" + sPurchasedDateIn + "', '0', " + iStartDateIn + ", " + iEndDate + ")", 10);
             gbDoingGetTrades = false;
             gbStopGetTrades = false;
         } else {
