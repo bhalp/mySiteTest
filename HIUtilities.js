@@ -422,7 +422,7 @@ function FormatMoney(amount) {
 	return "";
 }
 
-function FormatTDTradeDate(d) {
+function FormatTDTradeDate(d, bShowTimeIn) {
 	var s = "";           //Declare variables.
 	var sAMPM = "AM";
 	var sHours = "";
@@ -433,6 +433,11 @@ function FormatTDTradeDate(d) {
 	var iMinutes = d.getMinutes();
 	var iSeconds = d.getSeconds();
 	var iMilliSeconds = d.getMilliseconds();
+	let bShowTime = true;
+
+	if (!isUndefined(bShowTimeIn)) {
+		bShowTime = bShowTimeIn;
+    }
 
 	if (iYear < 1900) {
 		iYear += 1900;
@@ -450,7 +455,7 @@ function FormatTDTradeDate(d) {
 	else {
 		s += "0" + iDay + "/";                   //Get day
 	}
-	s += iYear + " ";                         //Get year.
+	s += iYear;                         //Get year.
 
 	//if (iHours > 11) {
 	//	sAMPM = "PM";
@@ -463,34 +468,37 @@ function FormatTDTradeDate(d) {
 	//	sHours = "0" + iHours;
 	//}
 
-	if (iHours < 10) {
-		sHours = "0" + iHours;
-	} else {
-		sHours = iHours;
+	if (bShowTime) {
+		s += " ";
+		if (iHours < 10) {
+			sHours = "0" + iHours;
+		} else {
+			sHours = iHours;
+		}
+
+		s += sHours + ":";
+
+		if (iMinutes > 9) {
+			s += iMinutes + ":";
+		}
+		else {
+			s += "0" + iMinutes + ":";
+		}
+
+		//if (iSeconds > 9) {
+		//	s += iSeconds + ":";
+		//}
+		//else {
+		//	s += "0" + iSeconds + ".";
+		//}
+
+		if (iSeconds > 9) {
+			s += iSeconds;
+		}
+		else {
+			s += "0" + iSeconds;
+		}
     }
-
-	s += sHours + ":";
-
-	if (iMinutes > 9) {
-		s += iMinutes + ":";
-	}
-	else {
-		s += "0" + iMinutes + ":";
-	}
-
-	//if (iSeconds > 9) {
-	//	s += iSeconds + ":";
-	//}
-	//else {
-	//	s += "0" + iSeconds + ".";
-	//}
-
-	if (iSeconds > 9) {
-		s += iSeconds;
-	}
-	else {
-		s += "0" + iSeconds;
-	}
 
 //	s = s + sAMPM;
 	return (s);
