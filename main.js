@@ -521,7 +521,9 @@ var gsFieldWidthsWLO = {
     "ActPrice": "width:70px;",
     "Time-in-Force": "width:100px;",
     "Opened": "width:130px;",
-    "Closed": "width:130px;"
+    "OpenedCell": "width:140px;",
+    "Closed": "width:130px;",
+    "ClosedCell": "width:140px;"
 }
 
 
@@ -542,6 +544,7 @@ var lengthsWLSOWLCol1Width = lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLCol
 
 const lengthsWLO = {
     WLWidth: "940px",
+    WLWidthCell: "960px",
     WLColOpenLabelWidth: 80,
     WLColOpenEntryWidth: 110,
     WLColAcquiredDateEntryWidth: 80,
@@ -10561,9 +10564,14 @@ function GetWatchlistO() {
 
                     //}
 
-                    //same for cell and not cell
-                    sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //mostly the same for cell and not cell
+                    if (gbUsingCell) {
+                        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLO.WLWidthCell + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLO.WLWidthCell + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    } else {
+                        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    }
                     sThisDiv = sThisDiv + "<tr>";
 
                     sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColOpenLabelWidth + lengthsWLO.WLColOpenEntryWidth + lengthsWLO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
@@ -10685,11 +10693,19 @@ function GetWatchlistO() {
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.TimeInForce);
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLO["Time-in-Force"] + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeInForce + "</td>";
 
-                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.TimeEntered);
-                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLO.Opened + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeEntered + "</td>";
+                        if (gbUsingCell) {
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.TimeEntered);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLO.OpenedCell + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeEntered + "</td>";
 
-                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Reported);
-                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLO.Closed + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Reported + "</td>";
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Reported);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLO.ClosedCell + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Reported + "</td>";
+                        } else {
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.TimeEntered);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLO.Opened + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeEntered + "</td>";
+
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Reported);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLO.Closed + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Reported + "</td>";
+                        }
 
                         sThisTableTitleInside = sThisTableTitleInside + "</tr></table>";
 
@@ -10801,7 +10817,11 @@ function GetWatchlistO() {
                                 let d2 = new Date(oWLOItem.enteredTime.split("+")[0] + "+00:00");
                                 sTmp = FormatTDTradeDate(d2);
                             }
-                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.Opened + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTimeEnteredSpacesP + sTmp + sTimeEnteredSpacesT + "</td>";
+                            if (gbUsingCell) {
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.OpenedCell + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTimeEnteredSpacesP + sTmp + sTimeEnteredSpacesT + "</td>";
+                            } else {
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.Opened + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTimeEnteredSpacesP + sTmp + sTimeEnteredSpacesT + "</td>";
+                            }
 
                             //Closed - closeTime
                             if (oWLOItem.closeTime == "") {
@@ -10810,7 +10830,11 @@ function GetWatchlistO() {
                                 let d2 = new Date(oWLOItem.closeTime.split("+")[0] + "+00:00");
                                 sTmp = FormatTDTradeDate(d2);
                             }
-                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.Closed + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sReportedSpacesP + sTmp + sReportedSpacesT + "</td>";
+                            if (gbUsingCell) {
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.ClosedCell + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sReportedSpacesP + sTmp + sReportedSpacesT + "</td>";
+                            } else {
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.Closed + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sReportedSpacesP + sTmp + sReportedSpacesT + "</td>";
+                            }
 
                             sThisTable = sThisTable + "</tr>";
 
