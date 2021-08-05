@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-05 00:53"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-05 00:55"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -13843,7 +13843,7 @@ function GetWatchlistSO() {
                             //Created - 
                             let d = new Date(oWLSOItem.savedTime.split("+")[0] + "+00:00");
                             sTmp = FormatTDTradeDate(d);
-                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Created + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sCreatedSpacesP + sTmp + sCreatedSpacesT + "</td>";
+                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Created + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; font-size:9pt;\">" + sCreatedSpacesP + sTmp + sCreatedSpacesT + "</td>";
 
                             //Bid
                             let dBidPrice = oWLSOItem.bidPrice;
