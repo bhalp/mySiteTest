@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-04 17:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-04 22:24"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -52,6 +52,19 @@ var gsSortOrderFieldsO = {
     "TimeInForce": "TimeInForce",
     "TimeEntered": "TimeEntered",
     "Reported": "Reported"
+}
+
+var gsSortOrderFieldsSO = {
+    "Action": "Action",
+    "Quantity": "Quantity",
+    "Symbol": "Symbol",
+    "Type": "Type",
+    "Price": "Price",
+    "ActPrice": "ActPrice",
+    "TimeInForce": "TimeInForce",
+    "TimeEntered": "TimeEntered",
+    "Bid": "Bid",
+    "Ask": "Ask"
 }
 
 function FixedPrice() {
@@ -344,6 +357,8 @@ function WLItemSavedOrder() {
     this.bSelectedTemp = true;
     this.bSelectedForOrder = false;
     this.bCheckboxEnabled = true;
+    this.sSortOrderFields = gsSortOrderFieldsSO.TimeEntered; //look at gsSortOrderFieldsSO
+    this.iSortOrderAscDesc = 1; //0 - ascending, 1 - descending
     this.savedOrderId = 0;
     this.savedTime = ""; //like "2021-03-04T20:30:01+0000"
     this.orderType = ""; //"MARKET", "LIMIT", or "TRAILING_STOP"
@@ -355,6 +370,8 @@ function WLItemSavedOrder() {
     this.duration = ""; //either "DAY" or "GOOD_TILL_CANCEL"
     this.instruction = ""; //"BUY" or "SELL" 
     this.quantity = 0; //a number
+    this.bidPrice = 0.0; //Bid
+    this.askPrice = 0.0; //Ask
     this.symbol = ""; //like "XYZ"
 }
 
@@ -527,13 +544,29 @@ var gsFieldWidthsWLO = {
 }
 
 
+//Action 	Quantity  Symbol 	Order Type 	Price  Activation  Time-in-Force  Created Bid Ask
+var gsFieldWidthsWLSO = {
+    "Action": "width:70px;",
+    "Quantity": "width:70px;",
+    "Symbol": "width:90px;",
+    "OrderType": "width:140px;",
+    "Price": "width:60px;",
+    "ActPrice": "width:70px;",
+    "Time-in-Force": "width:100px;",
+    "Created": "width:130px;",
+    "CreatedCell": "width:140px;",
+    "Bid": "width:60px;",
+    "Ask": "width:60px;"
+}
+
 
 const lengthsWLSO = {
-    WLWidth: "900px",
+    WLWidth: "920px",
+    WLWidthCell: "920px",
     WLColOpenLabelWidth:  80,
     WLColOpenEntryWidth: 80,
     WLColAcquiredDateEntryWidth: 80,
-    WLColTitleWidth: 460,
+    WLColTitleWidth: 480,
     WLColCloseLabelWidth: 110,
     WLColCloseEntryWidth: 60,
     WLDragXoffsetLeft: 220,
@@ -10629,7 +10662,6 @@ function GetWatchlistO() {
                             "Price": "<b><I><U>Price</U></I></b>",
                             "Symbol": "<b><I><U>Symbol</U></I></b>",
                             "Type": "<b><I><U>Type</U></I></b>",
-                            "Price": "<b><I><U>Price</U></I></b>",
                             "ActPrice": "<b><I><U>Act.Price</U></I></b>",
                             "TimeInForce": "<b><I><U>Time-in-Force</U></I></b>",
                             "TimeEntered": "<b><I><U>Opened</U></I></b>",
@@ -10643,7 +10675,6 @@ function GetWatchlistO() {
                             "Price": "<b><I><U>Price</U></I>xxx</b>",
                             "Symbol": "<b><I><U>Symbol</U></I>xxx</b>",
                             "Type": "<b><I><U>Type</U></I>xxx</b>",
-                            "Price": "<b><I><U>Price</U></I>xxx</b>",
                             "ActPrice": "<b><I><U>Act.Price</U></I>xxx</b>",
                             "TimeInForce": "<b><I><U>Time-in-Force</U></I>xxx</b>",
                             "TimeEntered": "<b><I><U>Opened</U></I>xxx</b>",
@@ -13317,6 +13348,10 @@ function GetWatchlists(bDoingReset) {
                         let oWL = new WLWatchList();
                         oWL.accountId = oAccount.accountId;
                         oWL.accountName = oAccount.accountName;
+
+                        oWL.sSortOrderFields = gsSortOrderFieldsSO.TimeEntered; 
+                        oWL.iSortOrderAscDesc = 1; //0 - ascending, 1 - descending
+
                         oWL.watchlistId = oAccount.accountId + "AccountSavedOrders";
                         oWL.name = gsAccountSavedOrders;
 
@@ -13350,6 +13385,8 @@ function GetWatchlists(bDoingReset) {
                                                 oWLItem.stopPriceLinkType = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceLinkType;
                                                 oWLItem.stopPriceOffset = oOldWL[idxWLCur].WLItems[idxWLItemOld].stopPriceOffset;
                                                 oWLItem.symbol = oOldWL[idxWLCur].WLItems[idxWLItemOld].symbol;
+                                                oWLItem.iSortOrderAscDesc = oOldWL[idxWLCur].WLItems[idxWLItemOld].iSortOrderAscDesc;
+                                                oWLItem.sSortOrderFields = oOldWL[idxWLCur].WLItems[idxWLItemOld].sSortOrderFields;
                                                 oWL.WLItems[oWL.WLItems.length] = oWLItem;
                                             }
                                         }
@@ -13374,29 +13411,27 @@ function GetWatchlistSO() {
     let sActionSpacesP = "";
     let sActionSpacesT = "";
     let sQuantitySpacesP = "";
-    let sQuantitySpacesT = "&nbsp;&nbsp;&nbsp;";
-    let sSymbolSpacesP = "&nbsp;&nbsp;&nbsp;";
+    let sQuantitySpacesT = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+    let sSymbolSpacesP = "";
     let sSymbolSpacesT = "";
-    let sOrderTypeSpacesP = "&nbsp;&nbsp;&nbsp;";
+    let sOrderTypeSpacesP = "";
     let sOrderTypeSpacesT = "";
     let sPriceSpacesP = "";
-    let sPriceSpacesT = "";
+    let sPriceSpacesT = "&nbsp;&nbsp;&nbsp;";
     let sActivitationSpacesP = "";
-    let sActivitationSpacesT = "&nbsp;&nbsp;&nbsp;";
-    let sDurationSpacesP = "";
+    let sActivitationSpacesT = "&nbsp;&nbsp;";
+    let sDurationSpacesP = "&nbsp;&nbsp;";
     let sDurationSpacesT = "";
     let sCreatedSpacesP = "";
     let sCreatedSpacesT = "";
     let sBidSpacesP = "";
-    let sBidSpacesT = "&nbsp;&nbsp;&nbsp;";
+    let sBidSpacesT = "&nbsp;&nbsp;";
     let sAskSpacesP = "";
-    let sAskSpacesT = "&nbsp;&nbsp;&nbsp;";
+    let sAskSpacesT = "&nbsp;&nbsp;";
 
     if (gWatchlists.length > 0) {
         for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
             if (gWatchlists[idxWL].bSelectedSO) {
-                let sThisDiv = "";
-                let sThisTable = "";
                 let sLastWLName = "";
                 let sLastWLAccountName = "";
                 let sLastWLAccountId = "";
@@ -13404,6 +13439,12 @@ function GetWatchlistSO() {
                 let sTableRowVerticalAlignment = "middle";
                 let sTmp = "";
                 let bEverythingIsChecked = true;
+                let bSomethingSelected = false;
+                let sThisTable = "";
+                let sThisDiv = "";
+                let sThisTableTitle = "";
+                let sThisTableTitleInside = "";
+                let iLineCnt = 0;
 
 
                 //get list of currently selected saved orders
@@ -13417,6 +13458,11 @@ function GetWatchlistSO() {
                         }
                     }
                 }
+
+                sLastWLName = gWatchlists[idxWL].name;
+                sLastWLAccountName = gWatchlists[idxWL].accountName;
+                sLastWLAccountId = gWatchlists[idxWL].accountId;
+                sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
 
                 let iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/accounts/" + gWatchlists[idxWL].accountId + "/savedorders", 5);
                 if (iReturn == 0) {
@@ -13461,81 +13507,142 @@ function GetWatchlistSO() {
                                 }
                                 if (!isUndefined(oCMSavedOrders[idxSO].orderLegCollection[0].instrument.symbol)) {
                                     oWLSOItem.symbol = oCMSavedOrders[idxSO].orderLegCollection[0].instrument.symbol;
+                                    if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
+                                        if (!isUndefined(oMDQ[oWLSOItem.symbol].bidPrice)) {
+                                            oWLSOItem.bidPrice = oMDQ[oWLSOItem.symbol].bidPrice;
+                                        }
+                                    }
+                                    if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
+                                        if (!isUndefined(oMDQ[oWLSOItem.symbol].askPrice)) {
+                                            oWLSOItem.askPrice = oMDQ[oWLSOItem.symbol].askPrice;
+                                        }
+                                    }
                                 }
                                 if (!isUndefined(oCurrentSOIDs[oCMSavedOrders[idxSO].savedOrderId])) {
                                     //already displayed so reset the selectfororder flag
                                     oWLSOItem.bSelectedForOrder = oCurrentSOIDs[oCMSavedOrders[idxSO].savedOrderId];
                                 }
+
+                                if (oWLSOItem.bSelectedForOrder) {
+                                    bSomethingSelected = true;
+                                }
+
+                                oWLSOItem.sSortOrderFields = gWatchlists[idxWL].sSortOrderFields;
+                                oWLSOItem.iSortOrderAscDesc = gWatchlists[idxWL].iSortOrderAscDesc;
+
                                 gWatchlists[idxWL].WLItems[gWatchlists[idxWL].WLItems.length] = oWLSOItem;
                             }
                         }
                     }
                     //now display the watchlist
 
+                    iLineCnt = 0;
+
                     sThisDiv = "";
-                    sLastWLName = gWatchlists[idxWL].name;
-                    sLastWLAccountName = gWatchlists[idxWL].accountName;
-                    sLastWLAccountId = gWatchlists[idxWL].accountId;
-                    sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+                    sThisTableTitle = "";
+                    sThisTableTitleInside = "";
 
+                    //sThisDiv = "";
+                    //sLastWLName = gWatchlists[idxWL].name;
+                    //sLastWLAccountName = gWatchlists[idxWL].accountName;
+                    //sLastWLAccountId = gWatchlists[idxWL].accountId;
+                    //sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
+
+                    //if (gbUsingCell) {
+                    //    sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //    sThisDiv = sThisDiv + "<table style=\"width:800px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //    sThisDiv = sThisDiv + "<tr>";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //        "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','"  + sLastWLAccountId + "')\" value=\"Place\" ></th>";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
+                    //        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                    //        "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
+                    //        "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                    //    sThisDiv = sThisDiv + "</tr>";
+
+                    //    sThisDiv = sThisDiv + "<tr>";
+                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+                    //} else { //not using cell
+
+                    //    sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLSO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //    sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLSO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //    sThisDiv = sThisDiv + "<tr>";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //        "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Place\" ></th>";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
+                    //        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                    //        "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
+                    //        "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                    //    sThisDiv = sThisDiv + "</tr>";
+
+                    //    sThisDiv = sThisDiv + "<tr>";
+                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+
+                    //}
+
+                    //mostly the same for cell and not cell
                     if (gbUsingCell) {
-                        sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                        sThisDiv = sThisDiv + "<table style=\"width:800px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                        sThisDiv = sThisDiv + "<tr>";
-
-                        sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','"  + sLastWLAccountId + "')\" value=\"Place\" ></th>";
-
-                        sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                            "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
-
-                        sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
-
-                        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                        sThisDiv = sThisDiv + "</tr>";
-
-                        sThisDiv = sThisDiv + "<tr>";
-                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-                    } else { //not using cell
-
+                        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLSO.WLWidthCell + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLSO.WLWidthCell + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    } else {
                         sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLSO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                         sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLSO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                        sThisDiv = sThisDiv + "<tr>";
-
-                        sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Place\" ></th>";
-
-                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                            "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
-
-                        sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
-
-                        sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                        sThisDiv = sThisDiv + "</tr>";
-
-                        sThisDiv = sThisDiv + "<tr>";
-                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-
                     }
+                    sThisDiv = sThisDiv + "<tr>";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Place\" ></th>";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWL].watchlistId + "')\">" +
+                        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                        "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
+
+                    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                    sThisDiv = sThisDiv + "</tr>";
+
+                    sThisDiv = sThisDiv + "<tr>";
+                    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+                    //-------------------------
+
                     sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    sThisTable = "";
-                    sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    sThisTable = sThisTable + "<tr>";
+                    sThisTableTitle = "<div id=\"divtableTitle" + sThisId + "\" style =\"" + gsReplaceTableHeightOverflowTitle + " border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisTableTitleInside = "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    sThisTableTitleInside = sThisTableTitleInside + "<tr style=\"height:" + giTitleHeight.toString() + "px; \">";
+
+                    //sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //sThisTable = "";
+                    //sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //sThisTable = sThisTable + "<tr>";
 
                     if (gWatchlists[idxWL].WLItems.length == 0) {
                         //no saved orders
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">No saved orders for this account.</td>";
-                        sThisTable = sThisTable + "</tr>";
+                        sThisTableTitleInside = sThisTableTitleInside + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">No saved orders for this account.</td>";
+                        sThisTableTitleInside = sThisTableTitleInside + "</tr>";
                         if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
                             if (document.getElementById("spanWLNumChecked" + sThisId) != null) {
                                 document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
@@ -13543,33 +13650,102 @@ function GetWatchlistSO() {
                         }
 
                     } else {
-                        sThisTable = sThisTable + "<td colspan=\"10\" style=\"text-align=left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px; \">";
-                        sThisTable = sThisTable + "Total saved orders " + gWatchlists[idxWL].WLItems.length.toString() + " (max 200)";
-                        sThisTable = sThisTable + "</td>";
-                        sThisTable = sThisTable + "</tr>";
-                        sThisTable = sThisTable + "<tr>";
+
+                        //Action 	Quantity  Symbol 	Order Type 	Price  Activation  Time-in-Force  Created Bid Ask
+                        let sTitle = {
+                            "Action": "<b><I><U>Action</U></I></b>",
+                            "Quantity": "<b><I><U>Quantity</U></I></b>",
+                            "Symbol": "<b><I><U>Symbol</U></I></b>",
+                            "Type": "<b><I><U>Order&nbsp;Type</U></I></b>",
+                            "Price": "<b><I><U>Price</U></I></b>",
+                            "ActPrice": "<b><I><U>Activation</U></I></b>",
+                            "TimeInForce": "<b><I><U>Time-in-Force</U></I></b>",
+                            "TimeEntered": "<b><I><U>Created</U></I></b>",
+                            "Bid": "<b><I><U>Bid</U></I></b>",
+                            "Ask": "<b><I><U>Ask</U></I></b>"
+                        };
+
+                        let sTitleWithArrow = {
+                            "Action": "<b><I><U>Action</U></I>xxx</b>",
+                            "Quantity": "<b><I><U>Quantity</U></I>xxx</b>",
+                            "Symbol": "<b><I><U>Symbol</U></I>xxx</b>",
+                            "Type": "<b><I><U>Type</U></I>xxx</b>",
+                            "Price": "<b><I><U>Price</U></I>xxx</b>",
+                            "ActPrice": "<b><I><U>Activation</U></I>xxx</b>",
+                            "TimeInForce": "<b><I><U>Time-in-Force</U></I>xxx</b>",
+                            "TimeEntered": "<b><I><U>Created</U></I>xxx</b>",
+                            "Bid": "<b><I><U>Bid</U></I>xxx</b>",
+                            "Ask": "<b><I><U>Ask</U></I>xxx</b>"
+                        };
+
+
+                        let sDownArrow = "&darr;";
+                        let sUpArrow = "&uarr;";
+                        let sArrow = "";
+                        if (gWatchlists[idxWL].iSortOrderAscDesc == 0) {
+                            sArrow = sDownArrow;
+                        } else {
+                            sArrow = sUpArrow;
+                        }
+                        sTitle[gWatchlists[idxWL].sSortOrderFields] = sTitleWithArrow[gWatchlists[idxWL].sSortOrderFields].replace("xxx", sArrow);
+                        gWatchlists[idxWL].WLItems.sort(sortWLSO);
+
+                        //sThisTableTitleInside = sThisTableTitleInside + "<td colspan=\"10\" style=\"text-align=left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px; \">";
+                        //sThisTableTitleInside = sThisTableTitleInside + "Total saved orders " + gWatchlists[idxWL].WLItems.length.toString() + " (max 200)";
+                        //sThisTableTitleInside = sThisTableTitleInside + "</td>";
+                        //sThisTableTitleInside = sThisTableTitleInside + "</tr>";
+                        //sThisTableTitleInside = sThisTableTitleInside + "<tr style=\"height:" + giTitleHeight.toString() + "px; \">";
 
                         let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
+                        let sonClickChangeOrderBase = "onclick =\"wlChangeOrderSO(" + idxWL.toString() + ", 'xxx')\"";
+                        let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Action);
+
+                        //let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
+                        sThisTableTitleInside = sThisTableTitleInside + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
                             "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + "-1" + ")\">" +
-                            "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-                            "<b><I>" + sActionSpacesP + "Action" + sActionSpacesT + "</I></b></span></td> ";
+                            "<span  " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Action + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                            sTitle.Action + "</span></td> ";
 
 
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Quantity);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Quantity + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Quantity + "</td>";
 
-                        sThisTable = sThisTable + "<td style=\"text-align:right;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sQuantitySpacesP + "Quantity" + sQuantitySpacesT + "</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sSymbolSpacesP + "Symbol" + sSymbolSpacesT + "</I></b></td> ";
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sOrderTypeSpacesP + "Order&nbsp;Type" + sOrderTypeSpacesT + "</I></b></td> ";
-                        sThisTable = sThisTable + "<td style=\"text-align:right;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sPriceSpacesP + "Price" + sPriceSpacesT + "</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:right;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sActivitationSpacesP + "Activation" + sActivitationSpacesT + "</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sDurationSpacesP + "Time-in-Force" + sDurationSpacesT + "</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sCreatedSpacesP + "Created" + sCreatedSpacesT + "</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:right;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sBidSpacesP + "Bid" + sBidSpacesT + "</I></b></td>";
-                        sThisTable = sThisTable + "<td style=\"text-align:right;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\"><b><I>" + sAskSpacesP + "Ask" + sAskSpacesT + "</I></b></td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Symbol);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Symbol + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Symbol + "</td>";
 
-                        sThisTable = sThisTable + "</tr>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Type);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.OrderType + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Type + "</td>";
 
-                        let iLineCnt = 0;
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Price);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Price + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Price + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.ActPrice);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.ActPrice + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.ActPrice + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.TimeInForce);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO["Time-in-Force"] + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeInForce + "</td>";
+
+                        if (gbUsingCell) {
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.TimeEntered);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.CreatedCell + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeEntered + "</td>";
+                        } else {
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.TimeEntered);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Created + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.TimeEntered + "</td>";
+                        }
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Bid);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Bid + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Bid + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Ask);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Ask + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Ask + "</td>";
+
+                        sThisTableTitleInside = sThisTableTitleInside + "</tr></table>";
+
+                        sThisTableTitle = sThisTableTitle + sThisTableTitleInside + "</div>" + "<div id=\"divtableInside" + sThisId + "\" style =\"" + gsReplaceTableHeightOverflow + " border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisTable = "";
+                        sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+
+                        iLineCnt = 0;
                         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
 
                             let oWLSOItem = new WLItemSavedOrder();
@@ -13602,21 +13778,21 @@ function GetWatchlistSO() {
                             let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(idxWLItem, 3, "0");
                             sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
                                 "<input style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + idxWLItem.toString() + ")\">" +
-                                "<span style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                                "<span style=\"" + gsFieldWidthsWLSO.Action + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
                                 sActionSpacesP + oWLSOItem.instruction.toProperCase(true) + sActionSpacesT + "</span></td>";
 
                             //Qty - quantity
                             sTmp = FormatDecimalNumber(oWLSOItem.quantity, 5, 0, "");
                             let dQty = parseFloat(sTmp);
                             if (dQty == 0.0) {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Quantity + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                             } else {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sQuantitySpacesP + sTmp + sQuantitySpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Quantity + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sQuantitySpacesP + sTmp + sQuantitySpacesT + "</td>";
                             }
 
                             //Symbol - symbol
                             sTmp = oWLSOItem.symbol;
-                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sSymbolSpacesP + sTmp + sSymbolSpacesT + "</td>";
+                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Symbol + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sSymbolSpacesP + sTmp + sSymbolSpacesT + "</td>";
 
                             //Order Type - orderType aqnd maybe stopPriceLinkType
                             sTmp = oWLSOItem.orderType;
@@ -13625,24 +13801,24 @@ function GetWatchlistSO() {
                             } else {
                                 sTmp = sTmp.toProperCase(true);
                             }
-                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sOrderTypeSpacesP + sTmp + sOrderTypeSpacesT + "</td>";
+                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.OrderType + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sOrderTypeSpacesP + sTmp + sOrderTypeSpacesT + "</td>";
 
                             //Price - price
                             sTmp = FormatDecimalNumber(oWLSOItem.price, 5, 2, "");
                             let dPrice = parseFloat(sTmp);
                             if (dPrice == 0.0) {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Price + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                             } else {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sPriceSpacesP + sTmp + sPriceSpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Price + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sPriceSpacesP + sTmp + sPriceSpacesT + "</td>";
                             }
 
                             //Activation - stopPriceOffset
                             sTmp = FormatDecimalNumber(oWLSOItem.stopPriceOffset, 5, 2, "");
                             let stopPriceOffset = parseFloat(sTmp);
                             if (stopPriceOffset == 0.0) {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.ActPrice + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                             } else {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sActivitationSpacesP + sTmp + "%" + sActivitationSpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.ActPrice + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sActivitationSpacesP + sTmp + "%" + sActivitationSpacesT + "</td>";
                             }
 
                             //Time-in-Force - duration
@@ -13657,39 +13833,39 @@ function GetWatchlistSO() {
                             } else {
                                 sTmp = sTmp.toProperCase(true);
                             }
-                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sDurationSpacesP + sTmp + sDurationSpacesT + "</td>";
+                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO["Time-in-Force"] + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sDurationSpacesP + sTmp + sDurationSpacesT + "</td>";
 
                             //Created - 
                             let d = new Date(oWLSOItem.savedTime.split("+")[0] + "+00:00");
                             sTmp = FormatTDTradeDate(d);
-                            sThisTable = sThisTable + "<td style=\"text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sCreatedSpacesP + sTmp + sCreatedSpacesT + "</td>";
+                            sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Created + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sCreatedSpacesP + sTmp + sCreatedSpacesT + "</td>";
 
                             //Bid
-                            let dBidPrice = 0.0;
-                            if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
-                                if (!isUndefined(oMDQ[oWLSOItem.symbol].bidPrice)) {
-                                    dBidPrice = oMDQ[oWLSOItem.symbol].bidPrice;
-                                }
-                            }
+                            let dBidPrice = oWLSOItem.bidPrice;
+                            //if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
+                            //    if (!isUndefined(oMDQ[oWLSOItem.symbol].bidPrice)) {
+                            //        dBidPrice = oMDQ[oWLSOItem.symbol].bidPrice;
+                            //    }
+                            //}
                             sTmp = FormatDecimalNumber(dBidPrice, 5, 2, "");
                             if (dBidPrice == 0.0) {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Bid + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                             } else {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sBidSpacesP + sTmp + sBidSpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Bid + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sBidSpacesP + sTmp + sBidSpacesT + "</td>";
                             }
 
                             //Ask
-                            let dAskPrice = 0.0;
-                            if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
-                                if (!isUndefined(oMDQ[oWLSOItem.symbol].askPrice)) {
-                                    dAskPrice = oMDQ[oWLSOItem.symbol].askPrice;
-                                }
-                            }
+                            let dAskPrice = oWLSOItem.askPrice;
+                            //if (!isUndefined(oMDQ[oWLSOItem.symbol])) {
+                            //    if (!isUndefined(oMDQ[oWLSOItem.symbol].askPrice)) {
+                            //        dAskPrice = oMDQ[oWLSOItem.symbol].askPrice;
+                            //    }
+                            //}
                             sTmp = FormatDecimalNumber(dAskPrice, 5, 2, "");
                             if (dAskPrice == 0.0) {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Ask + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                             } else {
-                                sThisTable = sThisTable + "<td style=\"text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAskSpacesP + sTmp + sAskSpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLSO.Ask + "text-align:right; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sAskSpacesP + sTmp + sAskSpacesT + "</td>";
                             }
 
                             sThisTable = sThisTable + "</tr>";
@@ -13698,22 +13874,36 @@ function GetWatchlistSO() {
 
                     }
 
-
-
-
                 } else {
                     //an error occurred, so don't update anything
                     return;
                 }
 
-
-                if (sThisTable != "") {
-                    sThisTable = sThisTable + "</table>";
+                if (sThisTable == "") {
+                    sThisDiv = sThisDiv + sThisTableTitle + "</div></div></td></tr></table></div>";
+                } else {
                     if (bEverythingIsChecked) {
-                        sThisTable = sThisTable.replace("xxthisWillBeReplacedxx", "checked");
+                        sThisTableTitleInside = sThisTableTitleInside.replace("xxthisWillBeReplacedxx", "checked");
+                        sThisTableTitle = sThisTableTitle.replace("xxthisWillBeReplacedxx", "checked");
+                    } else {
+                        sThisTableTitleInside = sThisTableTitleInside.replace("xxthisWillBeReplacedxx", "");
+                        sThisTableTitle = sThisTableTitle.replace("xxthisWillBeReplacedxx", "");
+                    }
+                    //sThisTable = sThisTable.replace("xxthisWillBeReplacedxx", "checked");
+
+                    if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWL].bShowMaximized)) {
+                        sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, gsTableHeightOverflow);
+                        sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitle);
+                        sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsMaximizeWindowImg);
+                    } else {
+                        sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
+                        sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
+                        sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
                     }
 
-                    sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
+                    sThisDiv = sThisDiv + sThisTableTitle + sThisTable + "</table></div></div>" + "</td></tr></table></div>";
+                    //sThisTable = sThisTable + "</table>";
+                    //sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
                 }
                 if (gWatchlists[idxWL].spanName == "") {
                     gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
@@ -13724,12 +13914,65 @@ function GetWatchlistSO() {
                         sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWL].spanName);
                         document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
                     } else {
-                        document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
-                        if (!isUndefined(document.getElementById("spanSODate" + sThisId))) {
-                            document.getElementById("spanSODate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
-                        }
+                        //document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
+                        if (!isUndefined(document.getElementById("spanODate" + sThisId))) {
+                            if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWL].bShowMaximized)) {
+                                document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
+                                document.getElementById("divtableInside" + sThisId).style.overflowY = "scroll";
+                                document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
+                                document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
+                                document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
+                            } else {
+                                document.getElementById("divtableInside" + sThisId).style.height = "";
+                                document.getElementById("spanMaxRestore" + sThisId).src = gsRestoreWindowImg;
+                            }
+                            document.getElementById("divtableTitle" + sThisId).innerHTML = sThisTableTitleInside;
+                            document.getElementById("divtableInside" + sThisId).innerHTML = sThisTable;
+                            if (!isUndefined(document.getElementById("spanSODate" + sThisId))) {
+                                document.getElementById("spanSODate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
+                            }
+                            if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
+                                if (!bSomethingSelected) {
+                                    if (document.getElementById("spanWLNumChecked" + sThisId) != null) {
+                                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                                    }
+                                }
+                            }
+                       }
                     }
                 }
+
+
+            //    if (sThisTable != "") {
+            //        sThisTable = sThisTable + "</table>";
+            //        if (bEverythingIsChecked) {
+            //            sThisTable = sThisTable.replace("xxthisWillBeReplacedxx", "checked");
+            //        }
+
+            //        sThisDiv = sThisDiv + sThisTable + "</div ></td ></tr ></table ></div > ";
+            //    }
+            //    if (gWatchlists[idxWL].spanName == "") {
+            //        gWatchlists[idxWL].spanName = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+            //        sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWL].spanName);
+            //        wlAddDiv(gWatchlists[idxWL].spanName, sThisDiv);
+            //    } else {
+            //        if (document.getElementById(gWatchlists[idxWL].spanName).innerHTML == "") {
+            //            sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWL].spanName);
+            //            document.getElementById(gWatchlists[idxWL].spanName).innerHTML = sThisDiv;
+            //        } else {
+            //            document.getElementById("divtable" + sThisId).innerHTML = sThisTable;
+            //            if (!isUndefined(document.getElementById("spanSODate" + sThisId))) {
+            //                document.getElementById("spanSODate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
+            //            }
+            //            if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
+            //                if (!bSomethingSelected) {
+            //                    if (document.getElementById("spanWLNumChecked" + sThisId) != null) {
+            //                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+            //                    }
+            //                }
+            //            }
+            //        }
+            //    }
             }
 
         }
@@ -13914,6 +14157,7 @@ function GetWatchlistSummary() {
 
                             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                                 if ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                                    (gWatchlists[idxWL].name != gsAccountOrders) &&
                                     (gWatchlists[idxWL].name != gsAccountWLSummary) &&
                                     (gWatchlists[idxWL].name != gsAccountOldGL) &&
                                     (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
@@ -19580,6 +19824,172 @@ function sortWLO(a, b) {
     return iReturn;
 }
 
+function sortWLSO(a, b) {
+    let iReturn = 0;
+    let aAmt = 0;
+    let bAmt = 0;
+    let aStr = "";
+    let bStr = "";
+    let bString = false;
+
+    //let oWLItemDetail = new WLItemSavedOrder();
+    switch (a.sSortOrderFields) {
+        case gsSortOrderFieldsSO.Action:
+            {
+                let sX = "                                                  ";
+                if (a.instruction.length < 20) {
+                    aStr = a.instruction + sX.substr(0, 20 - a.instruction.length);
+                }
+                if (b.instruction.length < 20) {
+                    bStr = b.instruction + sX.substr(0, 20 - b.instruction.length);
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsSO.ActPrice:
+            {
+                aAmt = a.stopPriceOffset;
+                bAmt = b.stopPriceOffset;
+                break;
+            }
+        case gsSortOrderFieldsSO.Ask:
+            {
+                aAmt = a.askPrice;
+                bAmt = b.askPrice;
+                break;
+            }
+        case gsSortOrderFieldsSO.Bid:
+            {
+                aAmt = a.bidPrice;
+                bAmt = b.bidPrice;
+                break;
+            }
+        case gsSortOrderFieldsSO.Price:
+            {
+                aAmt = a.price;
+                bAmt = b.price;
+                break;
+            }
+        case gsSortOrderFieldsSO.Quantity:
+            {
+                aAmt = a.quantity;
+                bAmt = b.quantity;
+                break;
+            }
+        case gsSortOrderFieldsO.Symbol:
+            {
+                let sX = "                                                  ";
+                if (a.symbol.length < 20) {
+                    aStr = a.symbol + sX.substr(0, 20 - a.symbol.length);
+                }
+                if (b.symbol.length < 20) {
+                    bStr = b.symbol + sX.substr(0, 20 - b.symbol.length);
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsSO.TimeEntered:
+            {
+                let sX = "                                                  ";
+                if (a.savedTime.length < 20) {
+                    aStr = a.savedTime + sX.substr(0, 20 - a.savedTime.length);
+                } else {
+                    aStr = a.savedTime;
+                }
+                if (b.savedTime.length < 20) {
+                    bStr = b.savedTime + sX.substr(0, 20 - b.savedTime.length);
+                } else {
+                    bStr = b.savedTime;
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsSO.TimeInForce:
+            {
+                let sTmp = FormatDecimalNumber(a.price, 5, 2, "");
+                let dPriceA = parseFloat(sTmp);
+                let sTmpA = a.duration;
+                if (sTmpA == "GOOD_TILL_CANCEL") {
+                    sTmpA = "GTC";
+                    if (dPriceA == 0.0) {
+                        sTmpA = "GTC";
+                    } else {
+                        sTmpA = "GTC + ext.";
+                    }
+                } else {
+                    sTmpA = sTmpA.toProperCase(true);
+                }
+
+                sTmp = FormatDecimalNumber(b.price, 5, 2, "");
+                let dPriceB = parseFloat(sTmp);
+                let sTmpB = b.duration;
+                if (sTmpB == "GOOD_TILL_CANCEL") {
+                    sTmpB = "GTC";
+                    if (dPriceB == 0.0) {
+                        sTmpB = "GTC";
+                    } else {
+                        sTmpB = "GTC + ext.";
+                    }
+                } else {
+                    sTmpB = sTmpB.toProperCase(true);
+                }
+
+                let sX = "                                                  ";
+                if (sTmpA.length < 20) {
+                    aStr = sTmpA + sX.substr(0, 20 - sTmpA.length);
+                } else {
+                    aStr = sTmpA;
+                }
+                if (sTmpB.length < 20) {
+                    bStr = sTmpB + sX.substr(0, 20 - sTmpB.length);
+                } else {
+                    bStr = sTmpB;
+                }
+                bString = true;
+                break;
+            }
+        case gsSortOrderFieldsSO.Type:
+            {
+                let sX = "                                                  ";
+                if (a.orderType.length < 20) {
+                    aStr = a.orderType + sX.substr(0, 20 - a.orderType.length);
+                } else {
+                    aStr = a.orderType;
+                }
+                if (b.orderType.length < 20) {
+                    bStr = b.orderType + sX.substr(0, 20 - b.orderType.length);
+                } else {
+                    bStr = b.orderType;
+                }
+                bString = true;
+                break;
+            }
+        default:
+            {
+                break;
+            }
+    }
+    if (bString) {
+        if (aStr < bStr) {
+            iReturn = -1;
+        }
+        if (aStr > bStr) {
+            iReturn = 1;
+        }
+    } else {
+        if (aAmt < bAmt) {
+            iReturn = -1;
+        }
+        if (aAmt > bAmt) {
+            iReturn = 1;
+        }
+    }
+    if (a.iSortOrderAscDesc != 0) {
+        iReturn = iReturn * -1;
+    }
+    return iReturn;
+}
+
 function UseEnterToTogglePriceHistory(ev) {
     if (ev.srcElement.checked) {
         gbUseEnterToTogglePriceHistory = true;
@@ -19841,7 +20251,60 @@ function wlChangeOrderO(idxWL, sSortOrder) {
             giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
         }
     } else {
-        window.setTimeout("wlChangeOrder(" + idxWL.toString() + ",'" + sSortOrder + "')", 100);
+        window.setTimeout("wlChangeOrderO(" + idxWL.toString() + ",'" + sSortOrder + "')", 100);
+    }
+}
+
+function wlChangeOrderSO(idxWL, sSortOrder) {
+    if (!gbDoingGetTDData) {
+        if (giGetTDDataTimeoutId != 0) {
+            window.clearTimeout(giGetTDDataTimeoutId);
+            giGetTDDataTimeoutId = 0;
+
+            if (gWatchlists[idxWL].sSortOrderFields == sSortOrder) {
+                if (gWatchlists[idxWL].iSortOrderAscDesc == 0) {
+                    gWatchlists[idxWL].iSortOrderAscDesc = 1;
+                } else {
+                    gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                }
+            } else {
+                switch (sSortOrder) {
+                    case gsSortOrderFieldsSO.ActPrice:
+                    case gsSortOrderFieldsSO.Price:
+                    case gsSortOrderFieldsSO.Ask:
+                    case gsSortOrderFieldsSO.Bid:
+                    case gsSortOrderFieldsSO.Quantity:
+                    case gsSortOrderFieldsSO.TimeInForce:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 1;
+                            break;
+                        }
+                    case gsSortOrderFieldsSO.Action:
+                    case gsSortOrderFieldsSO.Symbol:
+                    case gsSortOrderFieldsSO.Type:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                            break;
+                        }
+                    default:
+                        {
+                            gWatchlists[idxWL].iSortOrderAscDesc = 0;
+                            break;
+                        }
+                }
+                gWatchlists[idxWL].sSortOrderFields = sSortOrder;
+            }
+            if (gWatchlists[idxWL].WLItems.length > 0) {
+                for (let idx = 0; idx < gWatchlists[idxWL].WLItems.length; idx++) {
+                    gWatchlists[idxWL].WLItems[idx].sSortOrderFields = gWatchlists[idxWL].sSortOrderFields;
+                    gWatchlists[idxWL].WLItems[idx].iSortOrderAscDesc = gWatchlists[idxWL].iSortOrderAscDesc;
+                }
+            }
+
+            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
+        }
+    } else {
+        window.setTimeout("wlChangeOrderSO(" + idxWL.toString() + ",'" + sSortOrder + "')", 100);
     }
 }
 
