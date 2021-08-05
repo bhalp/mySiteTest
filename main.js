@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-04 22:24"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-05 00:29"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -10879,6 +10879,9 @@ function GetWatchlistO() {
                 }
 
                 if (sThisTable == "") {
+                    sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
+                    sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
+                    sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
                     sThisDiv = sThisDiv + sThisTableTitle + "</div></div></td></tr></table></div>";
                 } else {
                     if ((bEverythingIsChecked) && (iNumChecked > 0)) {
@@ -13642,7 +13645,9 @@ function GetWatchlistSO() {
                     if (gWatchlists[idxWL].WLItems.length == 0) {
                         //no saved orders
                         sThisTableTitleInside = sThisTableTitleInside + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">No saved orders for this account.</td>";
-                        sThisTableTitleInside = sThisTableTitleInside + "</tr>";
+                        sThisTableTitleInside = sThisTableTitleInside + "</tr></table>";
+                        sThisTableTitle = sThisTableTitle + sThisTableTitleInside + "</div>" + "<div id=\"divtableInside" + sThisId + "\" style =\"" + gsReplaceTableHeightOverflow + " border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+
                         if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
                             if (document.getElementById("spanWLNumChecked" + sThisId) != null) {
                                 document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
@@ -13880,6 +13885,9 @@ function GetWatchlistSO() {
                 }
 
                 if (sThisTable == "") {
+                    sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
+                    sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
+                    sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
                     sThisDiv = sThisDiv + sThisTableTitle + "</div></div></td></tr></table></div>";
                 } else {
                     if (bEverythingIsChecked) {
@@ -13928,9 +13936,9 @@ function GetWatchlistSO() {
                             }
                             document.getElementById("divtableTitle" + sThisId).innerHTML = sThisTableTitleInside;
                             document.getElementById("divtableInside" + sThisId).innerHTML = sThisTable;
-                            if (!isUndefined(document.getElementById("spanSODate" + sThisId))) {
-                                document.getElementById("spanSODate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
-                            }
+
+                            document.getElementById("spanSODate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
+
                             if (!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) {
                                 if (!bSomethingSelected) {
                                     if (document.getElementById("spanWLNumChecked" + sThisId) != null) {
