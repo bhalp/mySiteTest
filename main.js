@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-05 00:29"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-05 00:53"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -562,7 +562,7 @@ var gsFieldWidthsWLSO = {
 
 const lengthsWLSO = {
     WLWidth: "920px",
-    WLWidthCell: "920px",
+    WLWidthCell: "930px",
     WLColOpenLabelWidth:  80,
     WLColOpenEntryWidth: 80,
     WLColAcquiredDateEntryWidth: 80,
