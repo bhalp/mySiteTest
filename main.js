@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-04 16:50"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-04 17:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -10818,7 +10818,7 @@ function GetWatchlistO() {
                                 sTmp = FormatTDTradeDate(d2);
                             }
                             if (gbUsingCell) {
-                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.OpenedCell + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; font-size:8pt;\">" + sTimeEnteredSpacesP + sTmp + sTimeEnteredSpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.OpenedCell + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; font-size:9pt;\">" + sTimeEnteredSpacesP + sTmp + sTimeEnteredSpacesT + "</td>";
                             } else {
                                 sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.Opened + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTimeEnteredSpacesP + sTmp + sTimeEnteredSpacesT + "</td>";
                             }
@@ -10831,7 +10831,7 @@ function GetWatchlistO() {
                                 sTmp = FormatTDTradeDate(d2);
                             }
                             if (gbUsingCell) {
-                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.ClosedCell + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; font-size:8pt; \">" + sReportedSpacesP + sTmp + sReportedSpacesT + "</td>";
+                                sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.ClosedCell + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; font-size:9pt; \">" + sReportedSpacesP + sTmp + sReportedSpacesT + "</td>";
                             } else {
                                 sThisTable = sThisTable + "<td style=\"" + gsFieldWidthsWLO.Closed + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sReportedSpacesP + sTmp + sReportedSpacesT + "</td>";
                             }
