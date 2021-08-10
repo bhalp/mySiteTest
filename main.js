@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-09 18:32"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-09 22:50"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -11747,202 +11747,306 @@ function GetWatchlistPrices() {
                     sLastWLAccountId = gWatchlists[idxWLMain].accountId;
                     sThisId = gWatchlists[idxWLMain].watchlistId + sLastWLAccountId;
 
-                    if (gbUsingCell) {
-                        //                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
-                        if (bDoingAccountWL) {
-                            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            sThisDiv = sThisDiv + "<tr>";
+                    //if (gbUsingCell) {
+                    //    if (bDoingAccountWL) {
+                    //        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //        sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //        sThisDiv = sThisDiv + "<tr>";
 
-                            sThisDiv = sThisDiv + "<th colspan=\"3\" style=\"height:30px;vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                                "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                    //        sThisDiv = sThisDiv + "<th colspan=\"3\" style=\"height:30px;vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                    //            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                    //            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                    //            "&nbsp;&nbsp;&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                    //        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
-                            sThisDiv = sThisDiv + "</tr>";
+                    //        sThisDiv = sThisDiv + "</tr>";
 
-                            sThisDiv = sThisDiv + "<tr>";
+                    //        sThisDiv = sThisDiv + "<tr>";
 
-                        } else {
-                            if (bDoingDividendWL) {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthDiv + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table style=\"width" + lengthsWL.WLWidthDiv + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            } else {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            }
-                            sThisDiv = sThisDiv + "<tr>";
-                            //style=\"vertical-align:bottom\">
-                            sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-                                "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+                    //    } else {
+                    //        if (bDoingDividendWL) {
+                    //            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthDiv + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //            sThisDiv = sThisDiv + "<table style=\"width" + lengthsWL.WLWidthDiv + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //        } else {
+                    //            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //            sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //        }
+                    //        sThisDiv = sThisDiv + "<tr>";
+                    //        //style=\"vertical-align:bottom\">
+                    //        sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //            "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                    //            "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                    //            "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                    //            "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
 
-                            sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                                "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                    //        sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                    //            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                    //            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                    //            "&nbsp;&nbsp;&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-                            sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
-                                "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+                    //        sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
+                    //            "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
-                            sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-
-                            sThisDiv = sThisDiv + "</tr>";
-
-                            sThisDiv = sThisDiv + "<tr>";
-                        }
-
-                        sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
-                        sThisDiv = sThisDiv + "</th>";
-
-                        sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                            "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                        sThisDiv = sThisDiv + "</th> ";
-
-                        sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        if (bDoingAccountWL) {
-                            sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
-                        } else {
-                            sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
-                                "&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
-                                "&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
-                                "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
-                        }
+                    //        sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
 
-                        sThisDiv = sThisDiv + "</th> ";
+                    //        sThisDiv = sThisDiv + "</tr>";
+
+                    //        sThisDiv = sThisDiv + "<tr>";
+                    //    }
+
+                    //    sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
+                    //    sThisDiv = sThisDiv + "</th>";
+
+                    //    sThisDiv = sThisDiv + "<th style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                    //        "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                    //        "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+                    //    sThisDiv = sThisDiv + "</th> ";
+
+                    //    sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
+                    //    if (bDoingAccountWL) {
+                    //        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                    //            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                    //            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+                    //    } else {
+                    //        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                    //            "&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                    //            "&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
+                    //            "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+                    //    }
+
+
+                    //    sThisDiv = sThisDiv + "</th> ";
+
+                    //    sThisDiv = sThisDiv + "</tr>";
+
+                    //    sThisDiv = sThisDiv + "<tr>";
+
+                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+                    //} else { //not using cell
+                    //    //                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
+                    //    if (bDoingAccountWL) {
+                    //        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //        sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //        sThisDiv = sThisDiv + "<tr>";
+
+                    //        sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                    //            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                    //            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                    //            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                    //        sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                    //        sThisDiv = sThisDiv + "</tr>";
+
+                    //        sThisDiv = sThisDiv + "<tr>";
+                    //        sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
+
+                    //    } else {
+                    //        if (bDoingDividendWL) {
+                    //            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthDiv + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //            sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthDiv + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //        } else {
+                    //            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                    //            sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    //        }
+                    //        sThisDiv = sThisDiv + "<tr>";
+
+                    //        sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //            "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                    //            "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                    //            "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                    //            "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+
+                    //        sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                    //            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                    //            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                    //            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                    //            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+
+                    //        sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                    //            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
+                    //            "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+
+                    //        sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                    //        sThisDiv = sThisDiv + "</tr>";
+
+                    //        sThisDiv = sThisDiv + "<tr>";
+                    //        sThisDiv = sThisDiv + "<th colspan=\"4\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
+                    //    }
+
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
+
+
+                    //    if (bDoingDividendWL) {
+                    //        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                    //            "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                    //            "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+
+                    //        //sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                    //        //    "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                    //        //    "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+
+                    //        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                    //            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                    //            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" + 
+                    //            "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+
+                    //        sThisDiv = sThisDiv + "</th > ";
+
+                    //    } else {
+
+                    //        if (bDoingAccountWL) {
+                    //            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                    //                "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                    //                "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+                    //            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                    //                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                    //                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+
+                    //        } else {
+                    //            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                    //                "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                    //                "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+
+                    //            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                    //                "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                    //                "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
+                    //                "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+                    //        }
+                    //        sThisDiv = sThisDiv + "</th > ";
+                    //    }
+
+                    //    sThisDiv = sThisDiv + "</tr>";
+
+
+                    //    sThisDiv = sThisDiv + "<tr>";
+
+                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+
+                    //}
+                    //--------------------------------------------------------
+
+                    if (bDoingAccountWL) {
+                        sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                        sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                        sThisDiv = sThisDiv + "<tr>";
+
+                        sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                        sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
                         sThisDiv = sThisDiv + "<tr>";
+                        sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
 
-                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-                    } else { //not using cell
-                        //                            if (gWatchlists[idxWLMain].watchlistId == sLastWLAccountId) { //don't show Open and Close if this is an Account watchlist
-                        if (bDoingAccountWL) {
+                    } else {
+                        if (bDoingDividendWL) {
+                            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthDiv + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                            sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthDiv + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                        } else {
                             sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                             sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            sThisDiv = sThisDiv + "<tr>";
+                        }
+                        sThisDiv = sThisDiv + "<tr>";
 
-                            sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                                "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
-                                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
-                            sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                            "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
 
-                            sThisDiv = sThisDiv + "</tr>";
+                        sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
+                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-                            sThisDiv = sThisDiv + "<tr>";
-                            sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
+                        sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
+                            "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+
+                        sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+
+                        sThisDiv = sThisDiv + "</tr>";
+
+                        sThisDiv = sThisDiv + "<tr>";
+                        sThisDiv = sThisDiv + "<th colspan=\"4\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
+                    }
+
+                    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
+                    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
+                    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
+
+
+                    if (bDoingDividendWL) {
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                            "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+
+                        //sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                        //    "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                        //    "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
+                            "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+
+                        sThisDiv = sThisDiv + "</th > ";
+
+                    } else {
+
+                        if (bDoingAccountWL) {
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
+                                "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
 
                         } else {
-                            if (bDoingDividendWL) {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthDiv + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthDiv + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            } else {
-                                sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                                sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                            }
-                            sThisDiv = sThisDiv + "<tr>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-                                "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                                "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
-                                "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                                "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
-                                "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-
-                            sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                            sThisDiv = sThisDiv + "</tr>";
-
-                            sThisDiv = sThisDiv + "<tr>";
-                            sThisDiv = sThisDiv + "<th colspan=\"4\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
-                        }
-
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
-                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
-
-
-                        if (bDoingDividendWL) {
-                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                                 "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
 
-                            //sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
-                            //    "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                            //    "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-
-                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
-                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" + 
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
                                 "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
-
-                            sThisDiv = sThisDiv + "</th > ";
-
-                        } else {
-
-                            if (bDoingAccountWL) {
-                                sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
-                                    "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                                    "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                                sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
-                                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
-                                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
-
-                            } else {
-                                sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
-                                    "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
-                                    "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-
-                                sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
-                                    "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
-                                    "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
-                                    "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
-                            }
-                            sThisDiv = sThisDiv + "</th > ";
                         }
-
-                        sThisDiv = sThisDiv + "</tr>";
-
-
-                        sThisDiv = sThisDiv + "<tr>";
-
-                        sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-
+                        sThisDiv = sThisDiv + "</th > ";
                     }
 
+                    sThisDiv = sThisDiv + "</tr>";
 
+
+                    sThisDiv = sThisDiv + "<tr>";
+
+                    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
+
+                    //--------------------------------------------------------
                     sThisDiv = sThisDiv + "<div id=\"divtable" + sThisId + "\" style =\"border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                     sThisTableTitle = "<div id=\"divtableTitle" + sThisId + "\" style =\"" + gsReplaceTableHeightOverflowTitle + " border-spacing:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                     sThisTableTitleInside = "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
