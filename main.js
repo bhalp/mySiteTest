@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-09 16:53"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-09 17:44"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -3937,8 +3937,12 @@ function drag_div(div_id) {
                 x: event.touches[0].clientX,
                 y: event.touches[0].clientY
             };
-            div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
-            div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            if ((div.mousePosition.x + div.offset[0]) > 0) {
+                div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
+            }
+            if ((div.mousePosition.y + div.offset[1]) > 0) {
+                div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            }
         }
     }, true);
 
@@ -4020,8 +4024,12 @@ function drag_divPH(div_id) {
                     x: event.touches[0].clientX,
                     y: event.touches[0].clientY
                 };
-                div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
-                div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+                if ((div.mousePosition.x + div.offset[0]) > 0) {
+                    div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
+                }
+                if ((div.mousePosition.y + div.offset[1]) > 0) {
+                    div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+                }
             }
         }
     }, true);
@@ -4094,8 +4102,12 @@ function drag_divWL(div_id) {
                 x: event.touches[0].clientX,
                 y: event.touches[0].clientY
             };
-            div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
-            div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            if ((div.mousePosition.x + div.offset[0]) > 0) {
+                div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
+            }
+            if ((div.mousePosition.y + div.offset[1]) > 0) {
+                div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            }
         }
     }, true);
 
