@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-05 01:03"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.2 2021-08-09 16:53"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -3079,18 +3079,20 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
                 if (AreYouSure(sConfirmMsg)) {
                     //get the highest last update date
                     let iHighestUpdateDate = 0;
-                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                        if (iHighestUpdateDate == 0) {
-                            iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
-                        } else {
-                            if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate == 0) {
-                                alert("New symbol encountered. Please enter a date to use to initialize the entire watchlist.")
-                                return;
-                            } else if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iHighestUpdateDate) {
-                                iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
-                            }
-                        }
-                    }
+                    iHighestUpdateDate = GetHighestUpdateDate(idxWL, true);
+                    if (iHighestUpdateDate == -1) return;
+                    //for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                    //    if (iHighestUpdateDate == 0) {
+                    //        iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                    //    } else {
+                    //        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate == 0) {
+                    //            alert("New symbol encountered. Please enter a date to use to initialize the entire watchlist.")
+                    //            return;
+                    //        } else if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iHighestUpdateDate) {
+                    //            iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                    //        }
+                    //    }
+                    //}
                     //get the trade info for the selected symbols
                     window.setTimeout("GetTradesAutoBase(true, " + iHighestUpdateDate + ", " + idxWL + ", false, '', " + iEndDate + ", '')", 10);
                     //window.setTimeout("GetTradesAuto(true, " + iHighestUpdateDate + ", " + idxWL + ", false)", 10);
@@ -3918,8 +3920,13 @@ function drag_div(div_id) {
                 x: event.clientX,
                 y: event.clientY
             };
-            div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
-            div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            if ((div.mousePosition.x + div.offset[0]) > 0) {
+                div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
+            }
+            if ((div.mousePosition.y + div.offset[1]) > 0) {
+                div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            }
+//            div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
         }
     }, true);
 
@@ -3994,8 +4001,13 @@ function drag_divPH(div_id) {
                     x: event.clientX,
                     y: event.clientY
                 };
-                div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
-                div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+                if ((div.mousePosition.x + div.offset[0]) > 0) {
+                    div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
+                }
+                if ((div.mousePosition.y + div.offset[1]) > 0) {
+                    div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+                }
+//                div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
             }
         }
     }, true);
@@ -4066,8 +4078,12 @@ function drag_divWL(div_id) {
                 x: event.clientX,
                 y: event.clientY
             };
-            div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
-            div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            if ((div.mousePosition.x + div.offset[0]) > 0) {
+                div.style.left = (div.mousePosition.x + div.offset[0]) + 'px';
+            }
+            if ((div.mousePosition.y + div.offset[1]) > 0) {
+                div.style.top = (div.mousePosition.y + div.offset[1]) + 'px';
+            }
         }
     }, true);
 
@@ -6986,6 +7002,26 @@ function GetCurrentPricesAuto() {
             }
         }
     }
+}
+
+function GetHighestUpdateDate(idxWL, bShowAlert) {
+    //get the highest last update date
+    let iHighestUpdateDate = 0;
+    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+        if (iHighestUpdateDate == 0) {
+            iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+        } else {
+            if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate == 0) {
+                if (bShowAlert) {
+                    alert("New symbol encountered. Please enter a date to use to initialize the entire watchlist.")
+                    return -1;
+                }
+            } else if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iHighestUpdateDate) {
+                iHighestUpdateDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+            }
+        }
+    }
+    return iHighestUpdateDate;
 }
 
 function GetIndexValues() {
@@ -11638,6 +11674,13 @@ function GetWatchlistPrices() {
 
                 if (gWLDisplayed.length > 0) {
 
+                    //get the last update date
+                    let iTmpUpdateDate = GetHighestUpdateDate(idxWLMain, false);
+                    let sLastUpdateDate = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                    if (!bDoingAccountWL) {
+                        sLastUpdateDate = FormatDateWithTime(new Date(iTmpUpdateDate), true, false);
+                    }
+
                     //let bDoingDividendWL = false;
                     //if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
                     //    bDoingDividendWL = true;
@@ -11760,9 +11803,16 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "</th> ";
 
                         sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:right; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">";
-                        sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
-                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+                        sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>" +
+                            "&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                            "&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+
+                        //sThisDiv = sThisDiv + "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                        //    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                        //    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+
+
                         sThisDiv = sThisDiv + "</th> ";
 
                         sThisDiv = sThisDiv + "</tr>";
@@ -11834,18 +11884,31 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                                 "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+
+                            //sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                            //    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                            //    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
                             sThisDiv = sThisDiv + "</th > ";
 
                         } else {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;" +
                                 "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">";
-                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+
+                            //sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                            //    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                            //    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >";
+
                             sThisDiv = sThisDiv + "</th > ";
                         }
 
@@ -12769,6 +12832,7 @@ function GetWatchlistPrices() {
                         if (document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML == "") {
                             sThisDiv = sThisDiv.replace("xxxPrintDivNamexxx", gWatchlists[idxWLMain].spanName);
                             document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = sThisDiv;
+//                            document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML = "<div id=\"" + gWatchlists[idxWLMain].spanName + "top\"></div>" + sThisDiv;
                         } else {
                             if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWLMain].bShowMaximized)) {
                                 document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
@@ -12783,6 +12847,7 @@ function GetWatchlistPrices() {
                             document.getElementById("divtableTitle" + sThisId).innerHTML = sThisTableTitleInside;
                             document.getElementById("divtableInside" + sThisId).innerHTML = sThisTable;
                             document.getElementById("divtableTotals" + sThisId).innerHTML = sThisTableTotalsInside;
+                            document.getElementById("spanLastUpdateDate" + sThisId).innerHTML = sLastUpdateDate;
                             document.getElementById("spanWLDate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
                         }
                     }
