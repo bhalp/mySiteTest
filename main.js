@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.2 2021-08-09 22:50"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.3 2021-08-10 16:31"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -19275,8 +19275,12 @@ function SetupWatchlists(bDoingSymbols) {
             let sLastAccountname = "";
             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                 if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name == gsAccountOrders) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name == gsAccountOldGL) && (!bDoingSymbols)) ||
                     ((gWatchlists[idxWL].name == gsAccountWLSummary) && (!bDoingSymbols)) ||
                     ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                     (gWatchlists[idxWL].name != gsAccountOrders) &&
+                     (gWatchlists[idxWL].name != gsAccountOldGL) &&
                      (gWatchlists[idxWL].name != gsAccountWLSummary) &&
                      (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase))) {
                     if (gWatchlists[idxWL].accountName != sLastAccountname) {
@@ -19305,7 +19309,6 @@ function SetupWatchlists(bDoingSymbols) {
                             "<input type=\"checkbox\" value=\"\" onclick=\"wlMarkSelected(" + idxWL.toString() + ")\">" +
                             "</td > ";
                     }
-                    //                s = s + "<td onclick=\"wlShowSymbols(" + idxWL.toString() + ")\" style=\"text-align:left;vertical-align:top;border-width:0px;\">" +
                     s = s + "<td \" style=\"text-align:left;vertical-align:top;border-width:0px;\">" +
                         gWatchlists[idxWL].name +
                         "</td>";
@@ -19332,8 +19335,12 @@ function SetupWatchlists(bDoingSymbols) {
             let sLastAccountname = "";
             for (let idxWL = 0; idxWL < gWatchlists.length; idxWL++) {
                 if (((gWatchlists[idxWL].name == gsAccountSavedOrders) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name == gsAccountOrders) && (!bDoingSymbols)) ||
+                    ((gWatchlists[idxWL].name == gsAccountOldGL) && (!bDoingSymbols)) ||
                     ((gWatchlists[idxWL].name == gsAccountWLSummary) && (!bDoingSymbols)) ||
                     ((gWatchlists[idxWL].name != gsAccountSavedOrders) &&
+                     (gWatchlists[idxWL].name != gsAccountOrders) &&
+                     (gWatchlists[idxWL].name != gsAccountOldGL) &&
                      (gWatchlists[idxWL].name != gsAccountWLSummary) &&
                      (gWatchlists[idxWL].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase))) {
                     if (sLastAccountname == "") {
@@ -19347,7 +19354,6 @@ function SetupWatchlists(bDoingSymbols) {
                             s = s + "<optgroup label=\"" + sLastAccountname + "\">";
                         }
                     }
-
                     s = s + "<option value=\"" + idxWL.toString() + "\">" + gWatchlists[idxWL].name + "</option>";
                 }
             }
