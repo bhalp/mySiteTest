@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.3 2021-08-11 19:38"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.4 2021-08-13 15:11"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -463,7 +463,7 @@ var giWLColAcquiredDateEntryWidth = 80;
 var giWLColTitleWidth = 440;
 var giWLColCloseLabelWidth = 110;
 var giWLColCloseEntryWidth = 80;
-var giWLDragXoffsetLeft = 220;
+var giWLDragXoffsetLeft = 240;
 var giWLDragXoffsetRight = 700;
 var giWLCol1Width = giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth + giWLColTitleWidth + giWLColCloseLabelWidth + giWLColCloseEntryWidth + 40;
 var giWLCol2Width = 18;
@@ -574,7 +574,7 @@ var gsFieldWidthsWLOGL = {
     "AddImg": "width:20px;",
     "SymbolEntry": "width:80px;",
     "UpdateDescriptionButton": "width:110px;",
-    "DescriptionEntry": "width:80px;",
+    "DescriptionEntry": "width:140px;",
     "UpdateOGLButton": "width:90px;",
     "OGLEntry": "width:50px;"
 }
@@ -3179,11 +3179,14 @@ function DoWLDeleteSymbols(watchlistId, sLastWLAccountId) {
     }
 }
 
-function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
+function DoWLOpenSymbols(iFromWhere, watchlistId, sLastWLAccountId) {
+    //iFromwhere -- 1 add img, 2 - update img
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
         //allow the following
+        // iFromWhere = 1
         // 1 - something in txtwlopen and something in txtwlacquired - only one symbol allowed, use txtwlacquired as starting date for trades - require deleting existing before adding new
         // 2 - something in txtwlopen and nothing in txtwlacquired - adding a symbol with no acquired date - set starting and ending time to last update time, set GL value to 0
+        // iFromWhere = 2
         // 3 - nothing entered in txtwlopen and something in txtwlacquired - updating acquired date only - need to select at least one symbol - don't change GL value or dates
         // 4 - nothing entered in txtwlopen and nothing in txtwlacquired - clearing acquired date only - need to select at least one symbol - don't change GL value or dates
 
@@ -3212,376 +3215,763 @@ function DoWLOpenSymbols(watchlistId, sLastWLAccountId) {
                 }
             }
 
-            if ((stxtwlopen != "") && (stxtwlacquired != "")) { //case 1
-                let sSymbolsAlreadyOpen = "";
-                let sSymbolsAlreadyOpenSep = "";
-                if (!ValidateTDDate(stxtwlacquired, true)) {
-                    alert("Please enter an acquired date as yyyy-mm-dd.");
-                    return;
-                }
-                let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
-                let vTmp = sSymbolsToLookupTmp.split(",");
-                if (vTmp.length > 0) {
-                    if (vTmp.length > 1) {
-                        alert("Please enter only one symbol to add.");
-                        return;
-                    }
-                    sSymbolsToLookup = vTmp[0];
+            switch (iFromWhere) {
+                case 1: { //add img
+                    if ((stxtwlopen != "") && (stxtwlacquired != "")) { //case 1
 
-                    let sConfirmMsg = "";
-                    //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
-                    let oPositions = new Array();
-                    //get account position info if it exists
-                    for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                        if (gAccounts[idxAccount].positions.length > 0) {
-                            for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
-                                if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
-                                    let oPosition = new Position();
-                                    oPosition = gAccounts[idxAccount].positions[idxPositions];
-                                    oPosition.accountId = gAccounts[idxAccount].accountId;
-                                    oPosition.accountName = gAccounts[idxAccount].accountName;
-                                    oPosition.symbol = "";
-                                    oPositions[oPositions.length] = oPosition;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
-                        if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
-                            (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
-                            (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
-                            (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
-                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
-                                if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
-                                    if (oPositions.length > 0) {
-                                        let idxSym = -1;
-                                        let bNeedToAddPos = true;
-                                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
-                                            if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
-                                                idxSym = idxPos;
-                                                if (oPositions[idxPos].symbol == "") {
-                                                    bNeedToAddPos = false;
-                                                    oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if ((bNeedToAddPos) && (idxSym != -1)) {
-                                            let oPosition = new Position();
-                                            oPosition.longQuantity = oPositions[idxSym].longQuantity;
-                                            oPosition.accountId = oPositions[idxSym].accountId;
-                                            oPosition.accountName = oPositions[idxSym].accountName;
-                                            oPosition.symbol = gWatchlists[idxTmp].name;
-                                            oPositions[oPositions.length] = oPosition;
-                                        } else if (bNeedToAddPos) {
-                                            //no positions - so add one for the account containing the watchlist
-                                            let oPosition = new Position();
-                                            oPosition.accountId = gWatchlists[idxTmp].accountId;
-                                            oPosition.accountName = gWatchlists[idxTmp].accountName;
-                                            oPosition.symbol = gWatchlists[idxTmp].name;
-                                            oPositions[oPositions.length] = oPosition;
-                                        }
-                                    } else {
-                                        //no positions - so add one for the account containing the watchlist
-                                        let oPosition = new Position();
-                                        oPosition.accountId = gWatchlists[idxTmp].accountId;
-                                        oPosition.accountName = gWatchlists[idxTmp].accountName;
-                                        oPosition.symbol = gWatchlists[idxTmp].name;
-                                        oPositions[oPositions.length] = oPosition;
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (oPositions.length > 0) {
-                        oPositions.sort(sortByPosAccountandSymbol);
-                        let sLastAccountName = "";
-                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
-                            let oPosition = oPositions[idxPos];
-                            let sWatchlistname = oPosition.symbol;
-                            if (sWatchlistname == "") {
-                                sWatchlistname = "No watchlists";
-                            }
-                            if (sLastAccountName == "") {
-                                sLastAccountName = oPosition.accountName;
-                                sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname +"\n";
-                            } else {
-                                if (oPosition.accountName == sLastAccountName) {
-                                    sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
-                                } else {
-                                    sLastAccountName = oPosition.accountName;
-                                    sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
-                                }
-                            }
-                        }
-                    }
-                    if (sConfirmMsg != "") {
-                        if (!AreYouSure(sConfirmMsg + "\n")) {
+                        let sSymbolsAlreadyOpen = "";
+                        let sSymbolsAlreadyOpenSep = "";
+                        if (!ValidateTDDate(stxtwlacquired, true)) {
+                            alert("Please enter an acquired date as yyyy-mm-dd.");
                             return;
                         }
-                    }
-
-                    sConfirmMsg = "";
-                    let iNumAlreadyOpened = 0;
-                    sSymbolsToLookup = "";
-                    sSymbolsToLookupSep = "";
-                    //check to see if already in watchlist
-                    let bFound = false;
-                    for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
-                        bFound = false;
-                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                            if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
-                                bFound = true;
-                                sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
-                                sSymbolsAlreadyOpenSep = ", ";
-                                iNumAlreadyOpened++;
-                                break;
+                        let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
+                        let vTmp = sSymbolsToLookupTmp.split(",");
+                        if (vTmp.length > 0) {
+                            if (vTmp.length > 1) {
+                                alert("Please enter only one symbol to add.");
+                                return;
                             }
-                        }
-                        if (!bFound) {
-                            sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
-                            sSymbolsToLookupSep = ",";
-                        }
-                    }
+                            sSymbolsToLookup = vTmp[0];
 
-                    if (sSymbolsAlreadyOpen != "") {
-                        if (iNumAlreadyOpened == 1) {
-                            sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
-                        } else {
-                            sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
-                        }
-                    }
-                    if (sSymbolsToLookup != "") {
-                        if (sConfirmMsg != "") {
-                            sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
-                        } else {
-                            sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
-                        }
-                        if (AreYouSure(sConfirmMsg)) {
-                            //need to get the start and end dates with time
-                            //get the highest last update date
-                            let iEndDate = 0;
-                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                                if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
-                                    iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                            let sConfirmMsg = "";
+                            //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
+                            let oPositions = new Array();
+                            //get account position info if it exists
+                            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                                if (gAccounts[idxAccount].positions.length > 0) {
+                                    for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                        if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
+                                            let oPosition = new Position();
+                                            oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                            oPosition.accountId = gAccounts[idxAccount].accountId;
+                                            oPosition.accountName = gAccounts[idxAccount].accountName;
+                                            oPosition.symbol = "";
+                                            oPositions[oPositions.length] = oPosition;
+                                            break;
+                                        }
+                                    }
                                 }
                             }
-                            let aStartDate = stxtwlacquired.split("-");
-                            let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
-                            //if the highest last update date is less than the acquired date then set the start date to the highest last update date 
-                            if (iEndDate < iStartDate) {
-                                iStartDate = iEndDate;
+                            for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
+                                if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
+                                    (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
+                                    (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
+                                    (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
+                                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
+                                        if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
+                                            if (oPositions.length > 0) {
+                                                let idxSym = -1;
+                                                let bNeedToAddPos = true;
+                                                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                                                    if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
+                                                        idxSym = idxPos;
+                                                        if (oPositions[idxPos].symbol == "") {
+                                                            bNeedToAddPos = false;
+                                                            oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                if ((bNeedToAddPos) && (idxSym != -1)) {
+                                                    let oPosition = new Position();
+                                                    oPosition.longQuantity = oPositions[idxSym].longQuantity;
+                                                    oPosition.accountId = oPositions[idxSym].accountId;
+                                                    oPosition.accountName = oPositions[idxSym].accountName;
+                                                    oPosition.symbol = gWatchlists[idxTmp].name;
+                                                    oPositions[oPositions.length] = oPosition;
+                                                } else if (bNeedToAddPos) {
+                                                    //no positions - so add one for the account containing the watchlist
+                                                    let oPosition = new Position();
+                                                    oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                                    oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                                    oPosition.symbol = gWatchlists[idxTmp].name;
+                                                    oPositions[oPositions.length] = oPosition;
+                                                }
+                                            } else {
+                                                //no positions - so add one for the account containing the watchlist
+                                                let oPosition = new Position();
+                                                oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                                oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                                oPosition.symbol = gWatchlists[idxTmp].name;
+                                                oPositions[oPositions.length] = oPosition;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
                             }
-                            window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + stxtwlacquired + "')", 10);
-                        }
-                    } else {
-                        if (sConfirmMsg != "") {
-                            sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
-                        } else {
-                            sConfirmMsg = "No symbols will be added.";
-                        }
-                        alert(sConfirmMsg);
-                    }
-                } else {
-                    alert("Please enter a symbol to add.");
-                }
+                            if (oPositions.length > 0) {
+                                oPositions.sort(sortByPosAccountandSymbol);
+                                let sLastAccountName = "";
+                                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                                    let oPosition = oPositions[idxPos];
+                                    let sWatchlistname = oPosition.symbol;
+                                    if (sWatchlistname == "") {
+                                        sWatchlistname = "No watchlists";
+                                    }
+                                    if (sLastAccountName == "") {
+                                        sLastAccountName = oPosition.accountName;
+                                        sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+                                    } else {
+                                        if (oPosition.accountName == sLastAccountName) {
+                                            sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
+                                        } else {
+                                            sLastAccountName = oPosition.accountName;
+                                            sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+                                        }
+                                    }
+                                }
+                            }
+                            if (sConfirmMsg != "") {
+                                if (!AreYouSure(sConfirmMsg + "\n")) {
+                                    return;
+                                }
+                            }
 
-            } else if ((stxtwlopen != "") && (stxtwlacquired == "")) { //case 2
-                let sSymbolsAlreadyOpen = "";
-                let sSymbolsAlreadyOpenSep = "";
-                let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
-                let vTmp = sSymbolsToLookupTmp.split(",");
-                if (vTmp.length > 0) {
-                    if (vTmp.length > 1) {
-                        alert("Please enter only one symbol to add.");
+                            sConfirmMsg = "";
+                            let iNumAlreadyOpened = 0;
+                            sSymbolsToLookup = "";
+                            sSymbolsToLookupSep = "";
+                            //check to see if already in watchlist
+                            let bFound = false;
+                            for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
+                                bFound = false;
+                                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                    if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                                        bFound = true;
+                                        sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
+                                        sSymbolsAlreadyOpenSep = ", ";
+                                        iNumAlreadyOpened++;
+                                        break;
+                                    }
+                                }
+                                if (!bFound) {
+                                    sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
+                                    sSymbolsToLookupSep = ",";
+                                }
+                            }
+
+                            if (sSymbolsAlreadyOpen != "") {
+                                if (iNumAlreadyOpened == 1) {
+                                    sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
+                                } else {
+                                    sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
+                                }
+                            }
+                            if (sSymbolsToLookup != "") {
+                                if (sConfirmMsg != "") {
+                                    sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + " with an acquired date of " + stxtwlacquired + ". ";
+                                } else {
+                                    sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + " with an acquired date of " + stxtwlacquired + ". ";
+                                }
+                                if (AreYouSure(sConfirmMsg)) {
+                                    //need to get the start and end dates with time
+                                    //get the highest last update date
+                                    let iEndDate = 0;
+                                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
+                                            iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                                        }
+                                    }
+                                    let aStartDate = stxtwlacquired.split("-");
+                                    let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
+                                    //if the highest last update date is less than the acquired date then set the start date to the highest last update date 
+                                    if (iEndDate < iStartDate) {
+                                        iStartDate = iEndDate;
+                                    }
+                                    window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + stxtwlacquired + "')", 10);
+                                }
+                            } else {
+                                if (sConfirmMsg != "") {
+                                    sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
+                                } else {
+                                    sConfirmMsg = "No symbols will be added.";
+                                }
+                                alert(sConfirmMsg);
+                            }
+                        } else {
+                            alert("Please enter a symbol to add.");
+                        }
+
+                    } else if ((stxtwlopen != "") && (stxtwlacquired == "")) { //case 2
+                        let sSymbolsAlreadyOpen = "";
+                        let sSymbolsAlreadyOpenSep = "";
+                        let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
+                        let vTmp = sSymbolsToLookupTmp.split(",");
+                        if (vTmp.length > 0) {
+                            if (vTmp.length > 1) {
+                                alert("Please enter only one symbol to add.");
+                                return;
+                            }
+
+                            sSymbolsToLookup = vTmp[0];
+
+                            let sConfirmMsg = "";
+                            //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
+                            let oPositions = new Array();
+                            //get account position info if it exists
+                            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                                if (gAccounts[idxAccount].positions.length > 0) {
+                                    for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                                        if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
+                                            let oPosition = new Position();
+                                            oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                            oPosition.accountId = gAccounts[idxAccount].accountId;
+                                            oPosition.accountName = gAccounts[idxAccount].accountName;
+                                            oPosition.symbol = "";
+                                            oPositions[oPositions.length] = oPosition;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
+                                if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
+                                    (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
+                                    (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
+                                    (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
+                                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
+                                        if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
+                                            if (oPositions.length > 0) {
+                                                let idxSym = -1;
+                                                let bNeedToAddPos = true;
+                                                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                                                    if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
+                                                        idxSym = idxPos;
+                                                        if (oPositions[idxPos].symbol == "") {
+                                                            bNeedToAddPos = false;
+                                                            oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                if ((bNeedToAddPos) && (idxSym != -1)) {
+                                                    let oPosition = new Position();
+                                                    oPosition.longQuantity = oPositions[idxSym].longQuantity;
+                                                    oPosition.accountId = oPositions[idxSym].accountId;
+                                                    oPosition.accountName = oPositions[idxSym].accountName;
+                                                    oPosition.symbol = gWatchlists[idxTmp].name;
+                                                    oPositions[oPositions.length] = oPosition;
+                                                } else if (bNeedToAddPos) {
+                                                    //no positions - so add one for the account containing the watchlist
+                                                    let oPosition = new Position();
+                                                    oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                                    oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                                    oPosition.symbol = gWatchlists[idxTmp].name;
+                                                    oPositions[oPositions.length] = oPosition;
+                                                }
+                                            } else {
+                                                //no positions - so add one for the account containing the watchlist
+                                                let oPosition = new Position();
+                                                oPosition.accountId = gWatchlists[idxTmp].accountId;
+                                                oPosition.accountName = gWatchlists[idxTmp].accountName;
+                                                oPosition.symbol = gWatchlists[idxTmp].name;
+                                                oPositions[oPositions.length] = oPosition;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (oPositions.length > 0) {
+                                oPositions.sort(sortByPosAccountandSymbol);
+                                let sLastAccountName = "";
+                                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+                                    let oPosition = oPositions[idxPos];
+                                    let sWatchlistname = oPosition.symbol;
+                                    if (sWatchlistname == "") {
+                                        sWatchlistname = "No watchlists";
+                                    }
+                                    if (sLastAccountName == "") {
+                                        sLastAccountName = oPosition.accountName;
+                                        sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+                                    } else {
+                                        if (oPosition.accountName == sLastAccountName) {
+                                            sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
+                                        } else {
+                                            sLastAccountName = oPosition.accountName;
+                                            sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+                                        }
+                                    }
+                                }
+                            }
+                            if (sConfirmMsg != "") {
+                                if (!AreYouSure(sConfirmMsg + "\n")) {
+                                    return;
+                                }
+                            }
+
+                            sConfirmMsg = "";
+
+
+                            let iNumAlreadyOpened = 0;
+                            sSymbolsToLookup = "";
+                            sSymbolsToLookupSep = "";
+                            //check to see if already in watchlist
+                            let bFound = false;
+                            for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
+                                bFound = false;
+                                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                    if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                                        bFound = true;
+                                        sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
+                                        sSymbolsAlreadyOpenSep = ", ";
+                                        iNumAlreadyOpened++;
+                                        break;
+                                    }
+                                }
+                                if (!bFound) {
+                                    sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
+                                    sSymbolsToLookupSep = ",";
+                                }
+                            }
+
+                            if (sSymbolsAlreadyOpen != "") {
+                                if (iNumAlreadyOpened == 1) {
+                                    sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
+                                } else {
+                                    sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
+                                }
+                            }
+                            if (sSymbolsToLookup != "") {
+                                if (sConfirmMsg != "") {
+                                    sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + " with no acquired date. ";
+                                } else {
+                                    sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + " with no acquired date. ";
+                                }
+                                if (AreYouSure(sConfirmMsg)) {
+                                    //need to get the start and end dates with time
+                                    //get the highest last update date
+                                    let iEndDate = new Date().getTime();
+                                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
+                                            iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+                                        }
+                                    }
+                                    let iStartDate = iEndDate;
+                                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSymbolsToLookup.toUpperCase() + "', '" + stxtwlacquired + "', '0', " + iStartDate + ", " + iEndDate + ")", 10);
+                                }
+                            } else {
+                                if (sConfirmMsg != "") {
+                                    sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
+                                } else {
+                                    sConfirmMsg = "No symbols will be added.";
+                                }
+                                alert(sConfirmMsg);
+                            }
+                        } else {
+                            alert("Please enter a symbol to add.");
+                        }
+                    } else if ((stxtwlopen == "") && (stxtwlacquired != "")) { //case 3
+                        alert("Please enter a symbol to add.")
+                        return;
+                    } else { //case 4
+                        alert("Please enter a symbol to add.")
                         return;
                     }
-
-                    sSymbolsToLookup = vTmp[0];
-
-                    let sConfirmMsg = "";
-                    //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
-                    let oPositions = new Array();
-                    //get account position info if it exists
-                    for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
-                        if (gAccounts[idxAccount].positions.length > 0) {
-                            for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
-                                if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
-                                    let oPosition = new Position();
-                                    oPosition = gAccounts[idxAccount].positions[idxPositions];
-                                    oPosition.accountId = gAccounts[idxAccount].accountId;
-                                    oPosition.accountName = gAccounts[idxAccount].accountName;
-                                    oPosition.symbol = "";
-                                    oPositions[oPositions.length] = oPosition;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
-                        if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
-                            (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
-                            (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
-                            (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
-                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
-                                if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
-                                    if (oPositions.length > 0) {
-                                        let idxSym = -1;
-                                        let bNeedToAddPos = true;
-                                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
-                                            if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
-                                                idxSym = idxPos;
-                                                if (oPositions[idxPos].symbol == "") {
-                                                    bNeedToAddPos = false;
-                                                    oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if ((bNeedToAddPos) && (idxSym != -1)) {
-                                            let oPosition = new Position();
-                                            oPosition.longQuantity = oPositions[idxSym].longQuantity;
-                                            oPosition.accountId = oPositions[idxSym].accountId;
-                                            oPosition.accountName = oPositions[idxSym].accountName;
-                                            oPosition.symbol = gWatchlists[idxTmp].name;
-                                            oPositions[oPositions.length] = oPosition;
-                                        } else if (bNeedToAddPos) {
-                                            //no positions - so add one for the account containing the watchlist
-                                            let oPosition = new Position();
-                                            oPosition.accountId = gWatchlists[idxTmp].accountId;
-                                            oPosition.accountName = gWatchlists[idxTmp].accountName;
-                                            oPosition.symbol = gWatchlists[idxTmp].name;
-                                            oPositions[oPositions.length] = oPosition;
-                                        }
-                                    } else {
-                                        //no positions - so add one for the account containing the watchlist
-                                        let oPosition = new Position();
-                                        oPosition.accountId = gWatchlists[idxTmp].accountId;
-                                        oPosition.accountName = gWatchlists[idxTmp].accountName;
-                                        oPosition.symbol = gWatchlists[idxTmp].name;
-                                        oPositions[oPositions.length] = oPosition;
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (oPositions.length > 0) {
-                        oPositions.sort(sortByPosAccountandSymbol);
-                        let sLastAccountName = "";
-                        for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
-                            let oPosition = oPositions[idxPos];
-                            let sWatchlistname = oPosition.symbol;
-                            if (sWatchlistname == "") {
-                                sWatchlistname = "No watchlists";
-                            }
-                            if (sLastAccountName == "") {
-                                sLastAccountName = oPosition.accountName;
-                                sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
-                            } else {
-                                if (oPosition.accountName == sLastAccountName) {
-                                    sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
-                                } else {
-                                    sLastAccountName = oPosition.accountName;
-                                    sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
-                                }
-                            }
-                        }
-                    }
-                    if (sConfirmMsg != "") {
-                        if (!AreYouSure(sConfirmMsg + "\n")) {
+                    break;
+                }
+                case 2: { //update img
+                    if (stxtwlacquired != "") { //case 3
+                        if (iNumSelected == 0) {
+                            alert("Please select at least one symbol to change the Acquired date.")
                             return;
                         }
-                    }
-
-                    sConfirmMsg = "";
-
-
-                    let iNumAlreadyOpened = 0;
-                    sSymbolsToLookup = "";
-                    sSymbolsToLookupSep = "";
-                    //check to see if already in watchlist
-                    let bFound = false;
-                    for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
-                        bFound = false;
-                        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                            if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
-                                bFound = true;
-                                sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
-                                sSymbolsAlreadyOpenSep = ", ";
-                                iNumAlreadyOpened++;
-                                break;
-                            }
-                        }
-                        if (!bFound) {
-                            sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
-                            sSymbolsToLookupSep = ",";
-                        }
-                    }
-
-                    if (sSymbolsAlreadyOpen != "") {
-                        if (iNumAlreadyOpened == 1) {
-                            sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
-                        } else {
-                            sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
-                        }
-                    }
-                    if (sSymbolsToLookup != "") {
-                        if (sConfirmMsg != "") {
-                            sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
-                        } else {
-                            sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
-                        }
+                        let sConfirmMsg = "";
+                        sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
                         if (AreYouSure(sConfirmMsg)) {
-                            //need to get the start and end dates with time
-                            //get the highest last update date
-                            let iEndDate = new Date().getTime();
-                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                                if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
-                                    iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
-                                }
-                            }
-                            let iStartDate = iEndDate;
-                            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSymbolsToLookup.toUpperCase() + "', '" + stxtwlacquired + "', '0', " + iStartDate + ", " + iEndDate + ")", 10);
+                            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '" + stxtwlacquired + "', '', 0, 0)", 10);
                         }
-                    } else {
-                        if (sConfirmMsg != "") {
-                            sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
-                        } else {
-                            sConfirmMsg = "No symbols will be added.";
+                    } else { //case 4
+                        if (iNumSelected == 0) {
+                            alert("Please select at least one symbol to clear the Acquired date.")
+                            return;
                         }
-                        alert(sConfirmMsg);
+                        if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+                            alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
+                            return;
+                        }
+                        let sConfirmMsg = "";
+                        sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+                        if (AreYouSure(sConfirmMsg)) {
+                            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '', '', 0, 0)", 10);
+                        }
                     }
-                } else {
-                    alert("Please enter a symbol to add.");
-                }
-            } else if ((stxtwlopen == "") && (stxtwlacquired != "")) { //case 3
-                if (iNumSelected == 0) {
-                    alert("Please select at least one symbol to change the Acquired date.")
-                    return;
-                }
-                let sConfirmMsg = "";
-                sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-                if (AreYouSure(sConfirmMsg)) {
-                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '" + stxtwlacquired + "', '', 0, 0)", 10);
-                }
-            } else { //case 4
-                if (iNumSelected == 0) {
-                    alert("Please select at least one symbol to clear the Acquired date.")
-                    return;
-                }
-                if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
-                    alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
-                    return;
-                }
-                let sConfirmMsg = "";
-                sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
-                if (AreYouSure(sConfirmMsg)) {
-                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '', '', 0, 0)", 10);
+                    break;
                 }
             }
+        //    if ((stxtwlopen != "") && (stxtwlacquired != ""))  { //case 1
+
+        //        let sSymbolsAlreadyOpen = "";
+        //        let sSymbolsAlreadyOpenSep = "";
+        //        if (!ValidateTDDate(stxtwlacquired, true)) {
+        //            alert("Please enter an acquired date as yyyy-mm-dd.");
+        //            return;
+        //        }
+        //        let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
+        //        let vTmp = sSymbolsToLookupTmp.split(",");
+        //        if (vTmp.length > 0) {
+        //            if (vTmp.length > 1) {
+        //                alert("Please enter only one symbol to add.");
+        //                return;
+        //            }
+        //            sSymbolsToLookup = vTmp[0];
+
+        //            let sConfirmMsg = "";
+        //            //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
+        //            let oPositions = new Array();
+        //            //get account position info if it exists
+        //            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+        //                if (gAccounts[idxAccount].positions.length > 0) {
+        //                    for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+        //                        if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
+        //                            let oPosition = new Position();
+        //                            oPosition = gAccounts[idxAccount].positions[idxPositions];
+        //                            oPosition.accountId = gAccounts[idxAccount].accountId;
+        //                            oPosition.accountName = gAccounts[idxAccount].accountName;
+        //                            oPosition.symbol = "";
+        //                            oPositions[oPositions.length] = oPosition;
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
+        //                if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
+        //                    (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
+        //                    (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
+        //                    (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
+        //                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
+        //                        if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
+        //                            if (oPositions.length > 0) {
+        //                                let idxSym = -1;
+        //                                let bNeedToAddPos = true;
+        //                                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+        //                                    if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
+        //                                        idxSym = idxPos;
+        //                                        if (oPositions[idxPos].symbol == "") {
+        //                                            bNeedToAddPos = false;
+        //                                            oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
+        //                                            break;
+        //                                        }
+        //                                    }
+        //                                }
+        //                                if ((bNeedToAddPos) && (idxSym != -1)) {
+        //                                    let oPosition = new Position();
+        //                                    oPosition.longQuantity = oPositions[idxSym].longQuantity;
+        //                                    oPosition.accountId = oPositions[idxSym].accountId;
+        //                                    oPosition.accountName = oPositions[idxSym].accountName;
+        //                                    oPosition.symbol = gWatchlists[idxTmp].name;
+        //                                    oPositions[oPositions.length] = oPosition;
+        //                                } else if (bNeedToAddPos) {
+        //                                    //no positions - so add one for the account containing the watchlist
+        //                                    let oPosition = new Position();
+        //                                    oPosition.accountId = gWatchlists[idxTmp].accountId;
+        //                                    oPosition.accountName = gWatchlists[idxTmp].accountName;
+        //                                    oPosition.symbol = gWatchlists[idxTmp].name;
+        //                                    oPositions[oPositions.length] = oPosition;
+        //                                }
+        //                            } else {
+        //                                //no positions - so add one for the account containing the watchlist
+        //                                let oPosition = new Position();
+        //                                oPosition.accountId = gWatchlists[idxTmp].accountId;
+        //                                oPosition.accountName = gWatchlists[idxTmp].accountName;
+        //                                oPosition.symbol = gWatchlists[idxTmp].name;
+        //                                oPositions[oPositions.length] = oPosition;
+        //                            }
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            if (oPositions.length > 0) {
+        //                oPositions.sort(sortByPosAccountandSymbol);
+        //                let sLastAccountName = "";
+        //                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+        //                    let oPosition = oPositions[idxPos];
+        //                    let sWatchlistname = oPosition.symbol;
+        //                    if (sWatchlistname == "") {
+        //                        sWatchlistname = "No watchlists";
+        //                    }
+        //                    if (sLastAccountName == "") {
+        //                        sLastAccountName = oPosition.accountName;
+        //                        sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname +"\n";
+        //                    } else {
+        //                        if (oPosition.accountName == sLastAccountName) {
+        //                            sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
+        //                        } else {
+        //                            sLastAccountName = oPosition.accountName;
+        //                            sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            if (sConfirmMsg != "") {
+        //                if (!AreYouSure(sConfirmMsg + "\n")) {
+        //                    return;
+        //                }
+        //            }
+
+        //            sConfirmMsg = "";
+        //            let iNumAlreadyOpened = 0;
+        //            sSymbolsToLookup = "";
+        //            sSymbolsToLookupSep = "";
+        //            //check to see if already in watchlist
+        //            let bFound = false;
+        //            for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
+        //                bFound = false;
+        //                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+        //                    if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+        //                        bFound = true;
+        //                        sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
+        //                        sSymbolsAlreadyOpenSep = ", ";
+        //                        iNumAlreadyOpened++;
+        //                        break;
+        //                    }
+        //                }
+        //                if (!bFound) {
+        //                    sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
+        //                    sSymbolsToLookupSep = ",";
+        //                }
+        //            }
+
+        //            if (sSymbolsAlreadyOpen != "") {
+        //                if (iNumAlreadyOpened == 1) {
+        //                    sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
+        //                } else {
+        //                    sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
+        //                }
+        //            }
+        //            if (sSymbolsToLookup != "") {
+        //                if (sConfirmMsg != "") {
+        //                    sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+        //                } else {
+        //                    sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+        //                }
+        //                if (AreYouSure(sConfirmMsg)) {
+        //                    //need to get the start and end dates with time
+        //                    //get the highest last update date
+        //                    let iEndDate = 0;
+        //                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+        //                        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
+        //                            iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+        //                        }
+        //                    }
+        //                    let aStartDate = stxtwlacquired.split("-");
+        //                    let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
+        //                    //if the highest last update date is less than the acquired date then set the start date to the highest last update date 
+        //                    if (iEndDate < iStartDate) {
+        //                        iStartDate = iEndDate;
+        //                    }
+        //                    window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + stxtwlacquired + "')", 10);
+        //                }
+        //            } else {
+        //                if (sConfirmMsg != "") {
+        //                    sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
+        //                } else {
+        //                    sConfirmMsg = "No symbols will be added.";
+        //                }
+        //                alert(sConfirmMsg);
+        //            }
+        //        } else {
+        //            alert("Please enter a symbol to add.");
+        //        }
+
+        //    } else if ((stxtwlopen != "") && (stxtwlacquired == "")) { //case 2
+        //        let sSymbolsAlreadyOpen = "";
+        //        let sSymbolsAlreadyOpenSep = "";
+        //        let sSymbolsToLookupTmp = GetUniqueListOfSymbols(stxtwlopen);
+        //        let vTmp = sSymbolsToLookupTmp.split(",");
+        //        if (vTmp.length > 0) {
+        //            if (vTmp.length > 1) {
+        //                alert("Please enter only one symbol to add.");
+        //                return;
+        //            }
+
+        //            sSymbolsToLookup = vTmp[0];
+
+        //            let sConfirmMsg = "";
+        //            //check to see if the new symbol exists in any watchlist in all accounts linked to the logged in account
+        //            let oPositions = new Array();
+        //            //get account position info if it exists
+        //            for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+        //                if (gAccounts[idxAccount].positions.length > 0) {
+        //                    for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+        //                        if (gAccounts[idxAccount].positions[idxPositions].symbol == sSymbolsToLookup) {
+        //                            let oPosition = new Position();
+        //                            oPosition = gAccounts[idxAccount].positions[idxPositions];
+        //                            oPosition.accountId = gAccounts[idxAccount].accountId;
+        //                            oPosition.accountName = gAccounts[idxAccount].accountName;
+        //                            oPosition.symbol = "";
+        //                            oPositions[oPositions.length] = oPosition;
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            for (idxTmp = 0; idxTmp < gWatchlists.length; idxTmp++) {
+        //                if ((gWatchlists[idxTmp].name != gsAccountSavedOrders) &&
+        //                    (gWatchlists[idxTmp].name != gsAccountWLSummary) &&
+        //                    (gWatchlists[idxTmp].name.substr(0, gsAccountOldGLBase.length) != gsAccountOldGLBase) &&
+        //                    (gWatchlists[idxTmp].accountId != gWatchlists[idxTmp].watchlistId)) {
+        //                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxTmp].WLItems.length; idxWLItem++) {
+        //                        if (sSymbolsToLookup == gWatchlists[idxTmp].WLItems[idxWLItem].symbol.toUpperCase()) {
+        //                            if (oPositions.length > 0) {
+        //                                let idxSym = -1;
+        //                                let bNeedToAddPos = true;
+        //                                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+        //                                    if (oPositions[idxPos].accountId == gWatchlists[idxTmp].accountId) {
+        //                                        idxSym = idxPos;
+        //                                        if (oPositions[idxPos].symbol == "") {
+        //                                            bNeedToAddPos = false;
+        //                                            oPositions[idxPos].symbol = gWatchlists[idxTmp].name;
+        //                                            break;
+        //                                        }
+        //                                    }
+        //                                }
+        //                                if ((bNeedToAddPos) && (idxSym != -1)) {
+        //                                    let oPosition = new Position();
+        //                                    oPosition.longQuantity = oPositions[idxSym].longQuantity;
+        //                                    oPosition.accountId = oPositions[idxSym].accountId;
+        //                                    oPosition.accountName = oPositions[idxSym].accountName;
+        //                                    oPosition.symbol = gWatchlists[idxTmp].name;
+        //                                    oPositions[oPositions.length] = oPosition;
+        //                                } else if (bNeedToAddPos) {
+        //                                    //no positions - so add one for the account containing the watchlist
+        //                                    let oPosition = new Position();
+        //                                    oPosition.accountId = gWatchlists[idxTmp].accountId;
+        //                                    oPosition.accountName = gWatchlists[idxTmp].accountName;
+        //                                    oPosition.symbol = gWatchlists[idxTmp].name;
+        //                                    oPositions[oPositions.length] = oPosition;
+        //                                }
+        //                            } else {
+        //                                //no positions - so add one for the account containing the watchlist
+        //                                let oPosition = new Position();
+        //                                oPosition.accountId = gWatchlists[idxTmp].accountId;
+        //                                oPosition.accountName = gWatchlists[idxTmp].accountName;
+        //                                oPosition.symbol = gWatchlists[idxTmp].name;
+        //                                oPositions[oPositions.length] = oPosition;
+        //                            }
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            if (oPositions.length > 0) {
+        //                oPositions.sort(sortByPosAccountandSymbol);
+        //                let sLastAccountName = "";
+        //                for (let idxPos = 0; idxPos < oPositions.length; idxPos++) {
+        //                    let oPosition = oPositions[idxPos];
+        //                    let sWatchlistname = oPosition.symbol;
+        //                    if (sWatchlistname == "") {
+        //                        sWatchlistname = "No watchlists";
+        //                    }
+        //                    if (sLastAccountName == "") {
+        //                        sLastAccountName = oPosition.accountName;
+        //                        sConfirmMsg = sSymbolsToLookup + " is contained in\n" + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+        //                    } else {
+        //                        if (oPosition.accountName == sLastAccountName) {
+        //                            sConfirmMsg = sConfirmMsg + "   " + sWatchlistname + "\n";
+        //                        } else {
+        //                            sLastAccountName = oPosition.accountName;
+        //                            sConfirmMsg = sConfirmMsg + sLastAccountName + " (" + oPosition.longQuantity.toString() + ")\n   " + sWatchlistname + "\n";
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            if (sConfirmMsg != "") {
+        //                if (!AreYouSure(sConfirmMsg + "\n")) {
+        //                    return;
+        //                }
+        //            }
+
+        //            sConfirmMsg = "";
+
+
+        //            let iNumAlreadyOpened = 0;
+        //            sSymbolsToLookup = "";
+        //            sSymbolsToLookupSep = "";
+        //            //check to see if already in watchlist
+        //            let bFound = false;
+        //            for (let idxvTmp = 0; idxvTmp < vTmp.length; idxvTmp++) {
+        //                bFound = false;
+        //                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+        //                    if (vTmp[idxvTmp] == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+        //                        bFound = true;
+        //                        sSymbolsAlreadyOpen = sSymbolsAlreadyOpen + sSymbolsAlreadyOpenSep + vTmp[idxvTmp];
+        //                        sSymbolsAlreadyOpenSep = ", ";
+        //                        iNumAlreadyOpened++;
+        //                        break;
+        //                    }
+        //                }
+        //                if (!bFound) {
+        //                    sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + vTmp[idxvTmp];
+        //                    sSymbolsToLookupSep = ",";
+        //                }
+        //            }
+
+        //            if (sSymbolsAlreadyOpen != "") {
+        //                if (iNumAlreadyOpened == 1) {
+        //                    sConfirmMsg = sSymbolsAlreadyOpen + " already exists."
+        //                } else {
+        //                    sConfirmMsg = sSymbolsAlreadyOpen + " already exist."
+        //                }
+        //            }
+        //            if (sSymbolsToLookup != "") {
+        //                if (sConfirmMsg != "") {
+        //                    sConfirmMsg = sConfirmMsg + gsCRLF + "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+        //                } else {
+        //                    sConfirmMsg = "Adding " + sSymbolsToLookup.toUpperCase() + ". ";
+        //                }
+        //                if (AreYouSure(sConfirmMsg)) {
+        //                    //need to get the start and end dates with time
+        //                    //get the highest last update date
+        //                    let iEndDate = new Date().getTime();
+        //                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+        //                        if (gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate > iEndDate) {
+        //                            iEndDate = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate;
+        //                        }
+        //                    }
+        //                    let iStartDate = iEndDate;
+        //                    window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '" + sSymbolsToLookup.toUpperCase() + "', '" + stxtwlacquired + "', '0', " + iStartDate + ", " + iEndDate + ")", 10);
+        //                }
+        //            } else {
+        //                if (sConfirmMsg != "") {
+        //                    sConfirmMsg = sConfirmMsg + gsCRLF + "No symbols will be added.";
+        //                } else {
+        //                    sConfirmMsg = "No symbols will be added.";
+        //                }
+        //                alert(sConfirmMsg);
+        //            }
+        //        } else {
+        //            alert("Please enter a symbol to add.");
+        //        }
+        //    } else if ((stxtwlopen == "") && (stxtwlacquired != "")) { //case 3
+        //        if (iNumSelected == 0) {
+        //            alert("Please select at least one symbol to change the Acquired date.")
+        //            return;
+        //        }
+        //        let sConfirmMsg = "";
+        //        sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+        //        if (AreYouSure(sConfirmMsg)) {
+        //            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '" + stxtwlacquired + "', '', 0, 0)", 10);
+        //        }
+        //    } else { //case 4
+        //        if (iNumSelected == 0) {
+        //            alert("Please select at least one symbol to clear the Acquired date.")
+        //            return;
+        //        }
+        //        if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+        //            alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
+        //            return;
+        //        }
+        //        let sConfirmMsg = "";
+        //        sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+        //        if (AreYouSure(sConfirmMsg)) {
+        //            window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '', '', 0, 0)", 10);
+        //        }
+        //    }
         }
         return;
     }
@@ -10864,69 +11254,6 @@ function GetWatchlistO() {
                     sThisTableTitle = "";
                     sThisTableTitleInside = "";
 
-                    //sThisDiv = "";
-                    //sLastWLName = gWatchlists[idxWL].name;
-                    //sLastWLAccountName = gWatchlists[idxWL].accountName;
-                    //sLastWLAccountId = gWatchlists[idxWL].accountId;
-                    //sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
-
-                    //if (gbUsingCell) {
-                    //    sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    //    sThisDiv = sThisDiv + "<table style=\"width:800px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                    //    sThisDiv = sThisDiv + "<tr>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "&nbsp;From:&nbsp;<input id=\"txtOStart" + sThisId + "\" name=\"txtOStart" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
-                    //        "&nbsp;To:&nbsp;<input id=\"txtOEnd" + sThisId + "\" name=\"txtOEnd" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
-                    //        "&nbsp;<input id=\"chkUseDates" + sThisId + "\" name=\"chkUseDates" + sThisId + "\"  style=\"text-align:left;vertical-align:middle; \" type=\"checkbox\" value=\"\" ></th>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                    //        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                    //        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWL].watchlistId + "')\">" +
-                    //        "&nbsp;&nbsp;&nbsp;&nbsp;<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders('" + gWatchlists[idxWL].watchlistId + "','" +  sLastWLAccountId + "')\" value=\"Cancel\" ></th>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                    //    sThisDiv = sThisDiv + "</tr>";
-
-                    //    sThisDiv = sThisDiv + "<tr>";
-                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-                    //} else { //not using cell
-
-                    //    sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    //    sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                    //    sThisDiv = sThisDiv + "<tr>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColOpenLabelWidth + lengthsWLO.WLColOpenEntryWidth + lengthsWLO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "&nbsp;From:&nbsp;<input id=\"txtOStart" + sThisId + "\" name=\"txtOStart" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
-                    //        "&nbsp;To:&nbsp;<input id=\"txtOEnd" + sThisId + "\" name=\"txtOEnd" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
-                    //        "&nbsp;<input id=\"chkUseDates" + sThisId + "\" name=\"chkUseDates" + sThisId + "\"  style=\"text-align:left;vertical-align:middle; \" type=\"checkbox\" value=\"\" ></th>";
-
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; width:" + lengthsWLO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                    //        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                    //        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWL].watchlistId + "')\">" +
-                    //        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColCloseLabelWidth + lengthsWLO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId  + "')\" value=\"Cancel\" ></th>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                    //    sThisDiv = sThisDiv + "</tr>";
-
-                    //    sThisDiv = sThisDiv + "<tr>";
-                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-
-                    //}
-
                     //mostly the same for cell and not cell
                     if (gbUsingCell) {
                         sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLO.WLWidthCell + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
@@ -10938,22 +11265,22 @@ function GetWatchlistO() {
                     sThisDiv = sThisDiv + "<tr>";
 
                     sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColOpenLabelWidth + lengthsWLO.WLColOpenEntryWidth + lengthsWLO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                        "&nbsp;From:&nbsp;<input id=\"txtOStart" + sThisId + "\" name=\"txtOStart" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
-                        "&nbsp;To:&nbsp;<input id=\"txtOEnd" + sThisId + "\" name=\"txtOEnd" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
-                        "&nbsp;<input id=\"chkUseDates" + sThisId + "\" name=\"chkUseDates" + sThisId + "\"  style=\"text-align:left;vertical-align:middle; \" type=\"checkbox\" value=\"\" ></th>";
-
+                        "&nbsp;From:&nbsp;<input title=\"From Date as yyyy-mm-dd\" id=\"txtOStart" + sThisId + "\" name=\"txtOStart" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
+                        "&nbsp;To:&nbsp;<input title=\"To Date as yyyy-mm-dd\" id=\"txtOEnd" + sThisId + "\" name=\"txtOEnd" + sThisId + "\" type=\"text\" style=\"width:" + lengthsWLO.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
+                        "&nbsp;<input title=\"When checked use the From and To dates, otherwise only show orders opened or closed today.\" id=\"chkUseDates" + sThisId + "\" name=\"chkUseDates" + sThisId + "\"  style=\"text-align:left;vertical-align:middle; \" type=\"checkbox\" value=\"\" ></th>";
 
                     sThisDiv = sThisDiv + "<th style=\"height:30px; width:" + lengthsWLO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                         "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWL].watchlistId + "')\">" +
-                        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                        "<span style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                        "<span title=\"Account Name\"  style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--</b></span>" +
+                        "<span title=\"Watchlist Name\" style=\"vertical-align: middle;\"><b>" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                        "<img title=\"yyyimgMaxRestoreyyy\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWL].watchlistId + "')\">" +
+                        "&nbsp;&nbsp;<img title=\"Print\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                        "<span title=\"Current Date and Time\" style=\"vertical-align: middle;\" id=\"spanODate" + sThisId + "\" name=\"spanODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                     sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLO.WLColCloseLabelWidth + lengthsWLO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Cancel\" ></th>";
+                        "<input title=\"Cancel selected orders.\" type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoOCancelOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Cancel\" ></th>";
 
-                    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                    sThisDiv = sThisDiv + "<th title=\"Close\" style=\"width:" + lengthsWLO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                     sThisDiv = sThisDiv + "</tr>";
 
@@ -11212,6 +11539,7 @@ function GetWatchlistO() {
                     sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
                     sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
                     sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
+                    sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Restore");
                     sThisDiv = sThisDiv + sThisTableTitle + "</div></div></td></tr></table></div>";
                 } else {
                     if ((bEverythingIsChecked) && (iNumChecked > 0)) {
@@ -11227,10 +11555,12 @@ function GetWatchlistO() {
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, gsTableHeightOverflow);
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitle);
                         sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsMaximizeWindowImg);
+                        sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Maximize");
                     } else {
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
                         sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
+                        sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Restore");
                     }
 
                     sThisDiv = sThisDiv + sThisTableTitle + sThisTable + "</table></div></div>" + "</td></tr></table></div>";
@@ -11254,9 +11584,11 @@ function GetWatchlistO() {
                                 document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
                                 document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
                                 document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
+                                document.getElementById("spanMaxRestore" + sThisId).title = "Maximize";
                             } else {
                                 document.getElementById("divtableInside" + sThisId).style.height = "";
                                 document.getElementById("spanMaxRestore" + sThisId).src = gsRestoreWindowImg;
+                                document.getElementById("spanMaxRestore" + sThisId).title = "Restore";
                             }
                             document.getElementById("divtableTitle" + sThisId).innerHTML = sThisTableTitleInside;
                             document.getElementById("divtableInside" + sThisId).innerHTML = sThisTable;
@@ -11340,24 +11672,29 @@ function GetWatchlistOGL() {
 
                 sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLOGL.WLTitleWidth.toString() + "px; text-align:center; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                     "<span style=\"vertical-align:middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                    "<span style=\"vertical-align:middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                    "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
-                    "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                    "<span style=\"vertical-align:middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                    "<span title=\"Account Name\"  style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--</b></span>" +
+                    "<span title=\"Watchlist Name\" style=\"vertical-align: middle;\"><b>" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                    "<img title=\"yyyimgMaxRestoreyyy\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                    "&nbsp;&nbsp;<img title=\"Print\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                    "<span title=\"Current Date and Time\" style=\"vertical-align:middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-                sThisDiv = sThisDiv + "<th onclick=\"wlDoRemoveDivOldGL('" + sLastWLAccountId + "')\" style=\"width:" + lengthsWLOGL.WLCloseTableWidth.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                sThisDiv = sThisDiv + "<th title=\"Close\" onclick=\"wlDoRemoveDivOldGL('" + sLastWLAccountId + "')\" style=\"width:" + lengthsWLOGL.WLCloseTableWidth.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
 
                 sThisDiv = sThisDiv + "<tr>";
                 sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:1px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLUpdateOGLSymbols(3, '" + sLastWLAccountId + "', '', '')\" />" +
-                    "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLUpdateOGLSymbols(2, '" + sLastWLAccountId + "', '', '')\" />" +
-                    "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.SymbolEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-                    "&nbsp;&nbsp;<input type=\"button\" style=\"" + gsFieldWidthsWLOGL.UpdateDescriptionButton + "border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:8pt;\"  onclick=\"DoWLUpdateOGLSymbols(5, '" + sLastWLAccountId + "', '', '')\" value=\"Update Description\" >" +
-                    "&nbsp;<input id=\"txtwlopendesc" + sThisId + "\" name=\"txtwlopendesc" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.DescriptionEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-                    "&nbsp;&nbsp;<input type=\"button\" style=\"" + gsFieldWidthsWLOGL.UpdateOGLButton + "border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:8pt;\"  onclick=\"DoWLUpdateOGLSymbols(4, '" + sLastWLAccountId + "', '', '')\" value=\"Update Old GL\" >" +
-                    "&nbsp;&dollar;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.OGLEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                    "<img title=\"Delete Selected Symbols\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLUpdateOGLSymbols(3, '" + sLastWLAccountId + "', '', '')\" />" +
+                    "&nbsp;&nbsp;<img title=\"Add New Symbol\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLUpdateOGLSymbols(2, '" + sLastWLAccountId + "', '', '')\" />" +
+                    "&nbsp;<input title=\"Symbol to be added, optionally with Description and or Old G/L values.\" placeholder=\"Symbol\" id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.SymbolEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img title=\"Update Selected Description\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLUpdateOGLSymbols(5, '" + sLastWLAccountId + "', '', '')\" />" +
+                    "&nbsp;<input title=\"Description (max 15 chars)\" placeholder=\"Description\" id=\"txtwlopendesc" + sThisId + "\" name=\"txtwlopendesc" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.DescriptionEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img title=\"Update Selected Old GL\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLUpdateOGLSymbols(4, '" + sLastWLAccountId + "', '', '')\" />" +
+                    "&nbsp;&dollar;<input title=\"Old G/L as a dollar value\" placeholder=\"Old GL\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.OGLEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                     "</th>";
+
+                //"&nbsp;&nbsp;<input type=\"button\" style=\"" + gsFieldWidthsWLOGL.UpdateOGLButton + "border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:8pt;\"  onclick=\"DoWLUpdateOGLSymbols(4, '" + sLastWLAccountId + "', '', '')\" value=\"Update Old GL\" >" +
+                //"&nbsp;&nbsp;<input type=\"button\" style=\"" + gsFieldWidthsWLOGL.UpdateDescriptionButton + "border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:8pt;\"  onclick=\"DoWLUpdateOGLSymbols(5, '" + sLastWLAccountId + "', '', '')\" value=\"Update Description\" >" +
+
 
                 sThisDiv = sThisDiv + "</tr>";
 
@@ -11654,15 +11991,18 @@ function GetWatchlistOGL() {
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, gsTableHeightOverflow);
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitle);
                         sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsMaximizeWindowImg);
+                        sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Maximize");
                     } else {
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
                         sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
+                        sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Restore");
                     }
 
                     sThisDiv = sThisDiv + sThisTableTitle + sThisTable + "</div ></div ></td ></tr ></table ></div > ";
                 } else {
                     sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
+                    sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Restore");
                 }
                 if (gWatchlists[idxWLMain].spanName == "") {
                     gWatchlists[idxWLMain].spanName = gWatchlists[idxWLMain].watchlistId + gWatchlists[idxWLMain].accountId;
@@ -11677,12 +12017,14 @@ function GetWatchlistOGL() {
                             document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
                             document.getElementById("divtableInside" + sThisId).style.overflowY = "auto";
                             document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
+                            document.getElementById("spanMaxRestore" + sThisId).title = "Maximize";
                             document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
                             document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
                         } else {
                             document.getElementById("divtableInside" + sThisId).style.height = "";
                             document.getElementById("divtableTitle" + sThisId).style.overflowY = "hidden";
                             document.getElementById("spanMaxRestore" + sThisId).src = gsRestoreWindowImg;
+                            document.getElementById("spanMaxRestore" + sThisId).title = "Restore";
                         }
                         document.getElementById("divtableTitle" + sThisId).innerHTML = sThisTableTitleInside;
                         document.getElementById("divtableInside" + sThisId).innerHTML = sThisTable;
@@ -12298,11 +12640,12 @@ function GetWatchlistPrices() {
 
                         sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol1Width.toString() + "px; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
-                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
-                        sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                            "<span title=\"Account Name\"  style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--</b></span>" +
+                            "<span title=\"Watchlist Name\" style=\"vertical-align: middle;\"><b>" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                            "<img title=\"yyyimgMaxRestoreyyy\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                            "&nbsp;&nbsp;<img title=\"Print\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                            "<span title=\"Current Date and Time\" style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                        sThisDiv = sThisDiv + "<th title=\"Close\" style=\"height:24.5px; width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -12320,23 +12663,28 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "<tr>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColOpenLabelWidth + giWLColOpenEntryWidth + giWLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            "&nbsp;&nbsp;<img width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            "&nbsp;<input id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-                            "&nbsp;<input id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+                            "<img title=\"Delete Selected Symbols\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            "&nbsp;&nbsp;<img title=\"Add a new symbol optionally using the Acquired date as the start date for initializing the G/L.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(1,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            "&nbsp;<input title=\"Symbol to Add\" placeholder=\"Symbol\" id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"width:" + giWLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                            "&nbsp;&nbsp;<img title=\"Change the Acquired Date of one selected symbol.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLOpenSymbols(2,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            "&nbsp;<input title=\"Acquired Date as yyyy-mm-dd\" placeholder=\"Acquired Date\" id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"text\" style=\"width:" + giWLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + giWLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                             "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                            "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
-                            "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                            "<span style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                            "<span title=\"Account Name\"  style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--</b></span>" +
+                            "<span title=\"Watchlist Name\" style=\"vertical-align: middle;\"><b>" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                            "<img title=\"yyyimgMaxRestoreyyy\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWLMain].watchlistId + "')\">" +
+                            "&nbsp;&nbsp;<img title=\"Print\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                            "<span title=\"Current Date and Time\" style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                         sThisDiv = sThisDiv + "<th style=\"width:" + (giWLColCloseLabelWidth + giWLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
-                            "&nbsp;<input id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+                            "<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"width:" + giWLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
 
-                        sThisDiv = sThisDiv + "<th style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                        //"<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
+
+
+                        sThisDiv = sThisDiv + "<th title=\"Close\" style=\"width:" + giWLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                         sThisDiv = sThisDiv + "</tr>";
 
@@ -12361,7 +12709,7 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
                             "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
                             "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+                            "&nbsp;&nbsp;&nbsp;<span title=\"Last Time the Update G/L button was pressed\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
 
                         sThisDiv = sThisDiv + "</th > ";
 
@@ -12383,7 +12731,7 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
-                                "&nbsp;&nbsp;&nbsp;<span id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+                                "&nbsp;&nbsp;&nbsp;<span title=\"Last Time the Update G/L button was pressed\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
                         }
                         sThisDiv = sThisDiv + "</th > ";
                     }
@@ -13315,10 +13663,12 @@ function GetWatchlistPrices() {
                             sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, gsTableHeightOverflow);
                             sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitle);
                             sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsMaximizeWindowImg);
+                            sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Maximize");
                         } else {
                             sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
                             sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
                             sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
+                            sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Restore");
                         }
 
                         sThisDiv = sThisDiv + sThisTableTitle + sThisTable + "</table></div></div>" + sThisTableTotals + "</td></tr></table></div>";
@@ -13345,9 +13695,11 @@ function GetWatchlistPrices() {
                                 document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
                                 document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
                                 document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
+                                document.getElementById("spanMaxRestore" + sThisId).title = "Maximize";
                             } else {
                                 document.getElementById("divtableInside" + sThisId).style.height = "";
                                 document.getElementById("spanMaxRestore" + sThisId).src = gsRestoreWindowImg;
+                                document.getElementById("spanMaxRestore" + sThisId).title = "Restore";
                             }
                             document.getElementById("divtableTitle" + sThisId).innerHTML = sThisTableTitleInside;
                             document.getElementById("divtableInside" + sThisId).innerHTML = sThisTable;
@@ -14209,19 +14561,20 @@ function GetWatchlistSO() {
                     sThisDiv = sThisDiv + "<tr>";
 
                     sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                        "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Place\" ></th>";
+                        "&nbsp;<input title=\"Place selected orders.\" type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Place\" ></th>";
 
                     sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                         "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
-                        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWL].watchlistId + "')\">" +
-                        "<img height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
-                        "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
+                        "<span title=\"Account Name\"  style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--</b></span>" +
+                        "<span title=\"Watchlist Name\" style=\"vertical-align: middle;\"><b>" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
+                        "<img title=\"yyyimgMaxRestoreyyy\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"xxximgMaxRestorexxx\" id=\"spanMaxRestore" + sThisId + "\" onclick=\"wlDoMaximizeRestore('" + sLastWLAccountId + "', '" + gWatchlists[idxWL].watchlistId + "')\">" +
+                        "&nbsp;&nbsp;<img title=\"Print\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
+                        "<span title=\"Current Date and Time\" style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
                     sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
+                        "<input title=\"Delete selected orders.\" type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
 
-                    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
+                    sThisDiv = sThisDiv + "<th title=\"Close\" style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
                     sThisDiv = sThisDiv + "</tr>";
 
@@ -14493,6 +14846,7 @@ function GetWatchlistSO() {
                     sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
                     sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
                     sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
+                    sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Restore");
                     sThisDiv = sThisDiv + sThisTableTitle + "</div></div></td></tr></table></div>";
                 } else {
                     if (bEverythingIsChecked) {
@@ -14508,10 +14862,12 @@ function GetWatchlistSO() {
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, gsTableHeightOverflow);
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitle);
                         sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsMaximizeWindowImg);
+                        sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Maximize");
                     } else {
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, "");
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, "");
                         sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsRestoreWindowImg);
+                        sThisDiv = sThisDiv.replace("yyyimgMaxRestoreyyy", "Restore");
                     }
 
                     sThisDiv = sThisDiv + sThisTableTitle + sThisTable + "</table></div></div>" + "</td></tr></table></div>";
@@ -16597,10 +16953,10 @@ function PageLoad() {
             "<td><input type=\"checkbox\" id=\"chkIndexSP\" name=\"chkIndexSP\" value=\"\" checked onclick=\"chkIndexChanged(event)\">" +
             "<label for=\"chkIndexSP\"> S&P 500</label>" + "</td>" +
             "<td>" + 
-            "<input type=\"button\" style=\"border-radius:15px; visibility:visible;\" id=\"btnWLSelect\" name=\"btnWLSelect\" value=\"Select Watchlists\" onclick=\"SelectWatchlist()\">" +
+            "<input title=\"Select a watchlist to display.\" type=\"button\" style=\"border-radius:15px; visibility:visible;\" id=\"btnWLSelect\" name=\"btnWLSelect\" value=\"Select Watchlists\" onclick=\"SelectWatchlist()\">" +
             "</td>" +
             "<td>" +
-            "<input type=\"button\" style=\"border-radius:15px;\" id=\"btnWLReset\" name=\"btnWLReset\" value=\"Reset Watchlists\" onclick=\"ResetWatchlist()\">" +
+            "<input title=\"Press this after using the TDAmeritrade website to add or delete a watchlist.\" type=\"button\" style=\"border-radius:15px;\" id=\"btnWLReset\" name=\"btnWLReset\" value=\"Reset Watchlists\" onclick=\"ResetWatchlist()\">" +
             "</td>" +
             "</tr>" +
             "<tr height =\"20\">" +
@@ -20968,12 +21324,18 @@ function wlDoMaximizeRestore(sLastWLAccountId, watchlistId) {
             document.getElementById("divtableInside" + sThisId).style.overflowY = "hidden";
             document.getElementById("divtableInside" + sThisId).style.height = "";
             document.getElementById("spanMaxRestore" + sThisId).src = gsRestoreWindowImg;
+            if (!isUndefined(document.getElementById("spanMaxRestore" + sThisId).title)) {
+                document.getElementById("spanMaxRestore" + sThisId).title = "Restore";
+            }
         } else {
             document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
             document.getElementById("divtableInside" + sThisId).style.overflowY = "scroll";
             document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
             document.getElementById("divtableTitle" + sThisId).style.overflowY = "scroll";
             document.getElementById("spanMaxRestore" + sThisId).src = gsMaximizeWindowImg;
+            if (!isUndefined(document.getElementById("spanMaxRestore" + sThisId).title)) {
+                document.getElementById("spanMaxRestore" + sThisId).title = "Maximize";
+            }
         }
     }
 }

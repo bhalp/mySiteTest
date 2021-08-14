@@ -61,7 +61,7 @@
                     <span id="spanRegularMarket" style="display:none;width:50px;color:white;background-color:darkred;font-family:Arial, Helvetica, sans-serif; font-size:10pt;vertical-align:middle; text-align:left">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                     <span id="spanPostMarket" style="display:none;width:50px;color:white;background-color:darkred;font-family:Arial, Helvetica, sans-serif; font-size:10pt;vertical-align:middle; text-align:left">&nbsp;Post&nbsp;</span>
                     <span id="spanSpecialImage" style="display:none;"><img src="2019-rose-i-love-you-animation.gif" width="200" height="200"><img src="valentine_10_W.gif" width="200" height="200"></span>
-                    <span id="spanInfo" style="display:none; font-family:Arial, Helvetica, sans-serif; font-size:10pt;vertical-align:middle; text-align:left"><img src="Button-Info-icon25px.png" onclick="onClickInfo(event)" /></span>
+                    <span id="spanInfo" title="Show TDApp Version" style="display:none; font-family:Arial, Helvetica, sans-serif; font-size:10pt;vertical-align:middle; text-align:left"><img src="Button-Info-icon25px.png" onclick="onClickInfo(event)" /></span>
                     <span id="spanDebug" style="font-family:Arial, Helvetica, sans-serif; font-size:10pt;vertical-align:middle; text-align:left"></span>
                 </td>
             </tr>
@@ -78,32 +78,32 @@
                     <br />
                     Symbols (like amzn,aapl,msft or leave blank for all symbols):
                     <br />
-                    <input id="txtSymbols" name="txtSymbols" type="search" style="font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:300px" value="">
-                    <input type="button" style="border-radius:5px; visibility:visible;" id="btnSymSelect" name="btnSymSelect" value="..." onclick="SelectWatchlistSymbols()">
-                    <input type="button" style="border-radius:5px; visibility:visible;" id="btnSymFind" name="btnSymFind" value="Portfolio" onclick="FindSymbolsInWatchlists()">
+                    <input title="Symbols to show trade or price history." id="txtSymbols" name="txtSymbols" type="search" style="font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:300px" value="">
+                    <input title="Select a watchlist to add its symbols." type="button" style="border-radius:5px; visibility:visible;" id="btnSymSelect" name="btnSymSelect" value="..." onclick="SelectWatchlistSymbols()">
+                    <input title="Show the watchlists containing the first 3 symbols." type="button" style="border-radius:5px; visibility:visible;" id="btnSymFind" name="btnSymFind" value="Portfolio" onclick="FindSymbolsInWatchlists()">
                 </td>
             </tr>
             <tr>
                 <td style="vertical-align:top; text-align:left">
                     Start Date (yyyy-mm-dd):
                     <br />
-                    <input maxlength=10 id="txtStartDate" name="txtStartDate" type="search" style="font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:300px" value="">
+                    <input title="Start date for trade or price history." maxlength=10 id="txtStartDate" name="txtStartDate" type="search" style="font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:300px" value="">
                 </td>
             </tr>
             <tr>
                 <td style="vertical-align:top; text-align:left">
                     End Date (yyyy-mm-dd):
                     <br />
-                    <input maxlength=10 id="txtEndDate" name="txtEndDate" type="search" style="font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:300px" value="">
+                    <input title="End date for trade or price history." maxlength=10 id="txtEndDate" name="txtEndDate" type="search" style="font-family:Arial, Helvetica, sans-serif; font-size:12pt;width:300px" value="">
                 </td>
             </tr>
             <tr>
                 <td style="vertical-align:middle; text-align:left">
 
                     <br />
-                    <input style="border-radius:15px; font-family:Arial, Helvetica, sans-serif; font-size:12pt;width: 110px; height:50px; visibility: visible" type="button" id="btnGetTrades" name="btnGetTrades" value="Get Trades" onclick="DoGetTrades()">
+                    <input title="Get trade history." style="border-radius:15px; font-family:Arial, Helvetica, sans-serif; font-size:12pt;width: 110px; height:50px; visibility: visible" type="button" id="btnGetTrades" name="btnGetTrades" value="Get Trades" onclick="DoGetTrades()">
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    <input style="border-radius:15px;font-family:Arial, Helvetica, sans-serif; font-size:12pt;width: 160px; height:25px; visibility: visible" type="button" id="btnGetStockPriceHistory" name="btnGetStockPriceHistory" value="Start Price History" onclick="DoGetStockPriceHistory()"><br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Short time:&nbsp;<input maxlength=2 style="width: 30px; visibility: visible" type="text" id="txtShortTime" name="txtShortTime" onkeypress="return isNumberKey(event)" value="5">&nbsp;Long time:&nbsp;<input maxlength=2 style="width: 30px; visibility: visible" type="text" id="txtLongTime" name="txtLongTime" onkeypress="return isNumberKey(event)" value="40">&nbsp;&nbsp;<span id="spanRunning" style="background-color:green;color:white; visibility:hidden">Running</span>
+                    <input title="Get price history." style="border-radius:15px;font-family:Arial, Helvetica, sans-serif; font-size:12pt;width: 160px; height:25px; visibility: visible" type="button" id="btnGetStockPriceHistory" name="btnGetStockPriceHistory" value="Start Price History" onclick="DoGetStockPriceHistory()"><br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Short time:&nbsp;<input maxlength=2 style="width: 30px; visibility: visible" type="text" id="txtShortTime" name="txtShortTime" onkeypress="return isNumberKey(event)" value="5">&nbsp;Long time:&nbsp;<input maxlength=2 style="width: 30px; visibility: visible" type="text" id="txtLongTime" name="txtLongTime" onkeypress="return isNumberKey(event)" value="40">&nbsp;&nbsp;<span id="spanRunning" style="background-color:green;color:white; visibility:hidden">Running</span>
                 </td>
             </tr>
             <tr>
