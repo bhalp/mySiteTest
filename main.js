@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.4 2021-08-13 15:11"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.4 2021-08-17 17:02"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -7,7 +7,7 @@ var gsBearerCode = "";
 var gsTDAPIKey = "";
 var gsRedirectURL = "";
 var gbUsingCell = false;
-
+var gsOldBody = "";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
     return (opt_lowerCaseTheRest ? this.toLowerCase() : this)
@@ -19401,7 +19401,17 @@ function printdiv_do(printdivname) {
     let oldstr = document.body.innerHTML;
     document.body.innerHTML = headstr + newstr + footstr;
     window.print();
-    document.body.innerHTML = oldstr;
+    if (gbUsingCell) {
+        gsOldBody = oldstr;
+        window.setTimeout("printdiv_do_finish()", 2000);
+    } else {
+        document.body.innerHTML = oldstr;
+        window.setTimeout("wlResetDragAllWatchlists()", 1000);
+    }
+}
+
+function printdiv_do_finish() {
+    document.body.innerHTML = gsOldBody;
     window.setTimeout("wlResetDragAllWatchlists()", 1000);
 }
 
