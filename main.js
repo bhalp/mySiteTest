@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.4 2021-08-17 17:02"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.5 2021-08-19 15:49"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -194,12 +194,15 @@ function Symbol() {
     this.fees = 0.0;
     this.buy = 0.0;
     this.sell = 0.0
+    this.divAmount = 0.0;
     this.shares = 0.0;
     this.assetType = "";
     this.SymbolPrice = new SymbolPrice();
     this.trades = new Array();
 }
 var gSymbols = new Array(); //collection of Symbol objects
+var gSymbolsTotalDivLong = 0.0;
+var gSymbolsTotalDivShort = 0.0;
 var gSymbolsAuto = new Array(); //collection of Symbol objects used to update the Old G/L in a watchlist
 var gSymbolsGL = []; //will contain all of the symbols that have an OldGL for all of the accounts -- key = accountId + symbol, value = {symbol, symbolDescription, averagePrice}
 
@@ -643,6 +646,7 @@ function Trade() {
     this.cost = 0.0;
     this.netAmount = 0.0;
     this.fees = 0.0;
+    this.divAmount = 0.0;
     this.transactionSubType = "";
     this.assetType = "";
 }
@@ -9054,6 +9058,8 @@ function GetTrades(bFirstTime) {
 
         gTrades.length = 0;
         gSymbols.length = 0;
+        gSymbolsTotalDivLong = 0.0;
+        gSymbolsTotalDivShort = 0.0;
 
         //        let sSymbolsToLookup = sSymbolsToLookupTmp.split(",")
 
@@ -9211,6 +9217,7 @@ function GetTrades(bFirstTime) {
                                                             oTrade.price = 0;
                                                             oTrade.cost = 0;
                                                             oTrade.netAmount = oCM[idxTrade].netAmount;
+                                                            oTrade.divAmount = oCM[idxTrade].netAmount;
                                                             if (isUndefined(oCM[idxTrade].transactionSubType)) {
                                                                 oTrade.transactionSubType = "";
                                                             } else {
@@ -9233,6 +9240,7 @@ function GetTrades(bFirstTime) {
                                                                                         (gSymbols[idxTmp].accountId == gAccounts[idx].accountId)) {
                                                                                         bNeedToAddSymbol = false;
                                                                                         gSymbols[idxTmp].sell = gSymbols[idxTmp].sell + oCM[idxTrade].netAmount;
+                                                                                        gSymbols[idxTmp].divAmount = gSymbols[idxTmp].divAmount + oCM[idxTrade].netAmount;
                                                                                         gSymbols[idxTmp].trades[gSymbols[idxTmp].trades.length] = oTrade;
                                                                                         gSymbols[idxTmp].fees = gSymbols[idxTmp].fees + oTrade.fees;
                                                                                         break;
@@ -9247,6 +9255,7 @@ function GetTrades(bFirstTime) {
                                                                             oSymbol.accountName = gAccounts[idx].accountName;
                                                                             oSymbol.assetType = oCM[idxTrade].transactionItem.instrument.assetType;
                                                                             oSymbol.sell = oCM[idxTrade].netAmount;
+                                                                            oSymbol.divAmount = oCM[idxTrade].netAmount;
                                                                             oSymbol.trades[oSymbol.trades.length] = oTrade;
                                                                             oSymbol.fees = oTrade.fees;
                                                                             gSymbols[gSymbols.length] = oSymbol;
@@ -9593,26 +9602,26 @@ function GetTrades(bFirstTime) {
 
             GetCurrentPrices();
 
-            let iPwdFormHeight = document.getElementById("pwdForm").clientHeight + 10;
-            document.getElementById("tblSymbols").style.top = iPwdFormHeight.toString() + "px";
-            document.getElementById("tblSymbols").style.left = "0px";
+            //let iPwdFormHeight = document.getElementById("pwdForm").clientHeight + 10;
+            //document.getElementById("tblSymbols").style.top = iPwdFormHeight.toString() + "px";
+            //document.getElementById("tblSymbols").style.left = "0px";
 
-            document.getElementById("tblSymbols").style.width = "500px";
-            document.getElementById("nameTitle").style.width = "480px";
-            document.getElementById("tblSymbols").style.visibility = "visible";
+            //document.getElementById("tblSymbols").style.width = "500px";
+            //document.getElementById("nameTitle").style.width = "480px";
+            //document.getElementById("tblSymbols").style.visibility = "visible";
 
-            giZIndex++;
-            document.getElementById("tblSymbols").style.zIndex = giZIndex.toString();
+            //giZIndex++;
+            //document.getElementById("tblSymbols").style.zIndex = giZIndex.toString();
 
-            //document.getElementById("tblDetail").style.top = iPwdFormHeight.toString() + "px";
-            //document.getElementById("tblDetail").style.left = "510px";
-            //document.getElementById("tblDetail").style.width = "520px";
-            //document.getElementById("detailTitle").style.width = "500px";
-            document.getElementById("tblDetail").style.visibility = "hidden";
+            ////document.getElementById("tblDetail").style.top = iPwdFormHeight.toString() + "px";
+            ////document.getElementById("tblDetail").style.left = "510px";
+            ////document.getElementById("tblDetail").style.width = "520px";
+            ////document.getElementById("detailTitle").style.width = "500px";
+            //document.getElementById("tblDetail").style.visibility = "hidden";
+
+            //document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
+
             gSymbols.sort(sortBySymbolAndAccountname);
-
-            document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
-
 
             //let sSymbolDisplay = "<table style=\"width:100%;border-width:0px;\">";
             let sSymbolDisplay = "";
@@ -9624,10 +9633,12 @@ function GetTrades(bFirstTime) {
             let dTotalBuy = 0.0;
             let dTotalSell = 0.0;
             let dTotalShares = 0.0;
+            let dTotalDiv = 0.0;
             let dCurrentPrice = 0.0;
             let dTotalFees = 0.0;
 
             let dTotalLongShort = 0.0;
+            let dTotalLongShortDiv = 0.0;
             let dTotalLongShortFees = 0.0;
             let iTotalLongShortSymbols = 0;
 
@@ -9641,15 +9652,167 @@ function GetTrades(bFirstTime) {
             let sTRId = "";
 
             //debugger
+            //------------------------------------------------------------
             let bDoingLong = true;
             let bNeedTotalLongShort = false;
+            let bNeedDivColumnLong = false;
+            let bNeedDivColumnShort = false;
+            for (let idxLongShort = 0; idxLongShort < 2; idxLongShort++) {
+                sLastSymbol = "";
+                s = "";
+                if (idxLongShort == 0) {
+                    bDoingLong = true;
+                } else {
+                    if (dTotalLongShortDiv != 0.0) {
+                        bNeedDivColumnLong = true;
+                    }
+                    dTotalLongShortDiv = 0.0;
+                    bNeedTotalLongShort = false;
+                    bDoingLong = false;
+                }
+                for (let idx = 0; idx < gSymbols.length; idx++) {
+                    if (sLastSymbol == "") {
+                        sSymbol = gSymbols[idx].symbol;
+                        sLastSymbol = sSymbol;
+                        dTotalDiv = gSymbols[idx].divAmount;
+                        dTotalShares = gSymbols[idx].shares;
+                        bNeedTotal = true;
+                    } else if (sLastSymbol == gSymbols[idx].symbol) {
+                        sSymbol = gSymbols[idx].symbol;
+                        dTotalDiv = dTotalDiv + gSymbols[idx].divAmount;
+                        dTotalShares = dTotalShares + gSymbols[idx].shares;
+                    } else {
+                        let bOkToContinue = false;
+                        if (dTotalShares < 0.0) {
+                            if (!bDoingLong) {
+                                bOkToContinue = true;
+                                bNeedTotalLongShort = true;
+                            }
+                        } else {
+                            if (bDoingLong) {
+                                bOkToContinue = true;
+                                bNeedTotalLongShort = true;
+                            }
+                        }
+                        if (bOkToContinue) {
+                            dTotalLongShortDiv = dTotalLongShortDiv + dTotalDiv;
+                        }
+
+                        sSymbol = gSymbols[idx].symbol;
+
+                        sLastSymbol = sSymbol;
+                        dTotalDiv = gSymbols[idx].divAmount;
+                        dTotalShares = gSymbols[idx].shares;
+                        bNeedTotal = true;
+                    }
+                }
+                if (bNeedTotal) {
+                    bNeedTotal = false;
+                    if (dTotalShares < 0.0) {
+                        if (!bDoingLong) {
+                            bNeedTotalLongShort = true;
+                        }
+                    } else {
+                        if (bDoingLong) {
+                            bNeedTotalLongShort = true;
+                        }
+                    }
+                }
+                if (bNeedTotalLongShort) {
+                    if (bDoingLong) {
+                    } else {
+                        if (dTotalLongShortDiv != 0.0) {
+                            bNeedDivColumnShort = true;
+                        }
+                    }
+                }
+            }
+
+            let sColSpan = "";
+            let iPwdFormHeight = document.getElementById("pwdForm").clientHeight + 10;
+            document.getElementById("tblSymbols").style.top = iPwdFormHeight.toString() + "px";
+            document.getElementById("tblSymbols").style.left = "0px";
+            if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                document.getElementById("tblSymbols").style.width = "570px";
+                document.getElementById("nameTitle").style.width = "550px";
+                sColSpan = "7";
+            } else {
+                document.getElementById("tblSymbols").style.width = "500px";
+                document.getElementById("nameTitle").style.width = "480px";
+                sColSpan = "6";
+            }
+            document.getElementById("tblSymbols").style.visibility = "visible";
+            giZIndex++;
+            document.getElementById("tblSymbols").style.zIndex = giZIndex.toString();
+            document.getElementById("tblDetail").style.visibility = "hidden";
+            document.getElementById("nameTitle").innerHTML = "Symbols" + gGetTradesContext.sFilter;
+
+            //------------------------------------------------------------
+            sSymbolDisplay = "";
+            s = "";
+            sLastSymbol = "";
+            sSymbol = "";
+            sTmp = "";
+            sAccountName = "";
+            dTotalBuy = 0.0;
+            dTotalSell = 0.0;
+            dTotalShares = 0.0;
+            dTotalDiv = 0.0;
+            dCurrentPrice = 0.0;
+            dTotalFees = 0.0;
+
+            dTotalLongShort = 0.0;
+            dTotalLongShortDiv = 0.0;
+            dTotalLongShortFees = 0.0;
+            iTotalLongShortSymbols = 0;
+
+            sLastAssetType = "";
+            bNeedTotal = false;
+
+            totalBackgroundColor = "lightgray";
+            symbolTextColor = "blue";
+
+            iTRId = 0;
+            sTRId = "";
+
+            let sFieldWidths = {
+                "Account": "width:20%;",
+                "Buy": "width:19%;",
+                "Sell": "width:19%;",
+                "Shares": "width:13%;",
+                "Price": "width:14%;",
+                "GL": "width:15%;",
+                "Div": "width:13%;"
+            }
+
+            let sFieldWidthsDiv = {
+                "Account": "width:19%;",
+                "Buy": "width:16%;",
+                "Sell": "width:16%;",
+                "Shares": "width:11%;",
+                "Price": "width:12%;",
+                "GL": "width:13%;",
+                "Div": "width:13%;"
+            }
+
+            if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                sFieldWidths.Account = sFieldWidthsDiv.Account;
+                sFieldWidths.Buy = sFieldWidthsDiv.Buy;
+                sFieldWidths.Sell = sFieldWidthsDiv.Sell;
+                sFieldWidths.Shares = sFieldWidthsDiv.Shares;
+                sFieldWidths.Price = sFieldWidthsDiv.Price;
+                sFieldWidths.GL = sFieldWidthsDiv.GL;
+            }
+
+            bDoingLong = true;
+            bNeedTotalLongShort = false;
             for (let idxLongShort = 0; idxLongShort < 2; idxLongShort++) {
                 sLastSymbol = "";
                 s = "";
                 let sCurrentDiv = "";
                 if (idxLongShort == 0) {
                     sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
-                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"6\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt;height:30px;width:100%;vertical-align:middle;border-width:0px;border-style: solid;border-spacing:1px;border-color: White\"><b>Long Symbols</b>&nbsp;&nbsp;" + gsReplaceImgSymbolsLong + "</td></tr>";
+                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"" + sColSpan + "\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt;height:30px;width:100%;vertical-align:middle;border-width:0px;border-style: solid;border-spacing:1px;border-color: White\"><b>Long Symbols</b>&nbsp;&nbsp;" + gsReplaceImgSymbolsLong + "</td></tr>";
                     sSymbolDisplay = sSymbolDisplay + "</table>"
                     sSymbolDisplay = sSymbolDisplay + "<div id =\"divSymbolsLong\" name=\"divSymbolsLong\" style=\"" + gsReplaceTableHeightOverflowSymbolsLong + "\">";
                     sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
@@ -9659,11 +9822,11 @@ function GetTrades(bFirstTime) {
                 } else {
                     dTotalLongShort = 0.0;
                     dTotalLongShortFees = 0.0;
+                    dTotalLongShortDiv = 0.0;
                     bNeedTotalLongShort = false;
-                    gsReplaceTableHeightOverflow
                     sSymbolDisplay = sSymbolDisplay + "</table></div>";
                     sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
-                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"6\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt;height:30px;width:100%;vertical-align:middle;border-width:0px;border-style:solid;border-spacing:1px;border-color:White\"><b>Short Symbols</b>&nbsp;&nbsp;" + gsReplaceImgSymbolsShort + "</td></tr>";
+                    sSymbolDisplay = sSymbolDisplay + "<tr><td colspan=\"" + sColSpan + "\" style=\"text-align:center; color:" + gsNegativeColor + "; font-size:16pt;height:30px;width:100%;vertical-align:middle;border-width:0px;border-style:solid;border-spacing:1px;border-color:White\"><b>Short Symbols</b>&nbsp;&nbsp;" + gsReplaceImgSymbolsShort + "</td></tr>";
                     sSymbolDisplay = sSymbolDisplay + "</table>"
                     sSymbolDisplay = sSymbolDisplay + "<div id =\"divSymbolsShort\" name=\"divSymbolsShort\" style=\"" + gsReplaceTableHeightOverflowSymbolsShort + "\">";
                     sSymbolDisplay = sSymbolDisplay + "<table style=\"border-collapse:collapse; border: 0px solid black;width:100%;border-width:0px;\">";
@@ -9671,6 +9834,8 @@ function GetTrades(bFirstTime) {
                     bDoingLong = false;
                     sCurrentDiv = "divSymbolsShort";
                 }
+
+
                 for (let idx = 0; idx < gSymbols.length; idx++) {
                     if (sLastSymbol == "") {
                         sSymbol = gSymbols[idx].symbol;
@@ -9679,35 +9844,40 @@ function GetTrades(bFirstTime) {
                         //}
                         sLastSymbol = sSymbol;
                         sAccountName = gSymbols[idx].accountName;
-                        s = s + "<tr><td colspan=\"6\" style=\"color:" + symbolTextColor + "; height:20px; width:100%; vertical-align:top; border-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + (gSymbols[idx].assetType === "OPTION" ? " <span style='color:red;'>*&nbsp;</span>" : "") + sSymbol + "</b> - xxxxxxxxxxxx</td></tr > ";
+                        s = s + "<tr><td colspan=\"" + sColSpan + "\" style=\"color:" + symbolTextColor + "; height:20px; width:100%; vertical-align:top; border-width:0px; border-style:solid; border-spacing:1px; border-color:White\"><b>" + (gSymbols[idx].assetType === "OPTION" ? " <span style='color:red;'>*&nbsp;</span>" : "") + sSymbol + "</b> - xxxxxxxxxxxx</td></tr > ";
                         s = s + "<tr>";
-                        s = s + "<td style=\"width:20%; vertical-align:top;border-width:0px;\"><I>Account</I></td>";
-                        s = s + "<td style=\"width:19%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Buy</I></td>";
-                        s = s + "<td style=\"width:19%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Sell</I></td>";
-                        s = s + "<td style=\"width:13%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Shares</I></td>";
-                        s = s + "<td style=\"width:14%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Price</I></td>";
-                        s = s + "<td style=\"width:19%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>G/L</I></td>";
+
+                        s = s + "<td style=\"" + sFieldWidths.Account + " vertical-align:top;border-width:0px;\"><I>Account</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Buy + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Buy</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Sell + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Sell</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Shares + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Shares</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Price</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.GL + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>G/L</I></td>";
+                        if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Div</I></td>";
+                        }
+
                         s = s + "</tr>";
 
                         s = s + "<tr>";
 
                         iTRId++;
                         sTRId = "TDSym" + iTRId.toString();
-                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
+                        s = s + "<td id=\"" + sTRId + "\" style=\"" + sFieldWidths.Account + " vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
 
                         //                        sTmp = FormatMoney(gSymbols[idx].buy);
                         sTmp = FormatDecimalNumber(gSymbols[idx].buy, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + "; vertical - align: top; border - width: 0px; \">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Buy + " text-align:" + sBodyTextAlign + "; vertical - align: top; border - width: 0px; \">" + sTmp + "</td>";
                         dTotalBuy = gSymbols[idx].buy;
 
                         //                        sTmp = FormatMoney(gSymbols[idx].sell);
                         sTmp = FormatDecimalNumber(gSymbols[idx].sell, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Sell + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalSell = gSymbols[idx].sell;
 
                         //                        sTmp = FormatInt(gSymbols[idx].shares);
                         sTmp = FormatDecimalNumber(gSymbols[idx].shares, 3, 1, "");
-                        s = s + "<td style=\"width:13%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Shares + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalShares = gSymbols[idx].shares;
 
                         //sTmp = FormatDecimalNumber(gSymbols[idx].fees, 5, 2, "");
@@ -9724,7 +9894,7 @@ function GetTrades(bFirstTime) {
                             dCurrentPrice = oSymbolPrice.price; //get the current price here
                             //                            sTmp = FormatMoney(dCurrentPrice);
                             sTmp = FormatDecimalNumber(dCurrentPrice, 3, 2, "");
-                            s = s + "<td style=\"width:14%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             //                            sTmp = FormatMoney((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * 100 * dCurrentPrice));
                             sTmp = FormatDecimalNumber((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * 100 * dCurrentPrice), 3, 2, "");
@@ -9735,7 +9905,7 @@ function GetTrades(bFirstTime) {
                             dCurrentPrice = oSymbolPrice.price; //get the current price here
                             //                            sTmp = FormatMoney(dCurrentPrice);
                             sTmp = FormatDecimalNumber(dCurrentPrice, 3, 2, "");
-                            s = s + "<td style=\"width:14%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             //                            sTmp = FormatMoney((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice));
                             sTmp = FormatDecimalNumber((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice), 3, 2, "");
@@ -9750,9 +9920,15 @@ function GetTrades(bFirstTime) {
                         //}
 
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        }
+
+                        if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                            sTmp = FormatDecimalNumber(gSymbols[idx].divAmount, 3, 2, "");
+                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            dTotalDiv = gSymbols[idx].divAmount;
                         }
 
                         s = s + "</tr>";
@@ -9766,20 +9942,20 @@ function GetTrades(bFirstTime) {
 
                         iTRId++;
                         sTRId = "TDSym" + iTRId.toString();
-                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
+                        s = s + "<td id=\"" + sTRId + "\" style=\"" + sFieldWidths.Account + " vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
                         //                        sTmp = FormatMoney(gSymbols[idx].buy);
                         sTmp = FormatDecimalNumber(gSymbols[idx].buy, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Buy + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalBuy = dTotalBuy + gSymbols[idx].buy;
 
                         //                        sTmp = FormatMoney(gSymbols[idx].sell);
                         sTmp = FormatDecimalNumber(gSymbols[idx].sell, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Sell + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalSell = dTotalSell + gSymbols[idx].sell;
 
                         //                        sTmp = FormatInt(gSymbols[idx].shares);
                         sTmp = FormatDecimalNumber(gSymbols[idx].shares, 3, 1, "");
-                        s = s + "<td style=\"width:13%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Shares + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalShares = dTotalShares + gSymbols[idx].shares;
 
                         //sTmp = FormatDecimalNumber(gSymbols[idx].fees, 5, 2, "");
@@ -9788,7 +9964,7 @@ function GetTrades(bFirstTime) {
 
                         //                        sTmp = FormatMoney(dCurrentPrice);
                         sTmp = FormatDecimalNumber(dCurrentPrice, 3, 2, "");
-                        s = s + "<td style=\"width:14%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
 
                         if (sLastAssetType == "OPTION") {
@@ -9808,9 +9984,15 @@ function GetTrades(bFirstTime) {
                         }
 
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        }
+
+                        if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                            sTmp = FormatDecimalNumber(gSymbols[idx].divAmount, 3, 2, "");
+                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            dTotalDiv = dTotalDiv + gSymbols[idx].divAmount;
                         }
 
                         s = s + "</tr>";
@@ -9831,25 +10013,26 @@ function GetTrades(bFirstTime) {
                         if (bOkToContinue) {
                             iTotalLongShortSymbols++;
                             dTotalLongShortFees = dTotalLongShortFees + dTotalFees;
+                            dTotalLongShortDiv = dTotalLongShortDiv + dTotalDiv;
                             //show total and then first lines of new symbol
                             s = s + "<tr style=\"background-color:" + totalBackgroundColor + "; \">";
 
-                            s = s + "<td style=\"width:20%; vertical-align:top;border-width:0px;\"><I>Total</I></td > ";
+                            s = s + "<td style=\"" + sFieldWidths.Account + " vertical-align:top;border-width:0px;\"><I>Total</I></td > ";
                             //                        sTmp = FormatMoney(dTotalBuy);
                             sTmp = FormatDecimalNumber(dTotalBuy, 5, 2, "");
-                            s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Buy + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             //                        sTmp = FormatMoney(dTotalSell);
                             sTmp = FormatDecimalNumber(dTotalSell, 5, 2, "");
-                            s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Sell + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             //                        sTmp = FormatInt(gSymbols[idx].shares);
                             sTmp = FormatDecimalNumber(dTotalShares, 3, 1, "");
-                            s = s + "<td style=\"width:13%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Shares + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             //                        sTmp = FormatMoney(dCurrentPrice);
                             sTmp = FormatDecimalNumber(dCurrentPrice, 3, 2, "");
-                            s = s + "<td style=\"width:14%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             if (sLastAssetType == "OPTION") {
                                 //                            sTmp = FormatMoney((-1 * dTotalBuy) + dTotalSell + (dTotalShares * 100 * dCurrentPrice));
@@ -9862,9 +10045,14 @@ function GetTrades(bFirstTime) {
                             }
 
                             if (sTmp.indexOf("-") != -1) {
-                                s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                             } else {
-                                s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorGain + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            }
+
+                            if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                                sTmp = FormatDecimalNumber(dTotalDiv, 3, 2, "");
+                                s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                             }
 
                             s = s + "</tr>";
@@ -9876,15 +10064,18 @@ function GetTrades(bFirstTime) {
 
                         sLastSymbol = sSymbol;
                         sAccountName = gSymbols[idx].accountName;
-                        s = s + "<tr><td colspan=\"6\" style=\"color: " + symbolTextColor + "; height: 20px; width: 100 %; vertical - align: top; border - width: 0px; border - style: solid; border - spacing: 1px; border - color: White\"><b>" + (gSymbols[idx].assetType === "OPTION" ? " <span style='color: red;'>*&nbsp;</span>" : "") + sSymbol + "</b> - xxxxxxxxxxxx</td></tr>";
+                        s = s + "<tr><td colspan=\"" + sColSpan + "\" style=\"color: " + symbolTextColor + "; height: 20px; width: 100 %; vertical - align: top; border - width: 0px; border - style: solid; border - spacing: 1px; border - color: White\"><b>" + (gSymbols[idx].assetType === "OPTION" ? " <span style='color: red;'>*&nbsp;</span>" : "") + sSymbol + "</b> - xxxxxxxxxxxx</td></tr>";
                         s = s + "<tr>";
 
-                        s = s + "<td style=\"width:20%; vertical-align:top;border-width:0px;\"><I>Account</I></td>";
-                        s = s + "<td style=\"width:19%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Buy</I></td>";
-                        s = s + "<td style=\"width:19%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Sell</I></td>";
-                        s = s + "<td style=\"width:13%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Shares</I></td>";
-                        s = s + "<td style=\"width:14%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Price</I></td>";
-                        s = s + "<td style=\"width:19%; text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>G/L</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Account + " vertical-align:top;border-width:0px;\"><I>Account</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Buy + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Buy</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Sell + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Sell</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Shares + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Shares</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Price</I></td>";
+                        s = s + "<td style=\"" + sFieldWidths.GL + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>G/L</I></td>";
+                        if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sHeadingTextAlign + ";vertical-align:top;border-width:0px;\"><I>Div</I></td>";
+                        }
 
                         s = s + "</tr>";
 
@@ -9892,21 +10083,21 @@ function GetTrades(bFirstTime) {
 
                         iTRId++;
                         sTRId = "TDSym" + iTRId.toString();
-                        s = s + "<td id=\"" + sTRId + "\" style=\"width:20%; vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
+                        s = s + "<td id=\"" + sTRId + "\" style=\"" + sFieldWidths.Account + " vertical-align:top;border-width:0px;\"><a href=\"JavaScript: DoGetTradesBySymbol('" + sSymbol + "','" + gSymbols[idx].accountId + "','" + sAccountName + "','" + sTRId + "', " + idx.toString() + ",'" + sCurrentDiv + "') \">" + sAccountName + SetFeeIndicator(idx) + "</a></td > ";
 
                         //                        sTmp = FormatMoney(gSymbols[idx].buy);
                         sTmp = FormatDecimalNumber(gSymbols[idx].buy, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Buy + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalBuy = gSymbols[idx].buy;
 
                         //                        sTmp = FormatMoney(gSymbols[idx].sell);
                         sTmp = FormatDecimalNumber(gSymbols[idx].sell, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Sell + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalSell = gSymbols[idx].sell;
 
                         //                        sTmp = FormatInt(gSymbols[idx].shares);
                         sTmp = FormatDecimalNumber(gSymbols[idx].shares, 3, 1, "");
-                        s = s + "<td style=\"width:13%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Shares + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         dTotalShares = gSymbols[idx].shares;
 
                         //sTmp = FormatDecimalNumber(gSymbols[idx].fees, 5, 2, "");
@@ -9923,7 +10114,7 @@ function GetTrades(bFirstTime) {
                             dCurrentPrice = oSymbolPrice.price; //get the current price here
                             //                            sTmp = FormatMoney(dCurrentPrice);
                             sTmp = FormatDecimalNumber(dCurrentPrice, 3, 2, "");
-                            s = s + "<td style=\"width:14%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             //                            sTmp = FormatMoney((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * 100 * dCurrentPrice));
                             sTmp = FormatDecimalNumber((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * 100 * dCurrentPrice), 3, 2, "");
@@ -9934,7 +10125,7 @@ function GetTrades(bFirstTime) {
                             dCurrentPrice = oSymbolPrice.price; //get the current price here
                             //                            sTmp = FormatMoney(dCurrentPrice);
                             sTmp = FormatDecimalNumber(dCurrentPrice, 3, 2, "");
-                            s = s + "<td style=\"width:14%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                             //                            sTmp = FormatMoney((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice));
                             sTmp = FormatDecimalNumber((-1 * gSymbols[idx].buy) + gSymbols[idx].sell + (gSymbols[idx].shares * dCurrentPrice), 3, 2, "");
@@ -9949,9 +10140,15 @@ function GetTrades(bFirstTime) {
                         //}
 
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";width:15%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td " + sOnclick + " style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorGain + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        }
+
+                        if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                            sTmp = FormatDecimalNumber(gSymbols[idx].divAmount, 3, 2, "");
+                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            dTotalDiv = gSymbols[idx].divAmount;
                         }
 
                         s = s + "</tr>";
@@ -9976,24 +10173,25 @@ function GetTrades(bFirstTime) {
                     if (bOkToContinue) {
                         iTotalLongShortSymbols++;
                         dTotalLongShortFees = dTotalLongShortFees + dTotalFees;
+                        dTotalLongShortDiv = dTotalLongShortDiv + dTotalDiv;
                         s = s + "<tr style=\"background-color:" + totalBackgroundColor + "; \">";
 
-                        s = s + "<td style=\"width:20%; vertical-align:top;border-width:0px;\"><I>Total</I></td > ";
+                        s = s + "<td style=\"" + sFieldWidths.Account + " vertical-align:top;border-width:0px;\"><I>Total</I></td > ";
                         //                    sTmp = FormatMoney(dTotalBuy);
                         sTmp = FormatDecimalNumber(dTotalBuy, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Buy + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                         //                    sTmp = FormatMoney(dTotalSell);
                         sTmp = FormatDecimalNumber(dTotalSell, 5, 2, "");
-                        s = s + "<td style=\"width:19%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Sell + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                         //                    sTmp = FormatInt(dTotalShares);
                         sTmp = FormatDecimalNumber(dTotalShares, 3, 1, "");
-                        s = s + "<td style=\"width:13%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Shares + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                         //                    sTmp = FormatMoney(dCurrentPrice);
                         sTmp = FormatDecimalNumber(dCurrentPrice, 3, 2, "");
-                        s = s + "<td style=\"width:14%; text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        s = s + "<td style=\"" + sFieldWidths.Price + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
 
                         if (sLastAssetType == "OPTION") {
                             //                        sTmp = FormatMoney((-1 * dTotalBuy) + dTotalSell + (dTotalShares * 100 * dCurrentPrice));
@@ -10005,9 +10203,14 @@ function GetTrades(bFirstTime) {
                             dTotalLongShort = dTotalLongShort + ((-1 * dTotalBuy) + dTotalSell + (dTotalShares * dCurrentPrice));
                         }
                         if (sTmp.indexOf("-") != -1) {
-                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";width:15%;text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px; \">" + sTmp + "</td>";
+                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorLoss + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px; \">" + sTmp + "</td>";
                         } else {
-                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorGain + ";width:15%;text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            s = s + "<td style=\"background-color:" + totalBackgroundColor + "; color: " + sTotalsColorGain + ";" + sFieldWidths.GL + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                        }
+
+                        if (bNeedDivColumnLong || bNeedDivColumnShort) {
+                            sTmp = FormatDecimalNumber(dTotalDiv, 3, 2, "");
+                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
                         }
 
                         s = s + "</tr>";
@@ -10019,16 +10222,24 @@ function GetTrades(bFirstTime) {
                     s = "</table></div><div><table style=\"border-collapse:collapse; border:0px solid black;width:100%;border-width:0px;\"><tr style=\"background-color:darkgray; \">";
 
                     if (bDoingLong) {
-                        s = s + "<td colspan=\"5\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Total Long --- Total Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
+
+                        if (dTotalLongShortDiv != 0.0) {
+                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Long --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + " --- Dividend $" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</I ></td > ";
+                        } else {
+                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Long --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
+                        }
                         if (iTotalLongShortSymbols > 3) {
                             sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsLong, gsImgSymbolsLong);
                             sSymbolDisplay = sSymbolDisplay.replace(gsReplaceTableHeightOverflowSymbolsLong, "height:400px;overflow-Y:auto;");
                         } else {
                             sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsLong, "");
-
                         }
                     } else {
-                        s = s + "<td colspan=\"5\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Total Short --- Total Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I></td > ";
+                        if (dTotalLongShortDiv != 0.0) {
+                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Short --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + " --- Dividend $" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</I ></td > ";
+                        } else {
+                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Short --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
+                        }
                         if (iTotalLongShortSymbols > 3) {
                             sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsShort, gsImgSymbolsShort);
                             sSymbolDisplay = sSymbolDisplay.replace(gsReplaceTableHeightOverflowSymbolsShort, "height:400px;overflow-Y:auto;");
