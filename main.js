@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.5 2021-08-19 15:49"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.5 2021-08-23 01:26"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -9707,6 +9707,7 @@ function GetTrades(bFirstTime) {
                     }
                 }
                 if (bNeedTotal) {
+                    dTotalLongShortDiv = dTotalLongShortDiv + dTotalDiv;
                     bNeedTotal = false;
                     if (dTotalShares < 0.0) {
                         if (!bDoingLong) {
@@ -9927,7 +9928,15 @@ function GetTrades(bFirstTime) {
 
                         if (bNeedDivColumnLong || bNeedDivColumnShort) {
                             sTmp = FormatDecimalNumber(gSymbols[idx].divAmount, 3, 2, "");
-                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            if (sTmp.indexOf("-") != -1) {
+                                s = s + "<td style=\" color: " + sTotalsColorLoss + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            } else {
+                                if (sTmp == "0.00") {
+                                    s = s + "<td style=\" color: black;" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                } else {
+                                    s = s + "<td style=\" color: " + sTotalsColorGain + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                }
+                            }
                             dTotalDiv = gSymbols[idx].divAmount;
                         }
 
@@ -9991,7 +10000,15 @@ function GetTrades(bFirstTime) {
 
                         if (bNeedDivColumnLong || bNeedDivColumnShort) {
                             sTmp = FormatDecimalNumber(gSymbols[idx].divAmount, 3, 2, "");
-                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            if (sTmp.indexOf("-") != -1) {
+                                s = s + "<td style=\" color: " + sTotalsColorLoss + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            } else {
+                                if (sTmp == "0.00") {
+                                    s = s + "<td style=\" color: black;" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                } else {
+                                    s = s + "<td style=\" color: " + sTotalsColorGain + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                }
+                            }
                             dTotalDiv = dTotalDiv + gSymbols[idx].divAmount;
                         }
 
@@ -10052,7 +10069,15 @@ function GetTrades(bFirstTime) {
 
                             if (bNeedDivColumnLong || bNeedDivColumnShort) {
                                 sTmp = FormatDecimalNumber(dTotalDiv, 3, 2, "");
-                                s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                if (sTmp.indexOf("-") != -1) {
+                                    s = s + "<td style=\" color: " + sTotalsColorLoss + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                } else {
+                                    if (sTmp == "0.00") {
+                                        s = s + "<td style=\" color: black;" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                    } else {
+                                        s = s + "<td style=\" color: " + sTotalsColorGain + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                    }
+                                }
                             }
 
                             s = s + "</tr>";
@@ -10147,7 +10172,15 @@ function GetTrades(bFirstTime) {
 
                         if (bNeedDivColumnLong || bNeedDivColumnShort) {
                             sTmp = FormatDecimalNumber(gSymbols[idx].divAmount, 3, 2, "");
-                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            if (sTmp.indexOf("-") != -1) {
+                                s = s + "<td style=\" color: " + sTotalsColorLoss + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            } else {
+                                if (sTmp == "0.00") {
+                                    s = s + "<td style=\" color: black;" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                } else {
+                                    s = s + "<td style=\" color: " + sTotalsColorGain + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                }
+                            }
                             dTotalDiv = gSymbols[idx].divAmount;
                         }
 
@@ -10210,7 +10243,16 @@ function GetTrades(bFirstTime) {
 
                         if (bNeedDivColumnLong || bNeedDivColumnShort) {
                             sTmp = FormatDecimalNumber(dTotalDiv, 3, 2, "");
-                            s = s + "<td style=\"" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            if (sTmp.indexOf("-") != -1) {
+                                s = s + "<td style=\" color: " + sTotalsColorLoss + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                            } else {
+                                if (sTmp == "0.00") {
+                                    s = s + "<td style=\" color: black;" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                } else {
+                                    s = s + "<td style=\" color: " + sTotalsColorGain + ";" + sFieldWidths.Div + " text-align:" + sBodyTextAlign + ";vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+                                }
+                            }
+
                         }
 
                         s = s + "</tr>";
@@ -10224,9 +10266,15 @@ function GetTrades(bFirstTime) {
                     if (bDoingLong) {
 
                         if (dTotalLongShortDiv != 0.0) {
-                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Long --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + " --- Dividend $" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</I ></td > ";
+                            sTmp = FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "");
+                            if (sTmp.indexOf("-") != -1) {
+                                s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + "&nbsp;Symbols&nbsp;Long</I>&nbsp;---&nbsp;Fees:&nbsp;<span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "<span><span style=\"color: black;text-align:right;vertical-align:top;border-width:0px;\">&nbsp;---&nbsp;Dividend:&nbsp;<span><span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</span></td > ";
+                            } else {
+                                s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + "&nbsp;Symbols&nbsp;Long</I>&nbsp;---&nbsp;Fees:&nbsp;<span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "<span><span style=\"color: black;text-align:right;vertical-align:top;border-width:0px;\">&nbsp;---&nbsp;Dividend:&nbsp;<span><span style=\"color: " + sTotalsColorGain + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</span></td > ";
+                            }
                         } else {
-                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Long --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
+                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + "&nbsp;Symbols&nbsp;Long</I>&nbsp;---&nbsp;Fees:&nbsp;<span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "<span></td > ";
+                            //s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Short --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
                         }
                         if (iTotalLongShortSymbols > 3) {
                             sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsLong, gsImgSymbolsLong);
@@ -10236,9 +10284,15 @@ function GetTrades(bFirstTime) {
                         }
                     } else {
                         if (dTotalLongShortDiv != 0.0) {
-                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Short --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + " --- Dividend $" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</I ></td > ";
+                            sTmp = FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "");
+                            if (sTmp.indexOf("-") != -1) {
+                                s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + "&nbsp;Symbols&nbsp;Short</I>&nbsp;---&nbsp;Fees:&nbsp;<span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "<span><span style=\"color: black;text-align:right;vertical-align:top;border-width:0px;\">&nbsp;---&nbsp;Dividend:&nbsp;<span><span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</span></td > ";
+                            } else {
+                                s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + "&nbsp;Symbols&nbsp;Short</I>&nbsp;---&nbsp;Fees:&nbsp;<span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "<span><span style=\"color: black;text-align:right;vertical-align:top;border-width:0px;\">&nbsp;---&nbsp;Dividend:&nbsp;<span><span style=\"color: " + sTotalsColorGain + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortDiv, 5, 2, "") + "</span></td > ";
+                            }
                         } else {
-                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Short --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
+                            s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + "&nbsp;Symbols&nbsp;Short</I>&nbsp;---&nbsp;Fees:&nbsp;<span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\">" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "<span></td > ";
+                            //s = s + "<td colspan=\"" + sColSpan + "\" style=\"text-align:left; vertical-align:top;border-width:0px;\"><I>" + iTotalLongShortSymbols.toString() + " Symbols Short --- Fees $" + FormatDecimalNumber(dTotalLongShortFees, 5, 2, "") + "</I ></td > ";
                         }
                         if (iTotalLongShortSymbols > 3) {
                             sSymbolDisplay = sSymbolDisplay.replace(gsReplaceImgSymbolsShort, gsImgSymbolsShort);
@@ -10249,9 +10303,9 @@ function GetTrades(bFirstTime) {
                     }
                     sTmp = FormatDecimalNumber(dTotalLongShort, 3, 2, "");
                     if (sTmp.indexOf("-") != -1) {
-                        s = s + "<td style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\"><b>" + sTmp + "</b></td>";
+                        s = s + "<td style=\"color: black;text-align:right;vertical-align:top;border-width:0px;\">G/L:&nbsp;<span style=\"color: " + sTotalsColorLoss + ";text-align:right;vertical-align:top;border-width:0px;\"><b>" + sTmp + "</b></span></td>";
                     } else {
-                        s = s + "<td style=\"color: " + sTotalsColorGain + ";text-align:right;vertical-align:top;border-width:0px;\"><b>" + sTmp + "</b></td>";
+                        s = s + "<td style=\"color: black;text-align:right;vertical-align:top;border-width:0px;\">G/L:&nbsp;<span style=\"color: " + sTotalsColorGain + ";text-align:right;vertical-align:top;border-width:0px;\"><b>" + sTmp + "</b></span></td>";
                     }
 
                     s = s + "</tr>";
@@ -11119,7 +11173,11 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
             s = s + "<td style=\"width:10%; text-align:center;vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
         } else {
             iTotalShares = iTotalShares - oTrade.amount;
-            s = s + "<td style=\"width:10%; text-align:center;vertical-align:top;border-width:0px;\">-" + sTmp + "</td>";
+            if (sTmp == "0") {
+                s = s + "<td style=\"width:10%; text-align:center;vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+            } else {
+                s = s + "<td style=\"width:10%; text-align:center;vertical-align:top;border-width:0px;\">-" + sTmp + "</td>";
+            }
         }
 
         sTmp = FormatMoney(oTrade.price);
