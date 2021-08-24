@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.5 2021-08-23 17:01"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.5 2021-08-23 17:51"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
