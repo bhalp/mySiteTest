@@ -11183,7 +11183,7 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
         let d = new Date(oTrade.date.split("+")[0] + "+00:00");
         let sDate = FormatTDTradeDate(d) + "&nbsp;(" + oTrade.transactionSubType + ")";
 
-        s = s + "<td style=\"width:36%; font-size:10pt; vertical-align:center;border-width:0px;\">" + sDate + "</td > ";
+        s = s + "<td style=\"width:42%; font-size:10pt; vertical-align:center;border-width:0px;\">" + sDate + "</td > ";
         sTmp = FormatInt(oTrade.amount);
         if (oTrade.netAmount < 0.0) {
             iTotalShares = iTotalShares + oTrade.amount;
@@ -11204,10 +11204,10 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
         dTotalFees = dTotalFees + oTrade.fees;
         if (oTrade.fees == 0) {
             sTmp = "&nbsp;";
-            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:18%; text-align:center; vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:12%; text-align:center; vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
         } else {
             sTmp = FormatMoney(oTrade.fees);
-            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:18%; text-align:center; vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
+            s = s + "<td style=\"background-color:" + sTotalsBackcolor + "; color: " + sTotalsColorLoss + ";width:12%; text-align:center; vertical-align:top;border-width:0px;\">" + sTmp + "</td>";
             //    sTmp = FormatMoney(oTrade.cost);
             //    //                                    sTmp = FormatDecimalNumber(oTrade.cost, 5, 2, "");
             //    if (sTmp.indexOf("-") != -1) {
