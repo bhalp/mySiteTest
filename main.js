@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.5 2021-08-23 17:51"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.6 2021-08-27 16:23"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -7819,7 +7819,7 @@ function GetStockPriceHistory() {
     }
 
     if ((dShortTime == 0) || (dLongTime == 0)) {
-        alert("Please both short and long times greater than 0.");
+        alert("Please enter both short and long times greater than 0.");
         gbDoingStockPriceHistory = false;
         gbGettingStockPriceHistory = false;
         SetDefault();
@@ -13915,6 +13915,14 @@ function GetWatchlistPrices() {
                                 }
                                 sThisTableTotalsInside = sThisTableTotalsInside + "&nbsp;&nbsp;&nbsp;Amt:&nbsp;";
                                 sTmp = FormatDecimalNumber(dTotalAmt, 5, 2, "");
+                                sThisTableTotalsInside = sThisTableTotalsInside + sTmp;
+
+                                sThisTableTotalsInside = sThisTableTotalsInside + "&nbsp;&nbsp;&nbsp;&nbsp;Rate:&nbsp;";
+                                if (dTotalCost == 0) {
+                                    sTmp = "0.00%";
+                                } else {
+                                    sTmp = FormatDecimalNumber((dTotalAmt / dTotalCost) * 100 * 4, 5, 2, "") + "%";
+                                }
                                 sThisTableTotalsInside = sThisTableTotalsInside + sTmp;
                             } else {
                                 sThisTableTotalsInside = sThisTableTotalsInside + sPrecedingSpaces + "<I>Total</I>&nbsp;&nbsp;" +
@@ -21380,6 +21388,20 @@ function ValidateTDDate(sStartDate, bShowErrorMsg) {
 
 function window_onLoad() {
     PageLoad();
+}
+
+function AddGraph(sCanvasId, sWidth, sHeight, sLeft, sTop) {
+    //<canvas id="cvsDetail" width="300" height="300"></canvas>
+    //<canvas id="myCanvas" width="200" height="100" style="border:1px solid #000000;"></canvas >
+    let x = document.createElement("CANVAS");                     // Create a <canvas> element
+    x.id = sCanvasId;
+    x.width = sWidth;
+    x.height = sHeight;
+    x.style.left = sLeft + "px";
+    x.style.top = sTop + "px";
+
+    document.body.appendChild(x);
+
 }
 
 function wlAddDiv(sSpanId, sDiv, iWLDragXoffsetLeftIn, iWLDragXoffsetRightIn) {
