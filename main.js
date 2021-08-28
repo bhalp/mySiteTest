@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.6 2021-08-27 16:23"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.6 2021-08-27 18:12"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -4703,43 +4703,12 @@ function FormatDateForTD(d) {
 function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL, bInitializing, iEndDate) {
     //debugger
     gTDWLOrders.length = 0;
-    //let sTodaysDate = FormatCurrentDateForTD();
-    //let aTodaysDate = sTodaysDate.split("-");
-    //let aStartDate = sStartDate.split("-");
-    //let iQuantity = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
-    //let sQuantity = (iQuantity / 100000).toString();
-    //let iAveragePrice = new Date(parseInt(aTodaysDate[0]), parseInt(aTodaysDate[1] - 1), parseInt(aTodaysDate[2])).getTime();
-    //let sAveragePrice = (iAveragePrice / 100000).toString();
 
     let iQuantity = iLastUpdateDateTime;
     let sQuantity = ((iQuantity / 1000) - 1000000000).toString();
 
-    //let iAveragePrice = new Date().getTime(); //current update date and time
-    //let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
-
     let iAveragePrice = iEndDate; //current update date and time
     let sAveragePrice = ((iAveragePrice / 1000) - 1000000000).toString();
-
-    //find the OldGLx watchlist to add the symbol to - each watchlist can have up to 200 symbols
-    let WLIds = new Array();
-    let iLastGLNum = 0;
-    for (let idx = 0; idx < gWatchlists.length; idx++) {
-        if ((gWatchlists[idx].name.substr(0, gsAccountOldGLBase.length) == gsAccountOldGLBase) && (gWatchlists[idx].accountId == sAccountId)) {
-            let oWLOGLStats = new WLOGLStats();
-            oWLOGLStats.WLId = gWatchlists[idx].watchlistId;
-            oWLOGLStats.WLName = gWatchlists[idx].name;
-            if (iLastGLNum == 0) {
-                iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
-            } else {
-                if (iLastGLNum < parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length))) {
-                    iLastGLNum = parseInt(oWLOGLStats.WLName.substr(gsAccountOldGLBase.length));
-                }
-            }
-            oWLOGLStats.NumItems = gWatchlists[idx].WLItems.length;
-            WLIds[WLIds.length] = oWLOGLStats;
-        }
-    }
-
 
     for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
         let oTDWLOrder = new TDWLOrder();
@@ -4751,185 +4720,50 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL,
 
         let sCommission = "";
         let dLastCommision = 0.0;
-        for (let idxSym = 0; idxSym < gSymbolsAuto.length; idxSym++) {
-            if (gSymbolsAuto[idxSym].symbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
-                let oSymbolPrice = new SymbolPrice();
-                let sLastAssetType = gSymbolsAuto[idxSym].assetType;
-                oSymbolPrice = gSymbolsAuto[idxSym].SymbolPrice;
-                if (!bInitializing) {
-                    dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
-                }
-                //let dCurrentPrice = 0.0;
-                if (sLastAssetType == "OPTION") {
-                    //dCurrentPrice = oSymbolPrice.price; //get the current price here
+        if (!bInitializing) {
+            dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
+        }
+        if (gSymbolsAuto.length > 0) {
+            for (let idxSym = 0; idxSym < gSymbolsAuto.length; idxSym++) {
+                if (gSymbolsAuto[idxSym].symbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
+                    let oSymbolPrice = new SymbolPrice();
+                    let sLastAssetType = gSymbolsAuto[idxSym].assetType;
+                    oSymbolPrice = gSymbolsAuto[idxSym].SymbolPrice;
+                    //let dCurrentPrice = 0.0;
+                    if (sLastAssetType == "OPTION") {
+                        //dCurrentPrice = oSymbolPrice.price; //get the current price here
 
-                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell; // + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
-                    dSelectNum = dSelectNum + dLastCommision;
-                    if (dSelectNum < 0.0) {
-                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                        let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell; // + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
+                        dSelectNum = dSelectNum + dLastCommision;
+                        if (dSelectNum < 0.0) {
+                            dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                        }
+                        sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+                    } else {
+                        //dCurrentPrice = oSymbolPrice.price; //get the current price here
+                        let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell; // + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
+                        dSelectNum = dSelectNum + dLastCommision;
+                        if (dSelectNum < 0.0) {
+                            dSelectNum = (-1 * dSelectNum) + 1000000.0;
+                        }
+                        sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
                     }
-                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
-                } else {
-                    //dCurrentPrice = oSymbolPrice.price; //get the current price here
-                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell; // + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
-                    dSelectNum = dSelectNum + dLastCommision;
-                    if (dSelectNum < 0.0) {
-                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
-                    }
-                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
+                    break;
                 }
-                break;
             }
         }
         if (sCommission == "") {
+            //didn't find any trades for this symbol so just carry over the previous commission if not initializing, or if initializing set the commission to 0
             //oTDWLOrder.sError = gsWLAutoGLUpdateNoAccountError;
-            dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
-            if (bInitializing & (dLastCommision != 0)) {
-                let sSymbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                let sOldGL = "";
-                let idxWLIdAvailable = -1;
-                for (let idxWLIds = 0; idxWLIds < WLIds.length; idxWLIds++) {
-                    if (WLIds[idxWLIds].NumItems < 200) {
-                        idxWLIdAvailable = idxWLIds;
-                        break;
-                    }
-                }
-                if (isUndefined(gSymbolsGL[sAccountId + sSymbol])) {
-                    //not in Account OldGL so add it
-                    let sConfirmMsg = sSymbol + " with a value of " + FormatDecimalNumber(dLastCommision, 3, 2, "") + " needs to be added to the Account OldGL watchlist."
-                    if (AreYouSure(sConfirmMsg)) {
-                        //add to Account OldGL
-                        let sWatchlistId = "";
-                        let oTDWLOrder = new TDWLOrder();
-                        oTDWLOrder.bDoingAddNewSymbols = true;
-                        if (idxWLIdAvailable == -1) {
-                            //need to create a new OldGLx watchlist
-                            //don't do that here
-                            alert("Need to add this symbol to the Account GL watchlist manually and then redo this Update GL.")
-                            gbDoingCreateOrders = false;
-                            GetTradesCanceled();
-                            return;
-                        } else {
-                            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + WLIds[idxWLIdAvailable].WLName + "\", ";
-                            oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + WLIds[idxWLIdAvailable].WLId + "\", ";
-                            sWatchlistId = WLIds[idxWLIdAvailable].WLId;
-                        }
-                        oTDWLOrder.aWL04sequenceId = "";
-                        if (dLastCommision < 0.0) {
-                            sOldGL = FormatDecimalNumber(((-1 * dLastCommision) + 1000000.0), 5, 2, "");
-                        } else {
-                            sOldGL = FormatDecimalNumber(dLastCommision, 5, 2, "");
-                        }
-                        oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sOldGL + ", ";
-                        oTDWLOrder.aWL07purchasedDate = "";
-                        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
-                        oTDWLOrder.symbol = sSymbol;
-
-                        let sOrder = "";
-                        sOrder = oTDWLOrder.aWL00Start +
-                            oTDWLOrder.aWL01name +
-                            oTDWLOrder.aWL02watchlistId +
-                            oTDWLOrder.aWL03watchlistItemsStart +
-                            oTDWLOrder.aWL03watchlistItemStart +
-                            oTDWLOrder.aWL04sequenceId +
-                            oTDWLOrder.aWL05quantity +
-                            oTDWLOrder.aWL06averagePrice +
-                            oTDWLOrder.aWL07commission +
-                            oTDWLOrder.aWL08instrumentStart +
-                            oTDWLOrder.aWL09symbol +
-                            oTDWLOrder.aWL10assetType +
-                            oTDWLOrder.aWL11instrumentEnd +
-                            oTDWLOrder.aWL12watchlistItemEnd +
-                            oTDWLOrder.aWL12watchlistItemsEnd +
-                            oTDWLOrder.aWL13end;
-                        if (PostTDWLOrder(sAccountId, sWatchlistId, sOrder) != 0) {
-                            alert("Error adding new OldGL. Try again. The following error occurred -- " + gsLastError);
-                            gbDoingCreateOrders = false;
-                            GetTradesCanceled();
-                            return;
-                        }
-                        WLIds[idxWLIdAvailable].NumItems = WLIds[idxWLIdAvailable].NumItems + 1;
-                    } else {
-                        gbDoingCreateOrders = false;
-                        GetTradesCanceled();
-                        return;
-                    }
-                    dLastCommision = 0.0;
-                } else {
-                    if (gSymbolsGL[sAccountId + sSymbol].averagePrice != dLastCommision) {
-                        let sConfirmMsg = sSymbol + " with a value of " + FormatDecimalNumber(gSymbolsGL[sAccountId + sSymbol].averagePrice, 3, 2, "") + " needs to be updated to " + FormatDecimalNumber(dLastCommision, 3, 2, "") + " in the Account OldGL watchlist."
-                        if (AreYouSure(sConfirmMsg)) {
-                            //update the Account OldGL
-                            // update existing symbol
-                            let sWatchlistId = gSymbolsGL[sAccountId + sSymbol].WLId;
-                            let oTDWLOrder = new TDWLOrder();
-                            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gSymbolsGL[sAccountId + sSymbol].WLName + "\", ";
-                            oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gSymbolsGL[sAccountId + sSymbol].WLId + "\", ";
-                            oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gSymbolsGL[sAccountId + sSymbol].sequenceId + ", ";
-                            if (dLastCommision < 0.0) {
-                                sOldGL = FormatDecimalNumber(((-1 * dLastCommision) + 1000000.0), 5, 2, "");
-                            } else {
-                                sOldGL = FormatDecimalNumber(dLastCommision, 5, 2, "");
-                            }
-                            oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sOldGL + ", ";
-                            oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + sSymbol + "\" ,";
-                            oTDWLOrder.symbol = sSymbol;
-
-                            let sOrder = "";
-                            sOrder = oTDWLOrder.aWL00Start +
-                                oTDWLOrder.aWL01name +
-                                oTDWLOrder.aWL02watchlistId +
-                                oTDWLOrder.aWL03watchlistItemsStart +
-                                oTDWLOrder.aWL03watchlistItemStart +
-                                oTDWLOrder.aWL04sequenceId +
-                                oTDWLOrder.aWL05quantity +
-                                oTDWLOrder.aWL06averagePrice +
-                                oTDWLOrder.aWL07commission +
-                                oTDWLOrder.aWL08instrumentStart +
-                                oTDWLOrder.aWL09symbol +
-                                oTDWLOrder.aWL10assetType +
-                                oTDWLOrder.aWL11instrumentEnd +
-                                oTDWLOrder.aWL12watchlistItemEnd +
-                                oTDWLOrder.aWL12watchlistItemsEnd +
-                                oTDWLOrder.aWL13end;
-                            if (PostTDWLOrder(sAccountId, sWatchlistId, sOrder) != 0) {
-                                alert("Error updating OldGL. Try again. The following error occurred -- " + gsLastError);
-                                gbDoingCreateOrders = false;
-                                GetTradesCanceled();
-                                return;
-                            }
-                            dLastCommision = 0.0;
-                        } else {
-                            gbDoingCreateOrders = false;
-                            GetTradesCanceled();
-                            return;
-                        }
-                    } else {
-                        //already in Account OldGL
-                        dLastCommision = 0.0;
-                    }
-                }
-
-            //    let sConfirmMsg = gWatchlists[idxWL].WLItems[idxWLItem].symbol + " with a value of " + FormatDecimalNumber(dLastCommision, 3, 2, "") + " needs to be added to the Account OldGL watchlist."
-            //    if (AreYouSure(sConfirmMsg)) {
-            //        dLastCommision = 0.0;
-            //    } else {
-            //        gbDoingCreateOrders = false;
-            //        GetTradesCanceled();
-            //        return;
-            //    }
+            if (bInitializing) {
+                dLastCommision = 0.0;
             }
             if (dLastCommision < 0.0) {
                 dLastCommision = (-1 * dLastCommision) + 1000000.0;
             }
             sCommission = FormatDecimalNumber(dLastCommision, 3, 2, "");
-        //} else {
-        //    oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
-        //    //update WLInfo
-        //    gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
-        //    gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate = iQuantity;
         }
-
+        //always update the update times whether anything changed or not
         oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
         //update WLInfo
         gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
@@ -4939,56 +4773,6 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL,
         oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
         gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
 
-    //    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-    //        let oTDWLOrder = new TDWLOrder();
-    //        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
-    //        oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
-    //        oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
-    //        oTDWLOrder.aWL05Aquantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
-    //        oTDWLOrder.aWL06AaveragePrice = oTDWLOrder.aWL06AaveragePrice + sAveragePrice + ", ";
-
-    //        let sCommission = "";
-    //        let dLastCommision = 0.0;
-    //        for (let idxSym = 0; idxSym < gSymbolsAuto.length; idxSym++) {
-    //            if (gSymbolsAuto[idxSym].symbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
-    //                let oSymbolPrice = new SymbolPrice();
-    //                let sLastAssetType = gSymbolsAuto[idxSym].assetType;
-    //                oSymbolPrice = gSymbolsAuto[idxSym].SymbolPrice;
-
-    //                dLastCommision = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.averagePrice;
-    //                let dCurrentPrice = 0.0;
-    //                if (sLastAssetType == "OPTION") {
-    //                    dCurrentPrice = oSymbolPrice.price; //get the current price here
-
-    //                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * 100 * dCurrentPrice);
-    //                    if (dSelectNum < 0.0) {
-    //                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
-    //                    }
-    //                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
-    //                } else {
-    //                    dCurrentPrice = oSymbolPrice.price; //get the current price here
-    //                    let dSelectNum = (-1 * gSymbolsAuto[idxSym].buy) + gSymbolsAuto[idxSym].sell + (gSymbolsAuto[idxSym].shares * dCurrentPrice);
-    //                    if (dSelectNum < 0.0) {
-    //                        dSelectNum = (-1 * dSelectNum) + 1000000.0;
-    //                    }
-    //                    sCommission = FormatDecimalNumber(dSelectNum, 3, 2, "");
-    //                }
-    //                break;
-    //            }
-    //        }
-    //        if (sCommission == "") {
-    //            oTDWLOrder.sError = gsWLAutoGLUpdateNoAccountError;
-    //        } else {
-    //            oTDWLOrder.aWL07commission = oTDWLOrder.aWL07commission + sCommission + ", ";
-    //            //update WLInfo
-    //            gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateDate = iAveragePrice;
-    //            gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.GLUpdateStartDate = iQuantity;
-    //        }
-
-    //        oTDWLOrder.aWL09symbol = oTDWLOrder.aWL09symbol + "\"" + gWatchlists[idxWL].WLItems[idxWLItem].symbol + "\" ,";
-    //        oTDWLOrder.symbol = gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-    //        gTDWLOrders[gTDWLOrders.length] = oTDWLOrder;
-    //    }
     }
     //create orders here
     if (gTDWLOrders.length > 0) {
@@ -5002,379 +4786,6 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL,
         GetTradesCanceled();
     }
 }
-
-//function GenerateWLBuyOrders(sAccountId, sPercent, dSelectNum, idxWL, bExisting) {
-//    //if sPercent != "" then buying dSelectnum percentage of shares based on what is currently owned for the selected symbols
-//    //if sPercent == "" then buying dSelectnum worth of shares for the selected symbols
-//    //debugger
-//    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-//    let sSymbolsThisWL = "";
-//    let sSep = "";
-//    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-//        if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-//            sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-//            sSep = ",";
-//        }
-//    }
-//    sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
-//    gTDOrders.length = 0;
-//    if (sPercent != "") {
-//        //buying a percentage of shares based on what is currently owned
-//        if (gAccounts.length > 0) {
-//            for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
-//                if (gAccounts[idxAccounts].accountId == sAccountId) {
-//                    let oAccount = new Account();
-//                    oAccount = gAccounts[idxAccounts];
-//                    let bAddOrdersForThisAccount = false;
-//                    if (oAccount.positions.length > 0) {
-//                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-//                            let oPosition = new Position();
-//                            oPosition = oAccount.positions[idxPosition];
-//                            if (oPosition.assetType == "EQUITY") {
-//                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-//                                    bAddOrdersForThisAccount = true;
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                        if (bAddOrdersForThisAccount) {
-//                            gTDOrders.length = 0;
-//                            gOrdersToPlace.length = 0;
-//                            for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-//                                let oPosition = new Position();
-//                                oPosition = oAccount.positions[idxPosition];
-//                                if (oPosition.assetType == "EQUITY") {
-//                                    if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-//                                        let oTDOrder = new TDOrder();
-//                                        oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
-//                                        oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-//                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
-
-//                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
-//                                        if (iNumToBuy >= 1.0) {
-//                                            iNumToBuy = Math.floor(iNumToBuy);
-//                                        } else if (iNumToBuy > 0.0) {
-//                                            iNumToBuy = 1;
-//                                        } else {
-//                                            iNumToBuy = 0;
-//                                        }
-//                                        if (iNumToBuy > 0) {
-//                                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
-//                                            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + oPosition.symbol + "\", "
-//                                            oTDOrder.symbol = oPosition.symbol;
-//                                            gTDOrders[gTDOrders.length] = oTDOrder;
-
-//                                            if (document.getElementById("chkPlace" + sThisId).checked) {
-//                                                let oTDSavedOrder = new TDSavedOrder();
-//                                                oTDSavedOrder.orderType = "MARKET";
-//                                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-//                                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-//                                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
-//                                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-//                                                oTDSavedOrder.instruction = "BUY";
-//                                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-//                                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-//                                                oTDSavedOrder.symbol = oTDOrder.symbol;
-
-//                                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                            //create orders here
-//                            if (gTDOrders.length > 0) {
-//                                gTDOrders.sort(sortBySymbol);
-//                                gbDoingCreateOrders = true;
-//                                SetWait();
-//                                window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-//                            } else {
-//                                alert("No orders were generated for this watchlist.");
-//                            }
-//                        } else {
-//                            alert("No positions selected.");
-//                        }
-//                    } else {
-//                        alert("There are no positions in this watchlist.");
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//    } else {
-//        //then buying dSelectNum's worth of shares for each stock in the watchlist
-//        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-//            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-//                let oWatchList = new WLWatchList();
-//                let oWatchListItem = new WLItem();
-//                oWatchList = gWatchlists[idxWL];
-//                oWatchListItem = oWatchList.WLItems[idxWLItem];
-//                let sSymbol = oWatchListItem.symbol;
-//                for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-//                    let oWLDisplayed = new WLDisplayed();
-//                    oWLDisplayed = gWLDisplayed[idxDisplayed];
-//                    let oWLItemDetail = new WLItemDetail();
-//                    if (sSymbol == oWLDisplayed.symbol) {
-//                        for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-//                            oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-
-//                            let oTDOrder = new TDOrder();
-//                            oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
-//                            oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-//                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
-
-//                            let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-//                            if (iNumToBuy > 0) {
-//                                oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
-//                                oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-//                                oTDOrder.symbol = sSymbol;
-//                                gTDOrders[gTDOrders.length] = oTDOrder;
-
-//                                if (document.getElementById("chkPlace" + sThisId).checked) {
-//                                    let oTDSavedOrder = new TDSavedOrder();
-//                                    oTDSavedOrder.orderType = "MARKET";
-//                                    oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-//                                    oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-//                                    oTDSavedOrder.a04duration = oTDOrder.a04duration;
-//                                    oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-//                                    oTDSavedOrder.instruction = "BUY";
-//                                    oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-//                                    oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-//                                    oTDSavedOrder.symbol = oTDOrder.symbol;
-
-//                                    gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-//                                }
-
-//                            }
-//                            break;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        if (gTDOrders.length > 0) {
-//            gTDOrders.sort(sortBySymbol);
-//            gbDoingCreateOrders = true;
-//            SetWait();
-//            SetWaitWL(idxWL);
-//            window.setTimeout("PostWLBuyOrders(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-//        } else {
-//            alert("No orders were generated for this watchlist.");
-//        }
-//    }
-
-//}
-
-//function GenerateWLBuyOrdersLimit(sAccountId, sPercent, dSelectNum, idxWL, bExisting) {
-//    //if sPercent != "" then buying dSelectnum percentage of shares based on what is currently owned for the selected symbols
-//    //if sPercent == "" then buying dSelectnum worth of shares for the selected symbols
-//    //debugger
-//    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-//    let dtCancelTime = new Date(); //get todays date
-//    dtCancelTime.setMonth(dtCancelTime.getMonth() + 4);
-//    let sCancelTime = FormatDateForTD(dtCancelTime);
-
-//    let sSymbolsThisWL = "";
-//    let sSep = "";
-//    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-//        if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-//            sSymbolsThisWL = sSymbolsThisWL + sSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-//            sSep = ",";
-//        }
-//    }
-//    sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
-//    gTDOrders.length = 0;
-//    gOrdersToPlace.length = 0;
-//    if (sPercent != "") {
-//        //buying a percentage of shares based on what is currently owned
-//        if (gAccounts.length > 0) {
-//            for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
-//                if (gAccounts[idxAccounts].accountId == sAccountId) {
-//                    let oAccount = new Account();
-//                    oAccount = gAccounts[idxAccounts];
-//                    let bAddOrdersForThisAccount = false;
-//                    if (oAccount.positions.length > 0) {
-//                        for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-//                            let oPosition = new Position();
-//                            oPosition = oAccount.positions[idxPosition];
-//                            if (oPosition.assetType == "EQUITY") {
-//                                if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-//                                    bAddOrdersForThisAccount = true;
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                        if (bAddOrdersForThisAccount) {
-//                            gTDOrders.length = 0;
-//                            for (let idxPosition = 0; idxPosition < oAccount.positions.length; idxPosition++) {
-//                                let oPosition = new Position();
-//                                oPosition = oAccount.positions[idxPosition];
-//                                if (oPosition.assetType == "EQUITY") {
-//                                    if (sSymbolsThisWL.indexOf("," + oPosition.symbol.toUpperCase() + ",") != -1) {
-//                                        let oTDOrder = new TDOrder();
-//                                        oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
-//                                        oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
-//                                        oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-//                                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
-//                                        let iNumToBuy = oPosition.longQuantity * (dSelectNum / 100.0);
-//                                        if (iNumToBuy >= 1.0) {
-//                                            iNumToBuy = Math.floor(iNumToBuy);
-//                                        } else if (iNumToBuy > 0.0) {
-//                                            iNumToBuy = 1;
-//                                        } else {
-//                                            iNumToBuy = 0;
-//                                        }
-//                                        if (iNumToBuy > 0) {
-//                                            //get the price to use
-//                                            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-//                                                if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-//                                                    let oWatchList = new WLWatchList();
-//                                                    let oWatchListItem = new WLItem();
-//                                                    oWatchList = gWatchlists[idxWL];
-//                                                    oWatchListItem = oWatchList.WLItems[idxWLItem];
-//                                                    let sSymbol = oWatchListItem.symbol;
-//                                                    if (sSymbol == oPosition.symbol) {
-//                                                        for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-//                                                            let oWLDisplayed = new WLDisplayed();
-//                                                            oWLDisplayed = gWLDisplayed[idxDisplayed];
-//                                                            let oWLItemDetail = new WLItemDetail();
-//                                                            if (sSymbol == oWLDisplayed.symbol) {
-//                                                                for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-//                                                                    oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-//                                                                    let dPrice = oWLItemDetail.regularMarketLastPrice;
-//                                                                    let sPrice = FormatMoney(dPrice);
-//                                                                    if (parseFloat(sPrice) > 0) {
-//                                                                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-//                                                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
-//                                                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-//                                                                        oTDOrder.symbol = sSymbol;
-//                                                                        gTDOrders[gTDOrders.length] = oTDOrder;
-
-//                                                                        if (document.getElementById("chkPlace" + sThisId).checked) {
-//                                                                            let oTDSavedOrder = new TDSavedOrder();
-//                                                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-//                                                                            oTDSavedOrder.orderType = "LIMIT";
-//                                                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-//                                                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-//                                                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
-//                                                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
-//                                                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-//                                                                            oTDSavedOrder.instruction = "BUY";
-//                                                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-//                                                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-//                                                                            oTDSavedOrder.symbol = oTDOrder.symbol;
-
-//                                                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-//                                                                        }
-
-//                                                                    } else {
-//                                                                        alert("No price for " + sSymbol);
-//                                                                    }
-//                                                                    break;
-//                                                                }
-//                                                                break;
-//                                                            }
-//                                                        }
-//                                                        break;
-//                                                    }
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                            //create orders here
-//                            if (gTDOrders.length > 0) {
-//                                gTDOrders.sort(sortBySymbol);
-//                                gbDoingCreateOrders = true;
-//                                SetWait();
-//                                SetWaitWL(idxWL);
-//                                window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-//                            } else {
-//                                alert("No orders were generated for this watchlist.");
-//                            }
-//                        } else {
-//                            alert("No positions selected.");
-//                        }
-//                    } else {
-//                        alert("There are no positions in this watchlist.");
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//    } else {
-//        //then buying dSelectNum's worth of shares for each stock in the watchlist
-//        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-//            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-//                let oWatchList = new WLWatchList();
-//                let oWatchListItem = new WLItem();
-//                oWatchList = gWatchlists[idxWL];
-//                oWatchListItem = oWatchList.WLItems[idxWLItem];
-//                let sSymbol = oWatchListItem.symbol;
-//                for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-//                    let oWLDisplayed = new WLDisplayed();
-//                    oWLDisplayed = gWLDisplayed[idxDisplayed];
-//                    let oWLItemDetail = new WLItemDetail();
-//                    if (sSymbol == oWLDisplayed.symbol) {
-//                        for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-//                            oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-
-//                            let oTDOrder = new TDOrder();
-
-//                            oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
-//                            oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
-//                            oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-//                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"BUY\", ";
-
-//                            let iNumToBuy = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-//                            if (iNumToBuy > 0) {
-//                                let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
-//                                if (parseFloat(sPrice) > 0) {
-//                                    oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-//                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuy.toString() + ", ";
-//                                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-//                                    oTDOrder.symbol = sSymbol;
-//                                    gTDOrders[gTDOrders.length] = oTDOrder;
-
-//                                    if (document.getElementById("chkPlace" + sThisId).checked) {
-//                                        let oTDSavedOrder = new TDSavedOrder();
-//                                        //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-//                                        oTDSavedOrder.orderType = "LIMIT";
-//                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-//                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-//                                        oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
-//                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
-//                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-//                                        oTDSavedOrder.instruction = "BUY";
-//                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-//                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-//                                        oTDSavedOrder.symbol = oTDOrder.symbol;
-
-//                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-//                                    }
-
-//                                }
-//                            }
-
-//                            break;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        if (gTDOrders.length > 0) {
-//            gTDOrders.sort(sortBySymbol);
-//            gbDoingCreateOrders = true;
-//            SetWait();
-//            SetWaitWL(idxWL);
-//            window.setTimeout("PostWLBuyOrdersLimit(true, 0, 0, 0, " + (gTDOrders.length - 1).toString() + ", '" + sAccountId + "', 0, " + idxWL.toString() + ")", 10);
-//        } else {
-//            alert("No orders were generated for this watchlist.");
-//        }
-//    }
-
-//}
 
 function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, idxWL, bExisting) {
     //sBuySell = either "BUY" or "SELL"
@@ -11056,16 +10467,25 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
                 gbStopGetTrades = false;
             }
         } else {
+        //    if (gSymbolsAuto.length > 0) {
+        //        gSymbolsAuto.sort(sortBySymbol);
+        //    }
+        //    window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ", " + iEndDate + ")", 10);
             if (gSymbolsAuto.length > 0) {
                 //GetCurrentPricesAuto();
                 gSymbolsAuto.sort(sortBySymbol);
                 window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ", " + iEndDate + ")", 10);
             } else {
                 if (sSymbolsToLookupTmp.split(",").length == 1) {
-                    alert("No trades found for the selected symbol.");
+                    alert("No trades found since " + FormatDateWithTime(new Date(iLastUpdateDateTime), true, false) + " for the symbol in this watchlist.");
                 } else {
-                    alert("No trades found for the selected symbols.");
+                    alert("No trades found since " + FormatDateWithTime(new Date(iLastUpdateDateTime), true, false) + " for the symbols in this watchlist.");
                 }
+                //if (sSymbolsToLookupTmp.split(",").length == 1) {
+                //    alert("No trades found for the selected symbol.");
+                //} else {
+                //    alert("No trades found for the selected symbols.");
+                //}
                 gbDoingCreateOrders = false;
                 GetTradesCanceled();
             }
@@ -12995,7 +12415,7 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
                             "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
                             "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
-                            "&nbsp;&nbsp;&nbsp;<span title=\"Last Time the Update G/L button was pressed\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+                            "&nbsp;&nbsp;&nbsp;<span title=\"Last time the Update G/L button was pressed that caused a G/L value to change\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
 
                         sThisDiv = sThisDiv + "</th > ";
 
@@ -13017,7 +12437,7 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
                                 "&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
-                                "&nbsp;&nbsp;&nbsp;<span title=\"Last Time the Update G/L button was pressed\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+                                "&nbsp;&nbsp;&nbsp;<span title=\"Last time the Update G/L button was pressed that caused a G/L value to change\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
                         }
                         sThisDiv = sThisDiv + "</th > ";
                     }
