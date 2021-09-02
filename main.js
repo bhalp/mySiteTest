@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.6 2021-08-27 18:12"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.6 2021-09-01 17:13"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -344,6 +344,7 @@ function WLSummaryDisplayed() {
 var gWLSummaryDisplayed = new Array(); //array of WLSummaryDisplayed objects
 var goWLSummaryDisplayed = []; //will contain the last WLSummary item values to be used to determine if the display should be highlighted
 
+var gisymbolDescriptionMax = 17;
 
 function WLItem() {
     this.bSelected = true;
@@ -351,7 +352,7 @@ function WLItem() {
     this.bSelectedForOrder = false;
     this.bCheckboxEnabled = true;
     this.symbol = "";
-    this.symbolDescription = ""; //max 15 characters
+    this.symbolDescription = ""; //max gisymbolDescriptionMax characters
     this.assetType = "";
     this.sequenceId = 0;
     this.purchasedDate = "";
@@ -4145,8 +4146,8 @@ function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
                         let sSelectNum = "";
 
                         let sSymbolDescription = TrimLikeVB(document.getElementById("txtwlopendesc" + sThisId).value);
-                        if (sSymbolDescription.length > 15) {
-                            alert("Please enter a symbol description no longer than 15 letters, including spaces.");
+                        if (sSymbolDescription.length > gisymbolDescriptionMax) {
+                            alert("Please enter a symbol description no longer than " + gisymbolDescriptionMax.toString() + " letters, including spaces.");
                             return;
                         }
 
@@ -4302,8 +4303,8 @@ function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
                 case 5: //WL Update Symbol Description button
                     {
                         let sSymbolDescription = TrimLikeVB(document.getElementById("txtwlopendesc" + sThisId).value);
-                        if (sSymbolDescription.length > 15) {
-                            alert("Please enter a symbol description no longer than 15 letters, including spaces.");
+                        if (sSymbolDescription.length > gisymbolDescriptionMax) {
+                            alert("Please enter a symbol description no longer than " + gisymbolDescriptionMax.toString() + " letters, including spaces.");
                             return;
                         }
 
@@ -11393,7 +11394,7 @@ function GetWatchlistOGL() {
                     "&nbsp;&nbsp;<img title=\"Add New Symbol\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLUpdateOGLSymbols(2, '" + sLastWLAccountId + "', '', '')\" />" +
                     "&nbsp;<input title=\"Symbol to be added, optionally with Description and or Old G/L values.\" placeholder=\"Symbol\" id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.SymbolEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                     "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img title=\"Update Selected Description\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLUpdateOGLSymbols(5, '" + sLastWLAccountId + "', '', '')\" />" +
-                    "&nbsp;<input title=\"Description (max 15 chars)\" placeholder=\"Description\" id=\"txtwlopendesc" + sThisId + "\" name=\"txtwlopendesc" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.DescriptionEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                    "&nbsp;<input title=\"Description (max " + gisymbolDescriptionMax.toString() + " chars)\" placeholder=\"Description\" id=\"txtwlopendesc" + sThisId + "\" name=\"txtwlopendesc" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.DescriptionEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                     "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img title=\"Update Selected Old GL\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLUpdateOGLSymbols(4, '" + sLastWLAccountId + "', '', '')\" />" +
                     "&nbsp;&dollar;<input title=\"Old G/L as a dollar value\" placeholder=\"Old GL\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"text\" style=\"" + gsFieldWidthsWLOGL.OGLEntry + "font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
                     "</th>";
