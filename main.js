@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.7 2021-09-04 21:56"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.7 2021-09-04 22:44"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -16520,7 +16520,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    debugger
+    //debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
@@ -16626,7 +16626,7 @@ function PageLoad() {
         gsRefreshToken = "";
         gsTDAPIKey = "";
     }
-    gbUsingCell = true;
+    //gbUsingCell = true;
     
     gbCellWLSpecial = false; //set this to true if want 2 line watchlists
 
