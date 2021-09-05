@@ -7,6 +7,7 @@ var gsBearerCode = "";
 var gsTDAPIKey = "";
 var gsRedirectURL = "";
 var gbUsingCell = false;
+var gbCellWLSpecial = false;
 var gsOldBody = "";
 
 String.prototype.toProperCase = function (opt_lowerCaseTheRest) {
@@ -12141,7 +12142,7 @@ function GetWatchlistPrices() {
 
                 if (gWLDisplayed.length > 0) {
 
-                    if (gbUsingCell) {
+                    if (gbUsingCell && gbCellWLSpecial) {
                         if (bDoingDividendWL) {
                             //initialize widths and col spans
                             gsFieldWidthsWL.Amt = gsFieldWidthsWLCellDiv.Amt;
@@ -12357,7 +12358,7 @@ function GetWatchlistPrices() {
                         }
                         sThisDiv = sThisDiv + "<tr>";
 
-                        if (gbUsingCell) {
+                        if (gbUsingCell && gbCellWLSpecial) {
                             sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWL.WLColTitleWidth.toString() + "px; text-align:center; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
                                 "<span title=\"Account Name\"  style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--</b></span>" +
@@ -12417,7 +12418,7 @@ function GetWatchlistPrices() {
 
                     }
 
-                    if (gbUsingCell) {
+                    if (gbUsingCell && gbCellWLSpecial) {
 
                         if (bDoingDividendWL) {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
@@ -12632,7 +12633,7 @@ function GetWatchlistPrices() {
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Bid + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Bid + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Bid + "</td>";
                         sonClickChangeOrder = "";
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Ask + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Ask + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Ask + "</td>";
-                        if (gbUsingCell) {
+                        if (gbUsingCell && gbCellWLSpecial) {
                             sThisTableTitleInside = sThisTableTitleInside + "</tr>";
                             sThisTableTitleInside = sThisTableTitleInside + "<tr style=\"height:" + giTitleHeight.toString() + "px; \">";
                             //sLine2InitSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -13025,7 +13026,7 @@ function GetWatchlistPrices() {
                                     }
                                 }
 
-                                if (gbUsingCell) {
+                                if (gbUsingCell && gbCellWLSpecial) {
                                     sThisTable = sThisTable + "</tr>";
 
                                     if (sChecked == "checked") {
@@ -13461,7 +13462,7 @@ function GetWatchlistPrices() {
 
                         if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWLMain].bShowMaximized)) {
                             sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, gsTableHeightOverflow);
-                            if (gbUsingCell) {
+                            if (gbUsingCell && gbCellWLSpecial) {
                                 sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitleCell);
                             } else {
                                 sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitle);
@@ -13496,7 +13497,7 @@ function GetWatchlistPrices() {
                             if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWLMain].bShowMaximized)) {
                                 document.getElementById("divtableInside" + sThisId).style.height = gsTableHeightWithScrollbar;
                                 document.getElementById("divtableInside" + sThisId).style.overflowY = "scroll";
-                                if (gbUsingCell) {
+                                if (gbUsingCell && gbCellWLSpecial) {
                                     document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitleCell;
                                 } else {
                                     document.getElementById("divtableTitle" + sThisId).style.height = gsTableHeightWithScrollbarTitle;
@@ -14301,62 +14302,6 @@ function GetWatchlistSO() {
                     sThisDiv = "";
                     sThisTableTitle = "";
                     sThisTableTitleInside = "";
-
-                    //sThisDiv = "";
-                    //sLastWLName = gWatchlists[idxWL].name;
-                    //sLastWLAccountName = gWatchlists[idxWL].accountName;
-                    //sLastWLAccountId = gWatchlists[idxWL].accountId;
-                    //sThisId = gWatchlists[idxWL].watchlistId + sLastWLAccountId;
-
-                    //if (gbUsingCell) {
-                    //    sThisDiv = sThisDiv + "<div style=\"width:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    //    sThisDiv = sThisDiv + "<table style=\"width:800px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                    //    sThisDiv = sThisDiv + "<tr>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','"  + sLastWLAccountId + "')\" value=\"Place\" ></th>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-                    //        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                    //        "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th > ";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px; text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"height:30px;text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                    //    sThisDiv = sThisDiv + "</tr>";
-
-                    //    sThisDiv = sThisDiv + "<tr>";
-                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-                    //} else { //not using cell
-
-                    //    sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWLSO.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    //    sThisDiv = sThisDiv + "<table style=\"width:" + lengthsWLSO.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
-                    //    sThisDiv = sThisDiv + "<tr>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColOpenLabelWidth + lengthsWLSO.WLColOpenEntryWidth + lengthsWLSO.WLColAcquiredDateEntryWidth).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSOPlaceOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Place\" ></th>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" + 
-                    //        "<span style=\"vertical-align: middle;\"><b>" + sLastWLAccountName + "--" + sLastWLName + "&nbsp;&nbsp;</b></span>" +
-                    //        "<span style=\"vertical-align: middle;\"><img src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\" /></span>" +
-                    //        "<span style=\"vertical-align: middle;\" id=\"spanSODate" + sThisId + "\" name=\"spanSODate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWLSO.WLColCloseLabelWidth + lengthsWLSO.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                    //        "<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoSODeleteOrders('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Delete\" ></th>";
-
-                    //    sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWLSO.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWL].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
-
-                    //    sThisDiv = sThisDiv + "</tr>";
-
-                    //    sThisDiv = sThisDiv + "<tr>";
-                    //    sThisDiv = sThisDiv + "<td colspan=\"4\" style=\"vertical-align:top;border-width:1px; border-style:solid;border-spacing:1px;border-color:White\">";
-
-                    //}
 
                     //mostly the same for cell and not cell
                     if (gbUsingCell) {
@@ -16682,6 +16627,9 @@ function PageLoad() {
         gsTDAPIKey = "";
     }
     gbUsingCell = true;
+    
+    gbCellWLSpecial = false; //set this to true if want 2 line watchlists
+
     let x = document.getElementById("TheBody");
     x.style.backgroundColor = gsBodyBackgroundColor;
     x.onmouseup = function () {
@@ -16705,18 +16653,20 @@ function PageLoad() {
     soptMinLines = soptMinLines + "</select>";
 
     if (gbUsingCell) {
-        lengthsWL.WLCol2Width = lengthsWLCell.WLCol2Width;
-        lengthsWL.WLColAcquiredDateEntryWidth = lengthsWLCell.WLColAcquiredDateEntryWidth;
-        lengthsWL.WLColCloseEntryWidth = lengthsWLCell.WLColCloseEntryWidth;
-        lengthsWL.WLColCloseLabelWidth = lengthsWLCell.WLColCloseLabelWidth;
-        lengthsWL.WLColOpenEntryWidth = lengthsWLCell.WLColOpenEntryWidth;
-        lengthsWL.WLColOpenLabelWidth = lengthsWLCell.WLColOpenLabelWidth;
-        lengthsWL.WLColTitleWidth = lengthsWLCell.WLColTitleWidth;
-        lengthsWL.WLDragXoffsetLeft = lengthsWLCell.WLDragXoffsetLeft;
-        lengthsWL.WLDragXoffsetRight = lengthsWLCell.WLDragXoffsetRight;
-        lengthsWL.WLTrailingstopPercentWidth = lengthsWLCell.WLTrailingstopPercentWidth;
-        lengthsWL.WLWidth = lengthsWLCell.WLWidth;
-        lengthsWL.WLWidthDiv = lengthsWLCell.WLWidthDiv;
+        if (gbCellWLSpecial) {
+            lengthsWL.WLCol2Width = lengthsWLCell.WLCol2Width;
+            lengthsWL.WLColAcquiredDateEntryWidth = lengthsWLCell.WLColAcquiredDateEntryWidth;
+            lengthsWL.WLColCloseEntryWidth = lengthsWLCell.WLColCloseEntryWidth;
+            lengthsWL.WLColCloseLabelWidth = lengthsWLCell.WLColCloseLabelWidth;
+            lengthsWL.WLColOpenEntryWidth = lengthsWLCell.WLColOpenEntryWidth;
+            lengthsWL.WLColOpenLabelWidth = lengthsWLCell.WLColOpenLabelWidth;
+            lengthsWL.WLColTitleWidth = lengthsWLCell.WLColTitleWidth;
+            lengthsWL.WLDragXoffsetLeft = lengthsWLCell.WLDragXoffsetLeft;
+            lengthsWL.WLDragXoffsetRight = lengthsWLCell.WLDragXoffsetRight;
+            lengthsWL.WLTrailingstopPercentWidth = lengthsWLCell.WLTrailingstopPercentWidth;
+            lengthsWL.WLWidth = lengthsWLCell.WLWidth;
+            lengthsWL.WLWidthDiv = lengthsWLCell.WLWidthDiv;
+        }
 
         document.getElementById("spanInfo").style.display = "inline";
         sTmp = "<table style=\"border-collapse:collapse; border: 0px solid black; width:400px;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
