@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.7 2021-09-05 01:45"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.7 2021-09-12 16:37"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -3157,7 +3157,7 @@ function DoWLBuySell(idxWL, iBuySell) {
                         break;
                     }
                     case 2: {
-                        sConfirmMsg = "LIMIT orders to " + sBuySell + " " + sSelectNum + "% of selected symbols. LIMIT SELL orders for the selected symbols might be 1 % lower than the current market price.";
+                        sConfirmMsg = "LIMIT orders to " + sBuySell + " " + sSelectNum + "% of selected symbols. LIMIT SELL orders for the selected symbols might be 1% lower than the current market price. ";
                         break;
                     }
                     default: {
@@ -3166,7 +3166,21 @@ function DoWLBuySell(idxWL, iBuySell) {
                     }
                 }
             } else if (sDollars != "") {
-                sConfirmMsg = "LIMIT orders to " + sBuySell + " $" + sSelectNum + " worth of selected symbols. LIMIT SELL orders for the selected symbols might be 1% lower than the current market price.";
+                sConfirmMsg = "LIMIT orders to " + sBuySell + " $" + sSelectNum + " worth of selected symbols. LIMIT SELL orders for the selected symbols might be 1% lower than the current market price. ";
+                switch (iBuySell) {
+                    case 1: {
+                        sConfirmMsg = "LIMIT orders to " + sBuySell + " $" + sSelectNum + " worth of selected symbols. ";
+                        break;
+                    }
+                    case 2: {
+                        sConfirmMsg = "LIMIT orders to " + sBuySell + " $" + sSelectNum + " worth of selected symbols. LIMIT SELL orders for the selected symbols might be 1% lower than the current market price. ";
+                        break;
+                    }
+                    default: {
+                        sConfirmMsg = "LIMIT orders to " + sBuySell + " $" + sSelectNum + " worth of selected symbols. ";
+                        break;
+                    }
+                }
             } else {
                 switch (iBuySell) {
                     case 1: {
@@ -3174,7 +3188,7 @@ function DoWLBuySell(idxWL, iBuySell) {
                         break;
                     }
                     case 2: {
-                        sConfirmMsg = "LIMIT orders to " + sBuySell + " " + iShares.toString() + " shares of selected symbols. LIMIT SELL orders for the selected symbols might be 1 % lower than the current market price.";
+                        sConfirmMsg = "LIMIT orders to " + sBuySell + " " + iShares.toString() + " shares of selected symbols. LIMIT SELL orders for the selected symbols might be 1% lower than the current market price. ";
                         break;
                     }
                     default: {
