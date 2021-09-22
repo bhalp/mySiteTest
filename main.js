@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.8 2021-09-22 01:26"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.8 2021-09-22 09:48"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2386,6 +2386,12 @@ function ClearAllWLInputFields(idxWL) {
     }
     if (!(document.getElementById("txtwlclose" + sThisId) == null)) {
         document.getElementById("txtwlclose" + sThisId).value = "";
+    }
+}
+
+function ClearAllWLSelected(idxWL) {
+    for (let idx = 0; idx < gWatchlists[idxWL].WLItems.length; idx++) {
+        gWatchlists[idxWL].WLItems[idx].bSelectedForOrder = false;
     }
 }
 
@@ -18814,6 +18820,10 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
     let bDoingAddSymbols = false;
     let iNumHidden = 0;
     let iNumShown = 0;
+
+    let sSymbolsToShow = "";
+    let sSymbolsToShowSep = "";
+
     if (bFirstTime) {
         giProgress = 0;
         iProgressIncrement = 100;
@@ -18855,8 +18865,16 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
 
         if (oTDWLOrder.bDoingPurchasedDateClear && bDoingUnHide) {
             iNumShown = iNumShown + 0.5;
+            if ((", " + sSymbolsToShow + ", ").indexOf(", " + oTDWLOrder.symbol + ", ") == -1) {
+                sSymbolsToShow = sSymbolsToShow + sSymbolsToShowSep + oTDWLOrder.symbol;
+                sSymbolsToShowSep = ", ";
+            }
         } else if (oTDWLOrder.bDoingPurchasedDateUpdate && bDoingUnHide) {
             iNumShown = iNumShown + 1;
+            if ((", " + sSymbolsToShow + ", ").indexOf(", " + oTDWLOrder.symbol + ", ") == -1) {
+                sSymbolsToShow = sSymbolsToShow + sSymbolsToShowSep + oTDWLOrder.symbol;
+                sSymbolsToShowSep = ", ";
+            }
         } else if (oTDWLOrder.bDoingPurchasedDateUpdate && bDoingHide) {
             iNumHidden = iNumHidden + 1;
         }
@@ -18930,7 +18948,8 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
             if (bDoingHide) {
                 sMsg = iNumHidden.toString() + " watchlist ";
             } else if (bDoingUnHide) {
-                sMsg = iNumShown.toString() + " watchlist ";
+                sMsg = sSymbolsToShow + " (" + iNumShown.toString() + ") watchlist ";
+                //sMsg = iNumShown.toString() + " watchlist ";
             } else {
                 sMsg = iNumSuccess.toString() + " watchlist ";
             }
@@ -18983,7 +19002,11 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
             }
             if (iNumErrors == 0) {
                 if (idxWL != -1) {
-                    ClearAllWLInputFields(idxWL);
+                    if (bDoingHide) {
+                        ClearAllWLSelected(idxWL);
+                    } else {
+                        ClearAllWLInputFields(idxWL);
+                    }
                 }
             }
             ShowProgress(false, true);
