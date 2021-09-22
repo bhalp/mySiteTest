@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.8 2021-09-22 09:48"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.8 2021-09-22 11:50"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -4773,7 +4773,6 @@ function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, iSh
                         for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
                             oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
 
-
                             let oTDOrder = new TDOrder();
                             oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
                             oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
@@ -4941,45 +4940,74 @@ function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, iSh
                     oWatchList = gWatchlists[idxWL];
                     oWatchListItem = oWatchList.WLItems[idxWLItem];
                     let sSymbol = oWatchListItem.symbol;
-                    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-                        let oWLDisplayed = new WLDisplayed();
-                        oWLDisplayed = gWLDisplayed[idxDisplayed];
-                        let oWLItemDetail = new WLItemDetail();
-                        if (sSymbol == oWLDisplayed.symbol) {
-                            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
 
-                                let oTDOrder = new TDOrder();
-                                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
-                                oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-                                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+                    let oTDOrder = new TDOrder();
+                    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+                    oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+                    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
-                                let iNumToBuySell = iShares;
-                                if (iNumToBuySell > 0) {
-                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
-                                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                                    oTDOrder.symbol = sSymbol;
-                                    gTDOrders[gTDOrders.length] = oTDOrder;
+                    let iNumToBuySell = iShares;
+                    if (iNumToBuySell > 0) {
+                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                        oTDOrder.symbol = sSymbol;
+                        gTDOrders[gTDOrders.length] = oTDOrder;
 
-                                    if (document.getElementById("chkPlace" + sThisId).checked) {
-                                        let oTDSavedOrder = new TDSavedOrder();
-                                        oTDSavedOrder.orderType = "MARKET";
-                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                        oTDSavedOrder.instruction = sBuySell;
-                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                        oTDSavedOrder.symbol = oTDOrder.symbol;
+                        if (document.getElementById("chkPlace" + sThisId).checked) {
+                            let oTDSavedOrder = new TDSavedOrder();
+                            oTDSavedOrder.orderType = "MARKET";
+                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                            oTDSavedOrder.instruction = sBuySell;
+                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                            oTDSavedOrder.symbol = oTDOrder.symbol;
 
-                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-                                    }
-                                }
-                                break;
-                            }
+                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
                         }
                     }
+
+                //    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                //        let oWLDisplayed = new WLDisplayed();
+                //        oWLDisplayed = gWLDisplayed[idxDisplayed];
+                //        let oWLItemDetail = new WLItemDetail();
+                //        if (sSymbol == oWLDisplayed.symbol) {
+                //            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+                //                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+
+                //                let oTDOrder = new TDOrder();
+                //                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+                //                oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+                //                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+                //                let iNumToBuySell = iShares;
+                //                if (iNumToBuySell > 0) {
+                //                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                //                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                //                    oTDOrder.symbol = sSymbol;
+                //                    gTDOrders[gTDOrders.length] = oTDOrder;
+
+                //                    if (document.getElementById("chkPlace" + sThisId).checked) {
+                //                        let oTDSavedOrder = new TDSavedOrder();
+                //                        oTDSavedOrder.orderType = "MARKET";
+                //                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                //                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                //                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                //                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                //                        oTDSavedOrder.instruction = sBuySell;
+                //                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                //                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                //                        oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                //                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                //                    }
+                //                }
+                //                break;
+                //            }
+                //        }
+                //    }
                 }
             }
             if (gTDOrders.length > 0) {
