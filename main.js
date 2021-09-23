@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.8 2021-09-22 11:50"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.8 2021-09-23 02:10"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -437,7 +437,7 @@ function WLItemOrder() {
 const gksWLIconHide = "icons8-hide-30.png";
 const gksWLIconShow = "icons8-eye-30.png";
 const gksWLIconHideTitle = "Hide Selected Symbols";
-const gksWLIconShowTitle = "Show All Symbols";
+const gksWLIconShowTitle = "Show Hidden Symbols";
 
 var gsAccountWLSummary = "Watchlist Performance";
 var gsAccountSavedOrders = "Account Saved Orders";
@@ -3448,12 +3448,18 @@ function DoWLOpenSymbols(iFromWhere, watchlistId, sLastWLAccountId) {
 
             let sSymbolsToLookup = "";
             let sSymbolsToLookupSep = "";
+            let sSymbolsToShow = "";
+            let sSymbolsToShowSep = "";
             let iNumSelected = 0;
             for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                 if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
                     iNumSelected++;
                     sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
                     sSymbolsToLookupSep = ", ";
+                }
+                if (gWatchlists[idxWL].WLItems[idxWLItem].bHidden) {
+                    sSymbolsToShow = sSymbolsToShow + sSymbolsToShowSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                    sSymbolsToShowSep = ", ";
                 }
             }
 
@@ -3856,9 +3862,13 @@ function DoWLOpenSymbols(iFromWhere, watchlistId, sLastWLAccountId) {
                 }
                 case 4: { //unhide all
                     let sConfirmMsg = "";
-                    sConfirmMsg = "Showing all hidden symbols. ";
-                    if (AreYouSure(sConfirmMsg)) {
-                        window.setTimeout("GenerateWLUnHideSymbolOrders('" + sAccountId + "', " + idxWL + ")", 10);
+                    if (sSymbolsToShow == "") {
+                        alert("There are no hidden symbols to show.");
+                    } else {
+                        sConfirmMsg = "Showing " + sSymbolsToShow.toUpperCase() + ". ";
+                        if (AreYouSure(sConfirmMsg)) {
+                            window.setTimeout("GenerateWLUnHideSymbolOrders('" + sAccountId + "', " + idxWL + ")", 10);
+                        }
                     }
                     break;
                 }
@@ -4765,57 +4775,158 @@ function GenerateWLBuySellOrders(sAccountId, sBuySell, sPercent, dSelectNum, iSh
                 oWatchList = gWatchlists[idxWL];
                 oWatchListItem = oWatchList.WLItems[idxWLItem];
                 let sSymbol = oWatchListItem.symbol;
-                for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-                    let oWLDisplayed = new WLDisplayed();
-                    oWLDisplayed = gWLDisplayed[idxDisplayed];
-                    let oWLItemDetail = new WLItemDetail();
-                    if (sSymbol == oWLDisplayed.symbol) {
-                        for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                            oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
 
-                            let oTDOrder = new TDOrder();
-                            oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
-                            oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
-                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+                let bFoundPosition = false;
+                //get account position info if it exists
+                let oPosition = null;
+                for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                    if ((gAccounts[idxAccount].positions.length > 0) &&
+                        (gAccounts[idxAccount].accountId == sAccountId)) {
+                        for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                            if (sSymbol == gAccounts[idxAccount].positions[idxPositions].symbol) {
+                                bFoundPosition = true;
+                                oPosition = new Position();
+                                oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                oPosition.accountId = gAccounts[idxAccount].accountId;
+                                oPosition.accountName = gAccounts[idxAccount].accountName;
 
-                            let iNumToBuySell = 0;
-                            if (sBuySell == "SELL") {
-                                if (oWLItemDetail.marketValue > 0) {
-                                    if (dSelectNum > oWLItemDetail.marketValue) {
-                                        dSelectNum = oWLItemDetail.marketValue;
+                                let oTDOrder = new TDOrder();
+                                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+                                oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+                                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+                                let iNumToBuySell = 0;
+                                if (sBuySell == "SELL") {
+                                    if (oPosition.marketValue > 0) {
+                                        if (dSelectNum > oPosition.marketValue) {
+                                            dSelectNum = oPosition.marketValue;
+                                        }
+                                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                            iNumToBuySell = Math.floor(dSelectNum / oMDQ[sSymbol].regularMarketLastPrice);
+                                        }
                                     }
-                                    iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+                                } else {
+                                    if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                        iNumToBuySell = Math.floor(dSelectNum / oMDQ[sSymbol].regularMarketLastPrice);
+                                    }
                                 }
-                            } else {
-                                iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-                            }
-                            if (iNumToBuySell > 0) {
-                                oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
-                                oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                                oTDOrder.symbol = sSymbol;
-                                gTDOrders[gTDOrders.length] = oTDOrder;
 
-                                if (document.getElementById("chkPlace" + sThisId).checked) {
-                                    let oTDSavedOrder = new TDSavedOrder();
-                                    oTDSavedOrder.orderType = "MARKET";
-                                    oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                    oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                    oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                    oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                    oTDSavedOrder.instruction = sBuySell;
-                                    oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                    oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                    oTDSavedOrder.symbol = oTDOrder.symbol;
+                                if (iNumToBuySell > 0) {
+                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                                    oTDOrder.symbol = sSymbol;
+                                    gTDOrders[gTDOrders.length] = oTDOrder;
 
-                                    gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                    if (document.getElementById("chkPlace" + sThisId).checked) {
+                                        let oTDSavedOrder = new TDSavedOrder();
+                                        oTDSavedOrder.orderType = "MARKET";
+                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                        oTDSavedOrder.instruction = sBuySell;
+                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                        oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                    }
                                 }
+                                break;
                             }
-
-
-                            break;
                         }
+                        break;
                     }
                 }
+                if (!bFoundPosition) {
+                    if (sBuySell == "BUY") {
+                        let oTDOrder = new TDOrder();
+                        oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+                        oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+                        let iNumToBuySell = 0;
+                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                            iNumToBuySell = Math.floor(dSelectNum / oMDQ[sSymbol].regularMarketLastPrice);
+                        }
+
+                        if (iNumToBuySell > 0) {
+                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                            oTDOrder.symbol = sSymbol;
+                            gTDOrders[gTDOrders.length] = oTDOrder;
+
+                            if (document.getElementById("chkPlace" + sThisId).checked) {
+                                let oTDSavedOrder = new TDSavedOrder();
+                                oTDSavedOrder.orderType = "MARKET";
+                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                oTDSavedOrder.instruction = sBuySell;
+                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                            }
+                        }
+
+                    }
+                }
+
+            //    //--------------------------------
+            //    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+            //        let oWLDisplayed = new WLDisplayed();
+            //        oWLDisplayed = gWLDisplayed[idxDisplayed];
+            //        let oWLItemDetail = new WLItemDetail();
+            //        if (sSymbol == oWLDisplayed.symbol) {
+            //            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+            //                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+
+            //                let oTDOrder = new TDOrder();
+            //                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"MARKET\", ";
+            //                oTDOrder.a04duration = oTDOrder.a04duration + "\"DAY\", ";
+            //                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+            //                let iNumToBuySell = 0;
+            //                if (sBuySell == "SELL") {
+            //                    if (oWLItemDetail.marketValue > 0) {
+            //                        if (dSelectNum > oWLItemDetail.marketValue) {
+            //                            dSelectNum = oWLItemDetail.marketValue;
+            //                        }
+            //                        iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+            //                    }
+            //                } else {
+            //                    iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+            //                }
+            //                if (iNumToBuySell > 0) {
+            //                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+            //                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+            //                    oTDOrder.symbol = sSymbol;
+            //                    gTDOrders[gTDOrders.length] = oTDOrder;
+
+            //                    if (document.getElementById("chkPlace" + sThisId).checked) {
+            //                        let oTDSavedOrder = new TDSavedOrder();
+            //                        oTDSavedOrder.orderType = "MARKET";
+            //                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+            //                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+            //                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
+            //                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+            //                        oTDSavedOrder.instruction = sBuySell;
+            //                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+            //                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+            //                        oTDSavedOrder.symbol = oTDOrder.symbol;
+
+            //                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+            //                    }
+            //                }
+
+
+            //                break;
+            //            }
+            //        }
+            //    }
             }
         }
         if (gTDOrders.length > 0) {
@@ -5043,6 +5154,7 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
             sSep = ",";
         }
     }
+
     sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
     gTDOrders.length = 0;
     gOrdersToPlace.length = 0;
@@ -5095,56 +5207,100 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                                                     oWatchList = gWatchlists[idxWL];
                                                     oWatchListItem = oWatchList.WLItems[idxWLItem];
                                                     let sSymbol = oWatchListItem.symbol;
+
                                                     if (sSymbol == oPosition.symbol) {
-                                                        for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-                                                            let oWLDisplayed = new WLDisplayed();
-                                                            oWLDisplayed = gWLDisplayed[idxDisplayed];
-                                                            let oWLItemDetail = new WLItemDetail();
-                                                            if (sSymbol == oWLDisplayed.symbol) {
-                                                                for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                                                                    oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-                                                                    let dPrice = 0.0;
-                                                                    if (sBuySell == "BUY") {
-                                                                        dPrice = oWLItemDetail.regularMarketLastPrice;
-                                                                    } else {
-                                                                        dPrice = oWLItemDetail.regularMarketLastPrice - (oWLItemDetail.regularMarketLastPrice * .01);
-                                                                    }
-
-                                                                    let sPrice = FormatMoney(dPrice);
-                                                                    if (parseFloat(sPrice) > 0) {
-                                                                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
-                                                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                                                                        oTDOrder.symbol = sSymbol;
-                                                                        gTDOrders[gTDOrders.length] = oTDOrder;
-
-                                                                        if (document.getElementById("chkPlace" + sThisId).checked) {
-                                                                            let oTDSavedOrder = new TDSavedOrder();
-                                                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                                                                            oTDSavedOrder.orderType = "LIMIT";
-                                                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
-                                                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                                                            oTDSavedOrder.instruction = sBuySell;
-                                                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                                                            oTDSavedOrder.symbol = oTDOrder.symbol;
-
-                                                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-                                                                        }
-
-                                                                    } else {
-                                                                        alert("No price for " + sSymbol);
-                                                                    }
-                                                                    break;
-                                                                }
-                                                                break;
+                                                        let dPrice = 0.0;
+                                                        if (sBuySell == "BUY") {
+                                                            if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                                                dPrice = oMDQ[sSymbol].regularMarketLastPrice;
                                                             }
+                                                        } else {
+                                                            if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                                                dPrice = oMDQ[sSymbol].regularMarketLastPrice - (oMDQ[sSymbol].regularMarketLastPrice * .01);
+                                                            }
+                                                        }
+
+                                                        let sPrice = FormatMoney(dPrice);
+                                                        if (parseFloat(sPrice) > 0) {
+                                                            oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                                                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                                                            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                                                            oTDOrder.symbol = sSymbol;
+                                                            gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                                            if (document.getElementById("chkPlace" + sThisId).checked) {
+                                                                let oTDSavedOrder = new TDSavedOrder();
+                                                                //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                                                oTDSavedOrder.orderType = "LIMIT";
+                                                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                                                oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                                                oTDSavedOrder.instruction = sBuySell;
+                                                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                                                oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                                            }
+
+                                                        } else {
+                                                            alert("No price for " + sSymbol);
                                                         }
                                                         break;
                                                     }
+
+                                                //    if (sSymbol == oPosition.symbol) {
+                                                //        for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                                                //            let oWLDisplayed = new WLDisplayed();
+                                                //            oWLDisplayed = gWLDisplayed[idxDisplayed];
+                                                //            let oWLItemDetail = new WLItemDetail();
+                                                //            if (sSymbol == oWLDisplayed.symbol) {
+                                                //                for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+                                                //                    oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+                                                //                    let dPrice = 0.0;
+                                                //                    if (sBuySell == "BUY") {
+                                                //                        dPrice = oWLItemDetail.regularMarketLastPrice;
+                                                //                    } else {
+                                                //                        dPrice = oWLItemDetail.regularMarketLastPrice - (oWLItemDetail.regularMarketLastPrice * .01);
+                                                //                    }
+
+                                                //                    let sPrice = FormatMoney(dPrice);
+                                                //                    if (parseFloat(sPrice) > 0) {
+                                                //                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                                                //                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                                                //                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                                                //                        oTDOrder.symbol = sSymbol;
+                                                //                        gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                                //                        if (document.getElementById("chkPlace" + sThisId).checked) {
+                                                //                            let oTDSavedOrder = new TDSavedOrder();
+                                                //                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                                //                            oTDSavedOrder.orderType = "LIMIT";
+                                                //                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                                //                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                                //                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                                //                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                                //                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                                //                            oTDSavedOrder.instruction = sBuySell;
+                                                //                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                                //                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                                //                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                                //                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                                //                        }
+
+                                                //                    } else {
+                                                //                        alert("No price for " + sSymbol);
+                                                //                    }
+                                                //                    break;
+                                                //                }
+                                                //                break;
+                                                //            }
+                                                //        }
+                                                //        break;
+                                                //    }
                                                 }
                                             }
                                         }
@@ -5184,66 +5340,188 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                 oWatchList = gWatchlists[idxWL];
                 oWatchListItem = oWatchList.WLItems[idxWLItem];
                 let sSymbol = oWatchListItem.symbol;
-                for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-                    let oWLDisplayed = new WLDisplayed();
-                    oWLDisplayed = gWLDisplayed[idxDisplayed];
-                    let oWLItemDetail = new WLItemDetail();
-                    if (sSymbol == oWLDisplayed.symbol) {
-                        for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                            oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+                let bFoundPosition = false;
 
-                            let oTDOrder = new TDOrder();
+                //get account position info if it exists
+                let oPosition = null;
+                for (let idxAccount = 0; idxAccount < gAccounts.length; idxAccount++) {
+                    if ((gAccounts[idxAccount].positions.length > 0) &&
+                        (gAccounts[idxAccount].accountId == sAccountId)) {
+                        for (let idxPositions = 0; idxPositions < gAccounts[idxAccount].positions.length; idxPositions++) {
+                            if (sSymbol == gAccounts[idxAccount].positions[idxPositions].symbol) {
+                                bFoundPosition = true;
+                                oPosition = new Position();
+                                oPosition = gAccounts[idxAccount].positions[idxPositions];
+                                oPosition.accountId = gAccounts[idxAccount].accountId;
+                                oPosition.accountName = gAccounts[idxAccount].accountName;
 
-                            oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
-                            oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
-                            oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-                            oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+                                let oTDOrder = new TDOrder();
 
-                            let iNumToBuySell = 0;
-                            if (sBuySell == "SELL") {
-                                if (oWLItemDetail.marketValue > 0) {
-                                    if (dSelectNum > oWLItemDetail.marketValue) {
-                                        dSelectNum = oWLItemDetail.marketValue;
+                                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+                                oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+                                oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+                                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+                                let iNumToBuySell = 0;
+                                if (sBuySell == "SELL") {
+                                    if (oPosition.marketValue > 0) {
+                                        if (dSelectNum > oPosition.marketValue) {
+                                            dSelectNum = oPosition.marketValue;
+                                        }
+                                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                            iNumToBuySell = Math.floor(dSelectNum / oMDQ[sSymbol].regularMarketLastPrice);
+                                        }
                                     }
-                                    iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-                                }
-                            } else {
-                                iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
-                            }
-
-                            if (iNumToBuySell > 0) {
-                                let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
-                                if (parseFloat(sPrice) > 0) {
-                                    oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
-                                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                                    oTDOrder.symbol = sSymbol;
-                                    gTDOrders[gTDOrders.length] = oTDOrder;
-
-                                    if (document.getElementById("chkPlace" + sThisId).checked) {
-                                        let oTDSavedOrder = new TDSavedOrder();
-                                        //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                                        oTDSavedOrder.orderType = "LIMIT";
-                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                        oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
-                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                        oTDSavedOrder.instruction = sBuySell;
-                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                        oTDSavedOrder.symbol = oTDOrder.symbol;
-
-                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                } else {
+                                    if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                        iNumToBuySell = Math.floor(dSelectNum / oMDQ[sSymbol].regularMarketLastPrice);
                                     }
+                                }
 
+                                if (iNumToBuySell > 0) {
+                                    let sPrice = "0";
+                                    if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                        sPrice = FormatMoney(oMDQ[sSymbol].regularMarketLastPrice);
+                                    }
+                                    if (parseFloat(sPrice) > 0) {
+                                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                                        oTDOrder.symbol = sSymbol;
+                                        gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                        if (document.getElementById("chkPlace" + sThisId).checked) {
+                                            let oTDSavedOrder = new TDSavedOrder();
+                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                            oTDSavedOrder.orderType = "LIMIT";
+                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                            oTDSavedOrder.instruction = sBuySell;
+                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+                if (!bFoundPosition) {
+                    if (sBuySell == "BUY") {
+                        let oTDOrder = new TDOrder();
+
+                        oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+                        oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+                        oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+                        oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+                        let iNumToBuySell = 0;
+                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                            iNumToBuySell = Math.floor(dSelectNum / oMDQ[sSymbol].regularMarketLastPrice);
+                        }
+
+                        if (iNumToBuySell > 0) {
+                            let sPrice = "0";
+                            if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                sPrice = FormatMoney(oMDQ[sSymbol].regularMarketLastPrice);
+                            }
+                            if (parseFloat(sPrice) > 0) {
+                                oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                                oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                                oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                                oTDOrder.symbol = sSymbol;
+                                gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                if (document.getElementById("chkPlace" + sThisId).checked) {
+                                    let oTDSavedOrder = new TDSavedOrder();
+                                    //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                    oTDSavedOrder.orderType = "LIMIT";
+                                    oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                    oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                    oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                    oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                    oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                    oTDSavedOrder.instruction = sBuySell;
+                                    oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                    oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                    oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                    gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
                                 }
                             }
-
-                            break;
                         }
                     }
                 }
+
+
+            //    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+            //        let oWLDisplayed = new WLDisplayed();
+            //        oWLDisplayed = gWLDisplayed[idxDisplayed];
+            //        let oWLItemDetail = new WLItemDetail();
+            //        if (sSymbol == oWLDisplayed.symbol) {
+            //            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+            //                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+
+            //                let oTDOrder = new TDOrder();
+
+            //                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+            //                oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+            //                oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+            //                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+            //                let iNumToBuySell = 0;
+            //                if (sBuySell == "SELL") {
+            //                    if (oWLItemDetail.marketValue > 0) {
+            //                        if (dSelectNum > oWLItemDetail.marketValue) {
+            //                            dSelectNum = oWLItemDetail.marketValue;
+            //                        }
+            //                        iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+            //                    }
+            //                } else {
+            //                    iNumToBuySell = Math.floor(dSelectNum / oWLItemDetail.regularMarketLastPrice);
+            //                }
+
+            //                if (iNumToBuySell > 0) {
+            //                    let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
+            //                    if (parseFloat(sPrice) > 0) {
+            //                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+            //                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+            //                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+            //                        oTDOrder.symbol = sSymbol;
+            //                        gTDOrders[gTDOrders.length] = oTDOrder;
+
+            //                        if (document.getElementById("chkPlace" + sThisId).checked) {
+            //                            let oTDSavedOrder = new TDSavedOrder();
+            //                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+            //                            oTDSavedOrder.orderType = "LIMIT";
+            //                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+            //                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+            //                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+            //                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+            //                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+            //                            oTDSavedOrder.instruction = sBuySell;
+            //                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+            //                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+            //                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+            //                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+            //                        }
+
+            //                    }
+            //                }
+
+            //                break;
+            //            }
+            //        }
+            //    }
             }
         }
         if (gTDOrders.length > 0) {
@@ -5307,62 +5585,110 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
 
                                             if (iNumToBuySell > 0) {
                                                 //get the price to use
+                                                let sSymbol = oPosition.symbol;
+
                                                 for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                                                    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
-                                                        let oWatchList = new WLWatchList();
-                                                        let oWatchListItem = new WLItem();
-                                                        oWatchList = gWatchlists[idxWL];
-                                                        oWatchListItem = oWatchList.WLItems[idxWLItem];
-                                                        let sSymbol = oWatchListItem.symbol;
-                                                        if (sSymbol == oPosition.symbol) {
-                                                            for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-                                                                let oWLDisplayed = new WLDisplayed();
-                                                                oWLDisplayed = gWLDisplayed[idxDisplayed];
-                                                                let oWLItemDetail = new WLItemDetail();
-                                                                if (sSymbol == oWLDisplayed.symbol) {
-                                                                    for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                                                                        oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
-                                                                        let dPrice = 0.0;
-                                                                        dPrice = oWLItemDetail.regularMarketLastPrice - (oWLItemDetail.regularMarketLastPrice * .01);
+                                                    if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) && (sSymbol == gWatchlists[idxWL].WLItems[idxWLItem].symbol)) {
+                                                        let dPrice = 0.0;
 
-                                                                        let sPrice = FormatMoney(dPrice);
-                                                                        if (parseFloat(sPrice) > 0) {
-                                                                            oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                                                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
-                                                                            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                                                                            oTDOrder.symbol = sSymbol;
-                                                                            gTDOrders[gTDOrders.length] = oTDOrder;
-
-                                                                            if (document.getElementById("chkPlace" + sThisId).checked) {
-                                                                                let oTDSavedOrder = new TDSavedOrder();
-                                                                                //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                                                                                oTDSavedOrder.orderType = "LIMIT";
-                                                                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                                                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                                                                oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
-                                                                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                                                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                                                                oTDSavedOrder.instruction = sBuySell;
-                                                                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                                                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                                                                oTDSavedOrder.symbol = oTDOrder.symbol;
-
-                                                                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-                                                                            }
-
-                                                                        } else {
-                                                                            alert("No price for " + sSymbol);
-                                                                        }
-                                                                        break;
-                                                                    }
-                                                                    break;
-                                                                }
-                                                            }
-                                                            break;
+                                                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                                                            dPrice = oMDQ[sSymbol].regularMarketLastPrice - (oMDQ[sSymbol].regularMarketLastPrice * .01);
                                                         }
+
+                                                        let sPrice = FormatMoney(dPrice);
+                                                        if (parseFloat(sPrice) > 0) {
+                                                            oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                                                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                                                            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                                                            oTDOrder.symbol = sSymbol;
+                                                            gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                                            if (document.getElementById("chkPlace" + sThisId).checked) {
+                                                                let oTDSavedOrder = new TDSavedOrder();
+                                                                //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                                                oTDSavedOrder.orderType = "LIMIT";
+                                                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                                                oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                                                oTDSavedOrder.instruction = sBuySell;
+                                                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                                                oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                                            }
+
+                                                        } else {
+                                                            alert("No price for " + sSymbol);
+                                                        }
+
+                                                        break;
                                                     }
                                                 }
                                             }
+
+
+
+
+
+                                        //        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                                        //            if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
+                                        //                let oWatchList = new WLWatchList();
+                                        //                let oWatchListItem = new WLItem();
+                                        //                oWatchList = gWatchlists[idxWL];
+                                        //                oWatchListItem = oWatchList.WLItems[idxWLItem];
+                                        //                let sSymbol = oWatchListItem.symbol;
+                                        //                if (sSymbol == oPosition.symbol) {
+                                        //                    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                                        //                        let oWLDisplayed = new WLDisplayed();
+                                        //                        oWLDisplayed = gWLDisplayed[idxDisplayed];
+                                        //                        let oWLItemDetail = new WLItemDetail();
+                                        //                        if (sSymbol == oWLDisplayed.symbol) {
+                                        //                            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+                                        //                                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+                                        //                                let dPrice = 0.0;
+                                        //                                dPrice = oWLItemDetail.regularMarketLastPrice - (oWLItemDetail.regularMarketLastPrice * .01);
+
+                                        //                                let sPrice = FormatMoney(dPrice);
+                                        //                                if (parseFloat(sPrice) > 0) {
+                                        //                                    oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                                        //                                    oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                                        //                                    oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                                        //                                    oTDOrder.symbol = sSymbol;
+                                        //                                    gTDOrders[gTDOrders.length] = oTDOrder;
+
+                                        //                                    if (document.getElementById("chkPlace" + sThisId).checked) {
+                                        //                                        let oTDSavedOrder = new TDSavedOrder();
+                                        //                                        //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                        //                                        oTDSavedOrder.orderType = "LIMIT";
+                                        //                                        oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                        //                                        oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                        //                                        oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                        //                                        oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                        //                                        oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                        //                                        oTDSavedOrder.instruction = sBuySell;
+                                        //                                        oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                        //                                        oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                        //                                        oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                                        //                                        gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                                        //                                    }
+
+                                        //                                } else {
+                                        //                                    alert("No price for " + sSymbol);
+                                        //                                }
+                                        //                                break;
+                                        //                            }
+                                        //                            break;
+                                        //                        }
+                                        //                    }
+                                        //                    break;
+                                        //                }
+                                        //            }
+                                        //        }
+                                        //    }
                                         }
                                     }
                                 }
@@ -5396,7 +5722,7 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                     }
                 }
             }
-        } else {
+        } else { //BUY
             for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
                 if ((gWatchlists[idxWL].WLItems[idxWLItem].bSelected) && (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder)) {
                     let oWatchList = new WLWatchList();
@@ -5404,56 +5730,101 @@ function GenerateWLBuySellOrdersLimit(sAccountId, sBuySell, sPercent, dSelectNum
                     oWatchList = gWatchlists[idxWL];
                     oWatchListItem = oWatchList.WLItems[idxWLItem];
                     let sSymbol = oWatchListItem.symbol;
-                    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
-                        let oWLDisplayed = new WLDisplayed();
-                        oWLDisplayed = gWLDisplayed[idxDisplayed];
-                        let oWLItemDetail = new WLItemDetail();
-                        if (sSymbol == oWLDisplayed.symbol) {
-                            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
-                                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
 
-                                let oTDOrder = new TDOrder();
+                    let oTDOrder = new TDOrder();
 
-                                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
-                                oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
-                                oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
-                                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+                    oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+                    oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+                    oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+                    oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
 
-                                let iNumToBuySell = iShares;
+                    let iNumToBuySell = iShares;
 
-                                if (iNumToBuySell > 0) {
-                                    let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
-                                    if (parseFloat(sPrice) > 0) {
-                                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
-                                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
-                                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
-                                        oTDOrder.symbol = sSymbol;
-                                        gTDOrders[gTDOrders.length] = oTDOrder;
+                    if (iNumToBuySell > 0) {
+                        let sPrice = "0";
+                        if (!isUndefined(oMDQ[sSymbol].regularMarketLastPrice)) {
+                            sPrice = FormatMoney(oMDQ[sSymbol].regularMarketLastPrice);
+                        }
+                        if (parseFloat(sPrice) > 0) {
+                            oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                            oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                            oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                            oTDOrder.symbol = sSymbol;
+                            gTDOrders[gTDOrders.length] = oTDOrder;
 
-                                        if (document.getElementById("chkPlace" + sThisId).checked) {
-                                            let oTDSavedOrder = new TDSavedOrder();
-                                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
-                                            oTDSavedOrder.orderType = "LIMIT";
-                                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
-                                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
-                                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
-                                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
-                                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
-                                            oTDSavedOrder.instruction = sBuySell;
-                                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
-                                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
-                                            oTDSavedOrder.symbol = oTDOrder.symbol;
+                            if (document.getElementById("chkPlace" + sThisId).checked) {
+                                let oTDSavedOrder = new TDSavedOrder();
+                                //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                                oTDSavedOrder.orderType = "LIMIT";
+                                oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                                oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                                oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                                oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                                oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                                oTDSavedOrder.instruction = sBuySell;
+                                oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                                oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                                oTDSavedOrder.symbol = oTDOrder.symbol;
 
-                                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
-                                        }
-
-                                    }
-                                }
-
-                                break;
+                                gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
                             }
+
                         }
                     }
+
+
+
+                //    //-------------------------------------------------
+                //    for (let idxDisplayed = 0; idxDisplayed < gWLDisplayed.length; idxDisplayed++) {
+                //        let oWLDisplayed = new WLDisplayed();
+                //        oWLDisplayed = gWLDisplayed[idxDisplayed];
+                //        let oWLItemDetail = new WLItemDetail();
+                //        if (sSymbol == oWLDisplayed.symbol) {
+                //            for (let idxItemDetail = 0; idxItemDetail < oWLDisplayed.WLItemDetails.length; idxItemDetail++) {
+                //                oWLItemDetail = oWLDisplayed.WLItemDetails[idxItemDetail];
+
+                //                let oTDOrder = new TDOrder();
+
+                //                oTDOrder.a02orderType = oTDOrder.a02orderType + "\"LIMIT\", ";
+                //                oTDOrder.a04duration = oTDOrder.a04duration + "\"GOOD_TILL_CANCEL\", ";
+                //                oTDOrder.a03FcancelTime = oTDOrder.a03FcancelTime + "\"" + sCancelTime + "\", ";
+                //                oTDOrder.a07instructionStart = oTDOrder.a07instructionStart + "\"" + sBuySell + "\", ";
+
+                //                let iNumToBuySell = iShares;
+
+                //                if (iNumToBuySell > 0) {
+                //                    let sPrice = FormatMoney(oWLItemDetail.regularMarketLastPrice);
+                //                    if (parseFloat(sPrice) > 0) {
+                //                        oTDOrder.a02Aprice = oTDOrder.a02Aprice + "\"" + sPrice + "\", ";
+                //                        oTDOrder.a08quantity = oTDOrder.a08quantity + iNumToBuySell.toString() + ", ";
+                //                        oTDOrder.a10symbol = oTDOrder.a10symbol + "\"" + sSymbol + "\", "
+                //                        oTDOrder.symbol = sSymbol;
+                //                        gTDOrders[gTDOrders.length] = oTDOrder;
+
+                //                        if (document.getElementById("chkPlace" + sThisId).checked) {
+                //                            let oTDSavedOrder = new TDSavedOrder();
+                //                            //                                            oTDSavedOrder.savedOrderId = oWLItem.savedOrderId;
+                //                            oTDSavedOrder.orderType = "LIMIT";
+                //                            oTDSavedOrder.a02orderType = oTDOrder.a02orderType;
+                //                            oTDSavedOrder.a02Aprice = oTDOrder.a02Aprice;
+                //                            oTDSavedOrder.a03FcancelTime = oTDOrder.a03FcancelTime;
+                //                            oTDSavedOrder.a04duration = oTDOrder.a04duration;
+                //                            oTDSavedOrder.a07instructionStart = oTDOrder.a07instructionStart;
+                //                            oTDSavedOrder.instruction = sBuySell;
+                //                            oTDSavedOrder.a08quantity = oTDOrder.a08quantity;
+                //                            oTDSavedOrder.a10symbol = oTDOrder.a10symbol;
+                //                            oTDSavedOrder.symbol = oTDOrder.symbol;
+
+                //                            gOrdersToPlace[gOrdersToPlace.length] = oTDSavedOrder;
+                //                        }
+
+                //                    }
+                //                }
+
+                //                break;
+                //            }
+                //        }
+                //    }
                 }
             }
             if (gTDOrders.length > 0) {
@@ -12685,19 +13056,26 @@ function GetWatchlistPrices() {
                                 "&nbsp;&nbsp;<img title=\"Print\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
                                 "<span title=\"Current Date and Time\" style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-                            if (bSomeHidden) {
-                                sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                    "<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:none; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                    "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                    "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-                            } else {
-                                sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                    "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:none; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                    "<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                    "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                    "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-                            }
+
+                            sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                                "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                "&nbsp;<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+
+                            //if (bSomeHidden) {
+                            //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            //        "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            //        "<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:none; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            //        "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            //        "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+                            //} else {
+                            //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                            //        "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:none; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            //        "<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            //        "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                            //        "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+                            //}
 
 
                             //"<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
@@ -13904,29 +14282,29 @@ function GetWatchlistPrices() {
                                 }
                             }
 
-                            if (bSomeHidden) {
-                                if (!isUndefined(document.getElementById("IconHide" + sThisId))) {
-                                    if (!(document.getElementById("IconHide" + sThisId) == null)) {
-                                        document.getElementById("IconHide" + sThisId).style.display = "none";
-                                    }
-                                }
-                                if (!isUndefined(document.getElementById("IconShow" + sThisId))) {
-                                    if (!(document.getElementById("IconShow" + sThisId) == null)) {
-                                        document.getElementById("IconShow" + sThisId).style.display = "inline";
-                                    }
-                                }
-                            } else {
-                                if (!isUndefined(document.getElementById("IconHide" + sThisId))) {
-                                    if (!(document.getElementById("IconHide" + sThisId) == null)) {
-                                        document.getElementById("IconHide" + sThisId).style.display = "inline";
-                                    }
-                                }
-                                if (!isUndefined(document.getElementById("IconShow" + sThisId))) {
-                                    if (!(document.getElementById("IconShow" + sThisId) == null)) {
-                                        document.getElementById("IconShow" + sThisId).style.display = "none";
-                                    }
-                                }
-                            }
+                            //if (bSomeHidden) {
+                            //    if (!isUndefined(document.getElementById("IconHide" + sThisId))) {
+                            //        if (!(document.getElementById("IconHide" + sThisId) == null)) {
+                            //            document.getElementById("IconHide" + sThisId).style.display = "none";
+                            //        }
+                            //    }
+                            //    if (!isUndefined(document.getElementById("IconShow" + sThisId))) {
+                            //        if (!(document.getElementById("IconShow" + sThisId) == null)) {
+                            //            document.getElementById("IconShow" + sThisId).style.display = "inline";
+                            //        }
+                            //    }
+                            //} else {
+                            //    if (!isUndefined(document.getElementById("IconHide" + sThisId))) {
+                            //        if (!(document.getElementById("IconHide" + sThisId) == null)) {
+                            //            document.getElementById("IconHide" + sThisId).style.display = "inline";
+                            //        }
+                            //    }
+                            //    if (!isUndefined(document.getElementById("IconShow" + sThisId))) {
+                            //        if (!(document.getElementById("IconShow" + sThisId) == null)) {
+                            //            document.getElementById("IconShow" + sThisId).style.display = "none";
+                            //        }
+                            //    }
+                            //}
                             
                             document.getElementById("spanWLDate" + sThisId).innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;" + sDate;
                         }
