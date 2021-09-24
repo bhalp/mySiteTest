@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.8 2021-09-23 02:10"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.8 2021-09-23 17:05"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -19410,6 +19410,9 @@ function PostWLOpenSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgre
                 if (idxWL != -1) {
                     if (bDoingHide) {
                         ClearAllWLSelected(idxWL);
+                    } else if (bDoingUnHide) {
+                        SelectAllUnhidden(idxWL, sSymbolsToShow);
+                        ClearAllWLInputFields(idxWL);
                     } else {
                         ClearAllWLInputFields(idxWL);
                     }
@@ -20051,10 +20054,62 @@ function ResetIsDownAllSymbolDetailDivs() {
     }
 }
 
-
 function ResetWatchlist() {
     SetWait();
     window.setTimeout("DoResetWatchlists()", 50);
+}
+
+function SelectAllUnhidden(idxWL, sSymbolsToShow) {
+    let iNumSelected = 0;
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    let bAllChecked = true;
+    for (let idx = 0; idx < gWatchlists[idxWL].WLItems.length; idx++) {
+        let sThisTRId = "TR" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(idx, 3, "0");
+        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(idx, 3, "0");
+        if ((", " + sSymbolsToShow + ", ").indexOf(", " + gWatchlists[idxWL].WLItems[idx].symbol + ", ") != -1) {
+            gWatchlists[idxWL].WLItems[idx].bSelectedForOrder = true;
+            iNumSelected++;
+
+            if ((!isUndefined(document.getElementById(sThisTRId))) && (document.getElementById(sThisTRId) != null)) {
+                document.getElementById(sThisTRId).style.backgroundColor = gsWLTableSelectedRowBackgroundColor;
+            }
+            if ((!isUndefined(document.getElementById(sThischkItemId))) && (document.getElementById(sThischkItemId) != null)) {
+                document.getElementById(sThischkItemId).checked = true;
+            }
+
+
+        } else {
+            gWatchlists[idxWL].WLItems[idx].bSelectedForOrder = false;
+            bAllChecked = false;
+
+            if ((!isUndefined(document.getElementById(sThisTRId))) && (document.getElementById(sThisTRId) != null)) {
+                if ((idx % 2) == 0) {
+                    document.getElementById(sThisTRId).style.backgroundColor = gsWLTableEvenRowBackgroundColor;
+                } else {
+                    document.getElementById(sThisTRId).style.backgroundColor = gsWLTableOddRowBackgroundColor;
+                }
+            }
+            if ((!isUndefined(document.getElementById(sThischkItemId))) && (document.getElementById(sThischkItemId) != null)) {
+                document.getElementById(sThischkItemId).checked = false;
+            }
+        }
+    }
+
+    if ((bAllChecked) && (iNumSelected != 0)) {
+        if ((!isUndefined(document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000"))) && (document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000") != null)) {
+            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = true;
+        }
+    }
+    if (iNumSelected == 0) {
+        if ((!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) && (document.getElementById("spanWLNumChecked" + sThisId) != null)) {
+            document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+        }
+    } else {
+        if ((!isUndefined(document.getElementById("spanWLNumChecked" + sThisId))) && (document.getElementById("spanWLNumChecked" + sThisId) != null)) {
+            document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "(" + FormatIntegerNumber(iNumSelected, 3, "") + ")&nbsp;&nbsp;";
+        }
+    }
+
 }
 
 function SelectWatchlist() {
