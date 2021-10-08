@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.8 2021-09-23 17:05"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.9 2021-10-08 16:15"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -472,6 +472,7 @@ function WLWatchList() {
     this.watchlistId = ""; //if name is "Account" this is accountId, if name is "Account Saved Orders" this is accountId + "AccountSavedOrders"
     this.accountId = "";
     this.accountName = "";
+    this.defaultUpdateGLDate = "";
     this.WLItems = new Array(); //array of WLItem objects or WLItemSavedOrder or WLItemOrder objects
 }
 var gWatchlists = new Array(); //array of WLWatchList objects
@@ -2358,7 +2359,11 @@ function chkIndexChanged(ev) {
     }
 }
 
-function ClearAllWLInputFields(idxWL) {
+function ClearAllWLInputFields(idxWL, bAddStartDateToNameIn) {
+    let bAddStartDateToName = false;
+    if (!isUndefined(bAddStartDateToNameIn)) {
+        bAddStartDateToName = bAddStartDateToNameIn;
+    }
     let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     if (!(document.getElementById("txtWLpercent" + sThisId) == null)) {
         document.getElementById("txtWLpercent" + sThisId).value = "";
@@ -2385,7 +2390,9 @@ function ClearAllWLInputFields(idxWL) {
         document.getElementById("txtwlopendesc" + sThisId).value = "";
     }
     if (!(document.getElementById("txtwlclose" + sThisId) == null)) {
-        document.getElementById("txtwlclose" + sThisId).value = "";
+        if (!bAddStartDateToName) {
+            document.getElementById("txtwlclose" + sThisId).value = "";
+        }
     }
 }
 
@@ -3335,7 +3342,9 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
                         let aStartDate = sDollars.split("-");
                         let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
 
-                        window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", true, '', " + iEndDate +  ", '')", 10);
+                        gWatchlists[idxWL].defaultUpdateGLDate = sDollars;
+
+                        window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", true, '', " + iEndDate +  ", '', true)", 10);
                         //window.setTimeout("GetTradesAuto(true, " + iStartDate + ", " + idxWL + ", true)", 10);
                     }
                     //bDoingAutoUpdate = true;
@@ -3366,7 +3375,7 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
                     //    }
                     //}
                     //get the trade info for the selected symbols
-                    window.setTimeout("GetTradesAutoBase(true, " + iHighestUpdateDate + ", " + idxWL + ", false, '', " + iEndDate + ", '')", 10);
+                    window.setTimeout("GetTradesAutoBase(true, " + iHighestUpdateDate + ", " + idxWL + ", false, '', " + iEndDate + ", '', true)", 10);
                     //window.setTimeout("GetTradesAuto(true, " + iHighestUpdateDate + ", " + idxWL + ", false)", 10);
                 }
                 return;
@@ -3628,7 +3637,7 @@ function DoWLOpenSymbols(iFromWhere, watchlistId, sLastWLAccountId) {
                                     if (iEndDate < iStartDate) {
                                         iStartDate = iEndDate;
                                     }
-                                    window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + stxtwlacquired + "')", 10);
+                                    window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", false, '" + sSymbolsToLookup.toUpperCase() + "', " + iEndDate + ", '" + stxtwlacquired + "', false)", 10);
                                 }
                             } else {
                                 if (sConfirmMsg != "") {
@@ -4574,7 +4583,7 @@ function FormatDateForTD(d) {
     return s;
 }
 
-function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL, bInitializing, iEndDate) {
+function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL, bInitializing, iEndDate, bAddStartDateToName) {
     //debugger
     gTDWLOrders.length = 0;
 
@@ -4586,7 +4595,11 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL,
 
     for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
         let oTDWLOrder = new TDWLOrder();
-        oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+        if (bAddStartDateToName) {
+            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + SetNameWithDefaultUpdateGLDate(gWatchlists[idxWL]) + "\", ";
+        } else {
+            oTDWLOrder.aWL01name = oTDWLOrder.aWL01name + "\"" + gWatchlists[idxWL].name + "\", ";
+        }
         oTDWLOrder.aWL02watchlistId = oTDWLOrder.aWL02watchlistId + "\"" + gWatchlists[idxWL].watchlistId + "\", ";
         oTDWLOrder.aWL04sequenceId = oTDWLOrder.aWL04sequenceId + gWatchlists[idxWL].WLItems[idxWLItem].sequenceId + ", ";
         oTDWLOrder.aWL05Aquantity = oTDWLOrder.aWL05Aquantity + sQuantity + ", ";
@@ -4653,7 +4666,7 @@ function GenerateWLAutoCloseSymbolOrders(sAccountId, iLastUpdateDateTime, idxWL,
         gTDWLOrders.sort(sortBySymbol);
         gbDoingCreateOrders = true;
         SetWait();
-        window.setTimeout("PostWLAutoCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ")", 10);
+        window.setTimeout("PostWLAutoCloseSymbolOrders(true, 0, 0, 0, " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "', '" + gWatchlists[idxWL].watchlistId + "', 0, " + idxWL.toString() + ", " + bAddStartDateToName + ")", 10);
     } else {
         alert("No symbols were updated.");
         gbDoingCreateOrders = false;
@@ -7872,6 +7885,17 @@ function GetCurrentPricesAuto() {
     }
 }
 
+function GetdefaultUpdateGLDate(oWL) {
+    if (oWL.name != "") {
+        if (oWL.name.length > 9) {
+            if (oWL.name.substr(oWL.name.length - 9, 1) == "-") {
+                oWL.defaultUpdateGLDate = oWL.name.substr(oWL.name.length - 8, 4) + "-" + oWL.name.substr(oWL.name.length - 4, 2) + "-" + oWL.name.substr(oWL.name.length - 2, 2);
+                oWL.name = oWL.name.substr(0, oWL.name.length - 9);
+            }
+        }
+    }
+}
+
 function GetHighestUpdateDate(idxWL, bShowAlert) {
     //get the highest last update date
     let iHighestUpdateDate = 0;
@@ -10663,10 +10687,10 @@ function GetTradesAddSymbolAuto(idxWL, sSymbolsToLookup, sRADSymbol, oTradeIn) {
 }
 
 function GetTradesAuto(bFirstTime, iStartDateIn, idxWL, bInitializing) {
-    GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, "", 0, "");
+    GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, "", 0, "", false);
 }
 
-function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymbolIn, iEndDateIn, sPurchasedDateIn) {
+function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymbolIn, iEndDateIn, sPurchasedDateIn, bAddStartDateToName) {
     let iTryCount = 0;
     let vTmp = null;
     let sTmp = "";
@@ -11211,7 +11235,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
         gGetTradesContextAuto.bNeedToAddSymbol = bNeedToAddSymbol;
         gGetTradesContextAuto.idxStart = 0;
 
-        window.setTimeout("GetTradesAutoBase(false, " + iLastUpdateDateTime.toString() + ", " + idxWL.toString() + ", " + bInitializing + ", '" + sSymbolIn + "', " + iEndDate + ", '" + sPurchasedDateIn + "')", 100);
+        window.setTimeout("GetTradesAutoBase(false, " + iLastUpdateDateTime.toString() + ", " + idxWL.toString() + ", " + bInitializing + ", '" + sSymbolIn + "', " + iEndDate + ", '" + sPurchasedDateIn + "'," + bAddStartDateToName + ")", 100);
         return;
 
     }
@@ -11243,7 +11267,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
             if (gSymbolsAuto.length > 0) {
                 //GetCurrentPricesAuto();
                 gSymbolsAuto.sort(sortBySymbol);
-                window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ", " + iEndDate + ")", 10);
+                window.setTimeout("GenerateWLAutoCloseSymbolOrders('" + gWatchlists[idxWL].accountId + "', " + iLastUpdateDateTime + ", " + idxWL + ", " + bInitializing + ", " + iEndDate + ", " + bAddStartDateToName + ")", 10);
             } else {
                 if (sSymbolsToLookupTmp.split(",").length == 1) {
                     alert("No trades found since " + FormatDateWithTime(new Date(iLastUpdateDateTime), true, false) + " for the symbol in this watchlist.");
@@ -12982,6 +13006,7 @@ function GetWatchlistPrices() {
                     sLastWLAccountName = gWatchlists[idxWLMain].accountName;
                     sLastWLAccountId = gWatchlists[idxWLMain].accountId;
                     sThisId = gWatchlists[idxWLMain].watchlistId + sLastWLAccountId;
+                    let sdefaultUpdateGLDate = gWatchlists[idxWLMain].defaultUpdateGLDate;
 
                     if (bDoingAccountWL) {
                         sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
@@ -13033,7 +13058,7 @@ function GetWatchlistPrices() {
                                 "&nbsp;&nbsp;<img title=\"Change the Acquired Date of one selected symbol.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLOpenSymbols(2,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<input title=\"Acquired Date as yyyy-mm-dd\" placeholder=\"Acquired Date\" id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\">" +
                                 "&nbsp;&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                                "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + sdefaultUpdateGLDate + "\">" +
                                 "&nbsp;&nbsp;&nbsp;<span title=\"Last time the Update G/L button was pressed that caused a G/L value to change\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>" +
                                 "</th>";
                             sThisDiv = sThisDiv + "</tr>";
@@ -13061,7 +13086,7 @@ function GetWatchlistPrices() {
                                 "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
+                                "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + sdefaultUpdateGLDate + "\"></th>";
 
                             //if (bSomeHidden) {
                             //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
@@ -14389,6 +14414,7 @@ function GetWatchlists(bDoingReset) {
                 oWL.accountId = oCMWL[idxWL].accountId;
                 oWL.watchlistId = oCMWL[idxWL].watchlistId
                 oWL.name = oCMWL[idxWL].name;
+                GetdefaultUpdateGLDate(oWL);
                 if (sWLExclusionList.indexOf("," + UnReplace_XMLChar(oWL.name).toUpperCase() + ",") == -1) {
                     let bOKToUse = true;
                     if (gAccounts.length > 0) {
@@ -14506,6 +14532,7 @@ function GetWatchlists(bDoingReset) {
                 oWL.accountId = oCMWL[idxWL].accountId;
                 oWL.watchlistId = oCMWL[idxWL].watchlistId
                 oWL.name = oCMWL[idxWL].name;
+                GetdefaultUpdateGLDate(oWL);
                 if (sWLExclusionList.indexOf("," + UnReplace_XMLChar(oWL.name).toUpperCase() + ",") == -1) {
                     if (gAccounts.length > 0) {
                         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
@@ -18527,7 +18554,7 @@ function PostTDWLOrder(sAccountId, sWatchlistId, sData) {
     return iReturn;
 }
 
-function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, sWatchlistId, iTryCountIn, idxWL) {
+function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iProgressIncrementIn, idxOrderStart, sAccountId, sWatchlistId, iTryCountIn, idxWL, bAddStartDateToName) {
     let iNumSuccess = iNumSuccessIn;
     let iNumErrors = iNumErrorsIn;
     let iProgressIncrement = iProgressIncrementIn;
@@ -18581,7 +18608,7 @@ function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iP
                         if (iTryCount < 3) {
                             iTryCount++;
                             giProgress = giProgress - 1;
-                            window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "','" + sWatchlistId + "', " + iTryCount.toString() + ", " + idxWL.toString() + ")", 3000);
+                            window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + idxOrder.toString() + ", '" + sAccountId + "','" + sWatchlistId + "', " + iTryCount.toString() + ", " + idxWL.toString() + ", " + bAddStartDateToName + ")", 3000);
                             return;
                         } else {
                             // an error occurred
@@ -18596,7 +18623,7 @@ function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iP
                 }
             }
         }
-        window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "','" + sWatchlistId + "',  0, " + idxWL.toString() + ")", 200);
+        window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (idxOrder - 1).toString() + ", '" + sAccountId + "','" + sWatchlistId + "',  0, " + idxWL.toString() + ", " + bAddStartDateToName + ")", 200);
         return;
     }
     let sMsg = iNumSuccess.toString() + " watchlist ";
@@ -18608,7 +18635,7 @@ function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iP
     if ((iNumErrors > 0) && (giTDPostOrderRetryCnt < 3)) {
         giTDPostOrderRetryCnt++;
         giProgress = 0;
-        window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "','" + sWatchlistId + "',  0, " + idxWL.toString() + ")", 4000);
+        window.setTimeout("PostWLAutoCloseSymbolOrders(false, " + iNumSuccess.toString() + ", " + iNumErrors.toString() + ", " + iProgressIncrement.toString() + ", " + (gTDWLOrders.length - 1).toString() + ", '" + sAccountId + "','" + sWatchlistId + "',  0, " + idxWL.toString() + ", " + bAddStartDateToName + ")", 4000);
         return;
     } else {
         if (iNumErrors > 0) {
@@ -18635,7 +18662,7 @@ function PostWLAutoCloseSymbolOrders(bFirstTime, iNumSuccessIn, iNumErrorsIn, iP
         giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
     }
     if (iNumErrors == 0) {
-        ClearAllWLInputFields(idxWL);
+        ClearAllWLInputFields(idxWL, bAddStartDateToName);
     }
 
     GetTradesCanceled();
@@ -20538,6 +20565,23 @@ function SetLineCnt() {
         gsTableHeightWithScrollbar = (giLineLimit * giLineHeight).toString() + "px";
         gsTableHeightOverflow = "height:" + (giLineLimit * giLineHeight).toString() + "px; overflow: auto; ";
     }
+}
+
+function SetNameWithDefaultUpdateGLDate(oWL) {
+    let sReturnName = "";
+    if (oWL.name != "") {
+        sReturnName = oWL.name;
+        if (oWL.defaultUpdateGLDate != "") { //must be like yyyy-mm-dd
+            if (oWL.defaultUpdateGLDate.length == 10) {
+                if (oWL.name.length < 31) {
+                    sReturnName = oWL.name + "-" + oWL.defaultUpdateGLDate.substr(0, 4) + oWL.defaultUpdateGLDate.substr(5, 2) + oWL.defaultUpdateGLDate.substr(8, 2);
+                } else { //need to truncate the name to 31 characters
+                    sReturnName = oWL.name.substr(0, 31) + "-" + oWL.defaultUpdateGLDate.substr(0, 4) + oWL.defaultUpdateGLDate.substr(5, 2) + oWL.defaultUpdateGLDate.substr(8, 2);
+                }
+            }
+        }
+    }
+    return sReturnName;
 }
 
 function SetPurchasedDateHidden(sPurchasedDateIn) {
