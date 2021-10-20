@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.9 2021-10-08 16:15"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.95 2021-10-20 09:11"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -437,7 +437,7 @@ function WLItemOrder() {
 const gksWLIconHide = "icons8-hide-30.png";
 const gksWLIconShow = "icons8-eye-30.png";
 const gksWLIconHideTitle = "Hide Selected Symbols";
-const gksWLIconShowTitle = "Show Hidden Symbols";
+const gksWLIconShowTitle = "Show (xx) Hidden Symbols";
 
 var gsAccountWLSummary = "Watchlist Performance";
 var gsAccountSavedOrders = "Account Saved Orders";
@@ -12482,6 +12482,7 @@ function GetWatchlistPrices() {
                 if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
                     bDoingDividendWL = true;
                 }
+
                 let bDoingAccountWL = false;
                 if (gWatchlists[idxWLMain].watchlistId == gWatchlists[idxWLMain].accountId) { //don't show Open and Close if this is an Account watchlist
                     bDoingAccountWL = true;
@@ -12997,6 +12998,9 @@ function GetWatchlistPrices() {
 
                             //sSymbolsSelectedForOrderThisWL will contain: |symbol,idxWLItem,true|symbol,idxWLItem,false...
                             sSymbolsSelectedForOrderThisWL = sSymbolsSelectedForOrderThisWL + sSepForOrder + gWatchlists[idxWLMain].WLItems[idxWLItem].symbol + sSepSelectedForOrder + idxWLItem.toString() + sSepSelectedForOrder + gWatchlists[idxWLMain].WLItems[idxWLItem].bSelectedForOrder;
+                            if (gWatchlists[idxWLMain].WLItems[idxWLItem].bHidden) {
+                                iHiddenCnt++;
+                            }
                         }
                     }
                     sSymbolsThisWL = "," + GetUniqueListOfSymbols(sSymbolsThisWL) + ",";
@@ -13083,7 +13087,7 @@ function GetWatchlistPrices() {
 
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle.replace("xx", iHiddenCnt.toString()) + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + sdefaultUpdateGLDate + "\"></th>";
@@ -14307,6 +14311,12 @@ function GetWatchlistPrices() {
                                 }
                             }
 
+                            if (!isUndefined(document.getElementById("IconShow" + sThisId))) {
+                                if (!(document.getElementById("IconShow" + sThisId) == null)) {
+                                    document.getElementById("IconShow" + sThisId).title = gksWLIconShowTitle.replace("xx", iHiddenCnt.toString());
+                                }
+                            }
+
                             //if (bSomeHidden) {
                             //    if (!isUndefined(document.getElementById("IconHide" + sThisId))) {
                             //        if (!(document.getElementById("IconHide" + sThisId) == null)) {
@@ -14484,6 +14494,7 @@ function GetWatchlists(bDoingReset) {
                                     oWL.bSelected = true;
                                     oWL.bSelectedTemp = true;
                                     oWL.sSortOrderFields = oOldWL[idxWLCur].sSortOrderFields; //6/23/21
+                                    oWL.iSortOrderAscDesc = oOldWL[idxWLCur].iSortOrderAscDesc; //10/20/21
 
                                     // now reset the selected for order flag
                                     if (oWL.WLItems.length > 0) {
@@ -14533,6 +14544,10 @@ function GetWatchlists(bDoingReset) {
                 oWL.watchlistId = oCMWL[idxWL].watchlistId
                 oWL.name = oCMWL[idxWL].name;
                 GetdefaultUpdateGLDate(oWL);
+                if (oWL.name.toUpperCase().indexOf("CURRENT TRADE") != -1) {
+                    oWL.sSortOrderFields = gsSortOrderFields.PurchaseDate; //10/20/21
+                    oWL.iSortOrderAscDesc = 1; //0 - ascending, 1 - descending //10/20/21
+                }
                 if (sWLExclusionList.indexOf("," + UnReplace_XMLChar(oWL.name).toUpperCase() + ",") == -1) {
                     if (gAccounts.length > 0) {
                         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
@@ -17373,7 +17388,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    //debugger
+    debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
@@ -22185,7 +22200,8 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
 
                 let iNumSelected = 0;
                 for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                    if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
+                    if ((gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) && 
+                        (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
                         gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = bChecked;
                         if (bChecked) {
                             iNumSelected++;
@@ -22200,6 +22216,8 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
 
                 giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
 
+            } else {
+                window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
             }
         } else {
             window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
@@ -22226,7 +22244,8 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     let iNumSelected = 0;
                     for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
                         if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
-                            if (!gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
+                            if ((!gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) &&
+                                (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
                                 bAllChecked = false;
                             } else {
                                 iNumSelected++;
@@ -22256,7 +22275,8 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     let iNumSelected = 0;
                     for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
                         if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
-                            if (gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
+                            if ((gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) &&
+                                (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
                                 iNumSelected++;
                             }
                         }
@@ -22270,6 +22290,8 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
 
                 giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
 
+            } else {
+                window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
             }
         } else {
             window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
