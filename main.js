@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.95 2021-10-20 09:11"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.95 2021-10-20 16:03"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -22243,9 +22243,9 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     let bAllChecked = true;
                     let iNumSelected = 0;
                     for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                        if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
-                            if ((!gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) &&
-                                (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
+                        if ((gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) &&
+                            (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
+                            if (!gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
                                 bAllChecked = false;
                             } else {
                                 iNumSelected++;
@@ -22274,9 +22274,9 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                     document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = false;
                     let iNumSelected = 0;
                     for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                        if (gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) {
-                            if ((gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) &&
-                                (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
+                        if ((gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) &&
+                            (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
+                            if (gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder) {
                                 iNumSelected++;
                             }
                         }
