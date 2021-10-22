@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.95 2021-10-20 16:03"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.95 2021-10-22 00:55"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -13085,7 +13085,6 @@ function GetWatchlistPrices() {
                                 "&nbsp;&nbsp;<img title=\"Print\" height=\"20\" width=\"20\" style=\"vertical-align:middle;\" src=\"print-icon25px.png\" onclick=\"printdiv('xxxPrintDivNamexxx')\">" +
                                 "<span title=\"Current Date and Time\" style=\"vertical-align: middle;\" id=\"spanWLDate" + sThisId + "\" name=\"spanWLDate" + sThisId + "\">&nbsp;&nbsp;&nbsp;&nbsp;" + sDate + "</span></th >";
 
-
                             sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle.replace("xx", iHiddenCnt.toString()) + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
@@ -13325,8 +13324,13 @@ function GetWatchlistPrices() {
                             sTitle.Symbol + "</span></td > ";
 
                         //not doing dividend WL
-                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
-                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.PurchaseDate + "</td>";
+                        if (sLastWLName.toUpperCase().indexOf("CURRENT TRADE") != -1) {
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.PurchaseDate.replace("Acquired", "Catalyst") + "</td>";
+                        } else {
+                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
+                            sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.PurchaseDate + "</td>";
+                        }
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Qty + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Qty + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Qty + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
@@ -14546,7 +14550,7 @@ function GetWatchlists(bDoingReset) {
                 GetdefaultUpdateGLDate(oWL);
                 if (oWL.name.toUpperCase().indexOf("CURRENT TRADE") != -1) {
                     oWL.sSortOrderFields = gsSortOrderFields.PurchaseDate; //10/20/21
-                    oWL.iSortOrderAscDesc = 1; //0 - ascending, 1 - descending //10/20/21
+                    oWL.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending //10/22/21
                 }
                 if (sWLExclusionList.indexOf("," + UnReplace_XMLChar(oWL.name).toUpperCase() + ",") == -1) {
                     if (gAccounts.length > 0) {
@@ -16697,7 +16701,7 @@ function onClick(ev) {
 }
 
 function onClickInfo(ev) {
-    showTDAPIError("Current version is " + gsCurrentVersion);
+    showTDAPIError("Current version is " + gsCurrentVersion, 6000);
 }
 
 function onKeyDown(ev) {
@@ -16707,7 +16711,7 @@ function onKeyDown(ev) {
         if (charCode == 123) { //check for shift F12 so can display current version
             ev.cancelBubble = true;
             CancelKeyStroke(ev);
-            showTDAPIError("Current version is " + gsCurrentVersion);
+            showTDAPIError("Current version is " + gsCurrentVersion, 6000);
         } else {
             ev.cancelBubble = false;
         }
@@ -17388,7 +17392,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    debugger
+    //debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
@@ -20960,7 +20964,11 @@ function SetWaitWL(idxWL) {
     }
 }
 
-function showTDAPIError(sError) {
+function showTDAPIError(sError, iTimeoutIn) {
+    let iTimeout = 3000;
+    if (!isUndefined(iTimeoutIn)) {
+        iTimeout = iTimeoutIn;
+    }
     document.getElementById("divTDAPIError").innerHTML = sError;
     if (document.getElementById("divTDAPIError").style.display == "none") {
         document.getElementById("divTDAPIError").style.display = "block";
@@ -20969,7 +20977,7 @@ function showTDAPIError(sError) {
     if (giAPIErrorTimeoutId != 0) {
         window.clearInterval(giAPIErrorTimeoutId);
     }
-    giAPIErrorTimeoutId = window.setTimeout("hideTDAPIError()", 3000);
+    giAPIErrorTimeoutId = window.setTimeout("hideTDAPIError()", iTimeout);
 
 }
 
