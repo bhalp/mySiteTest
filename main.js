@@ -17690,6 +17690,10 @@ function PageLoad() {
         }
     };
 
+    document.getElementById("spanPreMarket").style.display = "inline";
+    document.getElementById("spanRegularMarket").style.display = "inline";
+    document.getElementById("spanPostMarket").style.display = "inline";
+
     //setup fixed price array
     let oFixedPrice = new FixedPrice();
     oFixedPrice.symbol = "GNL";
