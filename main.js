@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.95 2021-10-22 00:55"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.95 2021-10-29 11:08"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2028,6 +2028,10 @@ function AttemptOpenPatch(xhttp, sWhereTo, bAsync) {
 }
 
 function BuildStartEndDates(sStartDateIn, sEndDateIn) {
+    const iOffset = -300 * 60 * 1000; //EST UTC offset = -5 hours
+    //let aEndDate = stxtwlacquired.split("-");
+    //dtEndDate = new Date(parseInt(aEndDate[0]), parseInt(aEndDate[1] - 1), parseInt(aEndDate[2]), 23, 59, 59);
+
     //sStartDate - yyyy-mm-dd, sEndDate - yyyy-mm-dd
     let sStartDate = sStartDateIn;
     let sEndDate = sEndDateIn;
@@ -2040,23 +2044,26 @@ function BuildStartEndDates(sStartDateIn, sEndDateIn) {
     sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
     let dEndDate = new Date(sTmp);
 
-    vTmp = FormatDateForTD(new Date()).split("-");
+    let dCurrentDate = new Date(new Date().getTime() + iOffset);
+    vTmp = FormatDateForTD(dCurrentDate).split("-");
     sCurrentDate = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
-    let dCurrentDate = new Date(sCurrentDate);
+    //let dCurrentDate = new Date(sCurrentDate);
 
-    if (dStartDate.getTime() > dEndDate.getTime()) {
-        dStartDate = new Date(dEndDate.getTime());
+    if ((dStartDate.getTime() + iOffset) > (dEndDate.getTime() + iOffset)) {
+        dStartDate = new Date(dEndDate.getTime() + iOffset);
         sStartDate = FormatDateForTD(dStartDate);
-    }
-
-    if (dStartDate.getTime() > dCurrentDate.getTime()) {
+    } else if ((dStartDate.getTime() + iOffset) > dCurrentDate.getTime()) {
         dStartDate = new Date(dCurrentDate.getTime());
         sStartDate = FormatDateForTD(dStartDate);
+    } else {
+        dStartDate = new Date(dStartDate.getTime() + iOffset);
     }
 
-    if (dEndDate.getTime() > dCurrentDate.getTime()) {
+    if ((dEndDate.getTime() + iOffset) > dCurrentDate.getTime()) {
         dEndDate = new Date(dCurrentDate.getTime());
         sEndDate = FormatDateForTD(dStartDate);
+    } else {
+        dEndDate = new Date(dEndDate.getTime() + iOffset);
     }
 
     let iMonthRange = 1; //6/16/21 changed from 3 to 1 
@@ -4561,6 +4568,34 @@ function FormatDateForTD(d) {
     let iMonth = d.getMonth() + 1;
     let iDay = d.getDate();
     let iYear = d.getYear();
+
+    if (iYear < 1900) {
+        iYear += 1900;
+    }
+
+    s += iYear + "-";                         //Get year.
+
+    if (iMonth > 9) {
+        s += iMonth + "-";            //Get month
+    }
+    else {
+        s += "0" + iMonth + "-";            //Get month
+    }
+    if (iDay > 9) {
+        s += iDay;                   //Get day
+    }
+    else {
+        s += "0" + iDay;                   //Get day
+    }
+    return s;
+}
+
+function FormatDateForTDESTUTC(dIn) {
+    let s = "";
+    let d = new Date(dIn.getTime() - 300 * 60 * 1000);
+    let iMonth = d.getUTCMonth() + 1;
+    let iDay = d.getUTCDate();
+    let iYear = d.getUTCFullYear();
 
     if (iYear < 1900) {
         iYear += 1900;
@@ -10743,7 +10778,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
         sSymbolsToLookup = "," + sSymbolsToLookupTmp.toUpperCase() + ",";
 
         if (iEndDate == 0) {
-            iEndDate = new Date(iEndDate).getTime();
+            iEndDate = new Date().getTime();
         }
         sEndDate = FormatDateForTD(new Date(iEndDate));
 
@@ -17392,7 +17427,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    //debugger
+    debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
