@@ -10799,7 +10799,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
         }
         sEndDate = FormatDateForTD(new Date(iEndDate));
 
-        bEndDateISTodaysDate = BuildStartEndDates(iStartDateIn, iEndDate);
+        bEndDateISTodaysDate = BuildStartEndDates(new Date(iStartDateIn), new Date(iEndDate));
 
         gTradesAuto.length = 0;
         gSymbolsAuto.length = 0;
