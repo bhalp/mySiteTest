@@ -11446,10 +11446,11 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
         s = s + "<tr>";
 
         let d = new Date(oTrade.date.split("+")[0] + "+00:00");
-        let sLocalDate = d.toLocaleString('en-US', { timeZone: 'America/New_York' });
 
-        let sDate = sLocalDate + "&nbsp;(" + oTrade.transactionSubType + ")";
-        //let sDate = FormatTDTradeDate(d) + "&nbsp;(" + oTrade.transactionSubType + ")";
+        //let sLocalDate = d.toLocaleString('en-US', { timeZone: 'America/New_York' });
+        //let sDate = sLocalDate + "&nbsp;(" + oTrade.transactionSubType + ")";
+
+        let sDate = FormatTDTradeDate(d) + "&nbsp;(" + oTrade.transactionSubType + ")";
 
         s = s + "<td style=\"width:42%; font-size:10pt; vertical-align:center;border-width:0px;\">" + sDate + "</td > ";
         sTmp = FormatInt(oTrade.amount);
