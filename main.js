@@ -2045,25 +2045,27 @@ function BuildStartEndDates(sStartDateIn, sEndDateIn) {
     let dEndDate = new Date(sTmp);
 
     let dCurrentDate = new Date(new Date().getTime() + iOffset);
-    vTmp = FormatDateForTD(dCurrentDate).split("-");
+    vTmp = FormatDateForTDESTUTC(dCurrentDate).split("-");
     sCurrentDate = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
     //let dCurrentDate = new Date(sCurrentDate);
 
     if ((dStartDate.getTime() + iOffset) > (dEndDate.getTime() + iOffset)) {
         dStartDate = new Date(dEndDate.getTime() + iOffset);
-        sStartDate = FormatDateForTD(dStartDate);
+        sStartDate = FormatDateForTDESTUTC(dStartDate);
     } else if ((dStartDate.getTime() + iOffset) > dCurrentDate.getTime()) {
         dStartDate = new Date(dCurrentDate.getTime());
-        sStartDate = FormatDateForTD(dStartDate);
+        sStartDate = FormatDateForTDESTUTC(dStartDate);
     } else {
         dStartDate = new Date(dStartDate.getTime() + iOffset);
+        sStartDate = FormatDateForTDESTUTC(dStartDate);
     }
 
     if ((dEndDate.getTime() + iOffset) > dCurrentDate.getTime()) {
         dEndDate = new Date(dCurrentDate.getTime());
-        sEndDate = FormatDateForTD(dStartDate);
+        sEndDate = FormatDateForTDESTUTC(dStartDate);
     } else {
         dEndDate = new Date(dEndDate.getTime() + iOffset);
+        sEndDate = FormatDateForTDESTUTC(dEndDate);
     }
 
     let iMonthRange = 1; //6/16/21 changed from 3 to 1 
@@ -4592,7 +4594,8 @@ function FormatDateForTD(d) {
 
 function FormatDateForTDESTUTC(dIn) {
     let s = "";
-    let d = new Date(dIn.getTime() - 300 * 60 * 1000);
+    //let d = new Date(dIn.getTime() - 300 * 60 * 1000);
+    let d = dIn;
     let iMonth = d.getUTCMonth() + 1;
     let iDay = d.getUTCDate();
     let iYear = d.getUTCFullYear();
