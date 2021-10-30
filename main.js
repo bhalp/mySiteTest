@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.95 2021-10-29 11:08"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.96 2021-10-30 16:21"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2027,22 +2027,29 @@ function AttemptOpenPatch(xhttp, sWhereTo, bAsync) {
     return (bOK);
 }
 
-function BuildStartEndDates(sStartDateIn, sEndDateIn) {
+function BuildStartEndDates(dStartDateIn, dEndDateIn) {
     const iOffset = -300 * 60 * 1000; //EST UTC offset = -5 hours
     //let aEndDate = stxtwlacquired.split("-");
     //dtEndDate = new Date(parseInt(aEndDate[0]), parseInt(aEndDate[1] - 1), parseInt(aEndDate[2]), 23, 59, 59);
 
     //sStartDate - yyyy-mm-dd, sEndDate - yyyy-mm-dd
-    let sStartDate = sStartDateIn;
-    let sEndDate = sEndDateIn;
+    //let sStartDate = sStartDateIn;
+    //let sEndDate = sEndDateIn;
     let bEndDateIsCurrentDate = false;
-    //build start and end date sets - max of 1 year per set
-    let vTmp = sStartDate.split("-");
-    let sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
-    let dStartDate = new Date(sTmp);
-    vTmp = sEndDate.split("-");
-    sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
-    let dEndDate = new Date(sTmp);
+    ////build start and end date sets - max of 1 year per set
+    //let vTmp = sStartDate.split("-");
+    //let sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+    //let dStartDate = new Date(sTmp);
+    //vTmp = sEndDate.split("-");
+    //sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+    //let dEndDate = new Date(sTmp);
+
+    let vTmp = null;
+    let sStartDate = "";
+    let sEndDate = "";
+    let dStartDate = dStartDateIn;
+    let dEndDate = dEndDateIn;
+
 
     let dCurrentDate = new Date(new Date().getTime() + iOffset);
     vTmp = FormatDateForTDESTUTC(dCurrentDate).split("-");
@@ -9298,7 +9305,14 @@ function GetTrades(bFirstTime) {
             return;
         }
 
-        bEndDateISTodaysDate = BuildStartEndDates(sStartDate, sEndDate);
+        vTmp = sStartDate.split("-");
+        sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+        let dStartDate = new Date(sTmp);
+        vTmp = sEndDate.split("-");
+        sTmp = vTmp[1] + "/" + vTmp[2] + "/" + vTmp[0];
+        let dEndDate = new Date(sTmp);
+
+        bEndDateISTodaysDate = BuildStartEndDates(dStartDate, dEndDate);
 
         gTrades.length = 0;
         gSymbols.length = 0;
@@ -10785,7 +10799,7 @@ function GetTradesAutoBase(bFirstTime, iStartDateIn, idxWL, bInitializing, sSymb
         }
         sEndDate = FormatDateForTD(new Date(iEndDate));
 
-        bEndDateISTodaysDate = BuildStartEndDates(sStartDate, sEndDate);
+        bEndDateISTodaysDate = BuildStartEndDates(iStartDateIn, iEndDate);
 
         gTradesAuto.length = 0;
         gSymbolsAuto.length = 0;
@@ -11432,7 +11446,10 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
         s = s + "<tr>";
 
         let d = new Date(oTrade.date.split("+")[0] + "+00:00");
-        let sDate = FormatTDTradeDate(d) + "&nbsp;(" + oTrade.transactionSubType + ")";
+        let sLocalDate = d.toLocaleString('en-US', { timeZone: 'America/New_York' });
+
+        let sDate = sLocalDate + "&nbsp;(" + oTrade.transactionSubType + ")";
+        //let sDate = FormatTDTradeDate(d) + "&nbsp;(" + oTrade.transactionSubType + ")";
 
         s = s + "<td style=\"width:42%; font-size:10pt; vertical-align:center;border-width:0px;\">" + sDate + "</td > ";
         sTmp = FormatInt(oTrade.amount);
