@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.96 2021-10-31 15:23"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.96 2021-10-31 15:28"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -2063,7 +2063,7 @@ function BuildStartEndDates(sStartDateIn, sEndDateIn) {
 
     if (dEndDate.getTime() > dCurrentDate.getTime()) {
         dEndDate = new Date(dCurrentDate.getTime());
-        sEndDate = FormatDateForTD(dStartDate);
+        sEndDate = FormatDateForTD(dEndDate);
     }
 
 
