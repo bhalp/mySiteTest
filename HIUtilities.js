@@ -422,21 +422,42 @@ function FormatMoney(amount) {
 	return "";
 }
 
-function FormatTDTradeDate(d, bShowTimeIn) {
-	var s = "";           //Declare variables.
-	var sAMPM = "AM";
-	var sHours = "";
-	var iMonth = d.getMonth() + 1;
-	var iDay = d.getDate();
-	var iYear = d.getYear();
-	var iHours = d.getHours();
-	var iMinutes = d.getMinutes();
-	var iSeconds = d.getSeconds();
-	var iMilliSeconds = d.getMilliseconds();
+function FormatTDTradeDate(d, bShowTimeIn, bShowESTUTCIn) {
+	let s = "";           //Declare variables.
+	let sHours = "";
+
+	let iMonth = 0;
+	let iDay = 0;
+	let iYear = 0;
+	let iHours = 0;
+	let iMinutes = 0;
+	let iSeconds = 0;
+
 	let bShowTime = true;
+	let bShowESTUTC = false;
 
 	if (!isUndefined(bShowTimeIn)) {
 		bShowTime = bShowTimeIn;
+    }
+
+	if (!isUndefined(bShowESTUTCIn)) {
+		bShowESTUTC = bShowESTUTCIn;
+	}
+
+	if (bShowESTUTC) {
+		iMonth = d.getUTCMonth() + 1;
+		iDay = d.getUTCDate();
+		iYear = d.getUTCFullYear();
+		iHours = d.getUTCHours();
+		iMinutes = d.getUTCMinutes();
+		iSeconds = d.getUTCSeconds();
+	} else {
+		iMonth = d.getMonth() + 1;
+		iDay = d.getDate();
+		iYear = d.getYear();
+		iHours = d.getHours();
+		iMinutes = d.getMinutes();
+		iSeconds = d.getSeconds();
     }
 
 	if (iYear < 1900) {
@@ -457,17 +478,6 @@ function FormatTDTradeDate(d, bShowTimeIn) {
 	}
 	s += iYear;                         //Get year.
 
-	//if (iHours > 11) {
-	//	sAMPM = "PM";
-	//	iHours = iHours - 12;
-	//}
-	//if (iHours == 0) {
-	//	sHours = "12";
-	//}
-	//else {
-	//	sHours = "0" + iHours;
-	//}
-
 	if (bShowTime) {
 		s += " ";
 		if (iHours < 10) {
@@ -485,13 +495,6 @@ function FormatTDTradeDate(d, bShowTimeIn) {
 			s += "0" + iMinutes + ":";
 		}
 
-		//if (iSeconds > 9) {
-		//	s += iSeconds + ":";
-		//}
-		//else {
-		//	s += "0" + iSeconds + ".";
-		//}
-
 		if (iSeconds > 9) {
 			s += iSeconds;
 		}
@@ -500,7 +503,6 @@ function FormatTDTradeDate(d, bShowTimeIn) {
 		}
     }
 
-//	s = s + sAMPM;
 	return (s);
 }
 

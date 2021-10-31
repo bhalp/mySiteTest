@@ -11450,7 +11450,8 @@ function GetTradesBySymbol(sSymbolToLookup, sAccountID, sAccountName, sTRId, idx
         s = s + "<tr>";
 
         let d = new Date(oTrade.date.split("+")[0] + "+00:00");
-        let sDate = FormatTDTradeDate(d) + "&nbsp;(" + oTrade.transactionSubType + ")";
+        d = new Date(d.getTime() - 300 * 60 * 1000);
+        let sDate = FormatTDTradeDate(d, true, true) + "&nbsp;(" + oTrade.transactionSubType + ")";
 
         s = s + "<td style=\"width:42%; font-size:10pt; vertical-align:center;border-width:0px;\">" + sDate + "</td > ";
         sTmp = FormatInt(oTrade.amount);
