@@ -549,14 +549,14 @@ var gsFieldWidthsWL = {
     "GainDollar": "width:60px;",
     "GainPercent": "width:60px;",
     "CostPerShare": "width:60px;",
-    "PurchaseDate": "width:80px;",
+    "PurchaseDate": "width:90px;",
     "GL": "width:60px;",
     "MktValue": "width:70px;",
     "DivPercent": "width:60px;",
     "DivDollar": "width:50px;",
     "Amt": "width:60px;",
     "DivDate": "width:90px;",
-    "SymbolDescription": "width:160px;"
+    "SymbolDescription": "width:170px;"
 }
 
 var gsFieldWidthsWLBase = {
@@ -571,14 +571,14 @@ var gsFieldWidthsWLBase = {
     "GainDollar": "width:60px;",
     "GainPercent": "width:60px;",
     "CostPerShare": "width:60px;",
-    "PurchaseDate": "width:80px;",
+    "PurchaseDate": "width:90px;",
     "GL": "width:60px;",
     "MktValue": "width:70px;",
     "DivPercent": "width:60px;",
     "DivDollar": "width:50px;",
     "Amt": "width:60px;",
     "DivDate": "width:90px;",
-    "SymbolDescription": "width:160px;"
+    "SymbolDescription": "width:170px;"
 }
 
 var gsFieldWidthsWLCell = {
