@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.96 2021-10-31 15:28"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.96 2021-11-01 20:58"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -507,6 +507,7 @@ var gsSymbolDetailSpanPrefix = "symboldetail";
 const lengthsWL = {
     WLWidth: "930px",
     WLWidthDiv: "1120px",
+    WLWidthCurrentTrade: "1120px",
     WLTrailingstopPercentWidth: "40px",
     WLColOpenLabelWidth: 80,
     WLColOpenEntryWidth: 60,
@@ -554,7 +555,8 @@ var gsFieldWidthsWL = {
     "DivPercent": "width:60px;",
     "DivDollar": "width:50px;",
     "Amt": "width:60px;",
-    "DivDate": "width:90px;"
+    "DivDate": "width:90px;",
+    "SymbolDescription": "width:160px;"
 }
 
 var gsFieldWidthsWLBase = {
@@ -575,7 +577,8 @@ var gsFieldWidthsWLBase = {
     "DivPercent": "width:60px;",
     "DivDollar": "width:50px;",
     "Amt": "width:60px;",
-    "DivDate": "width:90px;"
+    "DivDate": "width:90px;",
+    "SymbolDescription": "width:160px;"
 }
 
 var gsFieldWidthsWLCell = {
@@ -638,7 +641,8 @@ var gsFieldColSpanWL = {
     "DivPercent": "",
     "DivDollar": "",
     "Amt": "",
-    "DivDate": ""
+    "DivDate": "",
+    "SymbolDescription": ""
 }
 
 var gsFieldColSpanWLBase = {
@@ -659,7 +663,8 @@ var gsFieldColSpanWLBase = {
     "DivPercent": "",
     "DivDollar": "",
     "Amt": "",
-    "DivDate": ""
+    "DivDate": "",
+    "SymbolDescription": ""
 }
 
 var gsFieldColSpanWLCell = {
@@ -2065,26 +2070,6 @@ function BuildStartEndDates(sStartDateIn, sEndDateIn) {
         dEndDate = new Date(dCurrentDate.getTime());
         sEndDate = FormatDateForTD(dEndDate);
     }
-
-
-    //if ((dStartDate.getTime() + iOffset) > (dEndDate.getTime() + iOffset)) {
-    //    dStartDate = new Date(dEndDate.getTime() + iOffset);
-    //    sStartDate = FormatDateForTDESTUTC(dStartDate);
-    //} else if ((dStartDate.getTime() + iOffset) > dCurrentDate.getTime()) {
-    //    dStartDate = new Date(dCurrentDate.getTime());
-    //    sStartDate = FormatDateForTDESTUTC(dStartDate);
-    //} else {
-    //    dStartDate = new Date(dStartDate.getTime() + iOffset);
-    //    sStartDate = FormatDateForTDESTUTC(dStartDate);
-    //}
-
-    //if ((dEndDate.getTime() + iOffset) > dCurrentDate.getTime()) {
-    //    dEndDate = new Date(dCurrentDate.getTime());
-    //    sEndDate = FormatDateForTDESTUTC(dStartDate);
-    //} else {
-    //    dEndDate = new Date(dEndDate.getTime() + iOffset);
-    //    sEndDate = FormatDateForTDESTUTC(dEndDate);
-    //}
 
     let iMonthRange = 1; //6/16/21 changed from 3 to 1 
 
@@ -12536,8 +12521,13 @@ function GetWatchlistPrices() {
                 let bAllHidden = true;
                 gWLDisplayed.length = 0;
                 let bDoingDividendWL = false;
+                let bDoingCurrentTrade = false;
                 if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
                     bDoingDividendWL = true;
+                }
+
+                if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("CURRENT TRADE") != -1) {
+                    bDoingCurrentTrade = true;
                 }
 
                 let bDoingAccountWL = false;
@@ -12573,6 +12563,13 @@ function GetWatchlistPrices() {
                             sInvalidSymbolsSep = ", "
                             let oWLDisplayed = new WLDisplayed();
                             oWLDisplayed.symbol = sSymbol;
+
+                            if (!((gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol] == null) || (isUndefined(gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol])))) {
+                                if (gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription != "") {
+                                    oWLDisplayed.symbolDescription = gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription;
+                                }
+                            }
+
                             if (gWatchlists[idxWLMain].WLItems[idxWLItem].bHidden) {
                                 bSomeHidden = true;
                             } else {
@@ -12626,6 +12623,12 @@ function GetWatchlistPrices() {
                             }
                             oWLDisplayed.bHidden = gWatchlists[idxWLMain].WLItems[idxWLItem].bHidden;
                             oWLDisplayed.assetType = oMDQ[sSymbol].assetType;
+
+                            if (!((gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol] == null) || (isUndefined(gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol])))) {
+                                if (gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription != "") {
+                                    oWLDisplayed.symbolDescription = gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription;
+                                }
+                            }
 
                             oWLItemDetail = new WLItemDetail();
                             if (oWLDisplayed.assetType == "OPTION") {
@@ -12831,6 +12834,43 @@ function GetWatchlistPrices() {
                     "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I>xxx</b>"
                 };
 
+
+                let sTitleCurrentTrade = {
+                    "Symbol": "<b><I><U>Symbol</U></I></b>",
+                    "PurchaseDate": "<b><I><U>Catalyst</U></I></b>",
+                    "SymbolDescription": "<b><I><U>Description</U></I></b>",
+                    "Qty": "<b><I><U>Qty</U></I></b>",
+                    "Price": "<b><I><U>Price</U></I></b>",
+                    "ChgPercent": "<b><I><U>Chg(%)</U></I></b>",
+                    "ChgDollar": "<b><I><U>Chg($)</U></I></b>",
+                    "Bid": "<b><I>Bid</I></b>",
+                    "Ask": "<b><I>Ask</I></b>",
+                    "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I></b>",
+                    "GainDollar": "<b><I><U>Gain($)</U></I></b>",
+                    "GainPercent": "<b><I><U>Gain(%)</U></I></b>",
+                    "CostPerShare": "<b><I>Cost</I></b>",
+                    "GL": "<b><I><U>G/L</U></I></b>",
+                    "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I></b>"
+                };
+
+                let sTitleCurrentTradeWithArrow = {
+                    "Symbol": "<b><I><U>Symbol</U></I>xxx</b>",
+                    "PurchaseDate": "<b><I><U>Catalyst</U></I>xxx</b>",
+                    "SymbolDescription": "<b><I><U>Description</U></I>xxx</b>",
+                    "Qty": "<b><I><U>Qty</U></I>xxx</b>",
+                    "Price": "<b><I><U>Price</U></I>xxx</b>",
+                    "ChgPercent": "<b><I><U>Chg(%)</U></I>xxx</b>",
+                    "ChgDollar": "<b><I><U>Chg($)</U></I>xxx</b>",
+                    "Bid": "<b><I><U>Bid</U></I>xxx</b>",
+                    "Ask": "<b><I><U>Ask</U></I>xxx</b>",
+                    "DayGain": "<b><I><U>Day&nbsp;gain($)</U></I>xxx</b>",
+                    "GainDollar": "<b><I><U>Gain($)</U></I>xxx</b>",
+                    "GainPercent": "<b><I><U>Gain(%)</U></I>xxx</b>",
+                    "CostPerShare": "<b><I><U>Cost</U></I>xxx</b>",
+                    "GL": "<b><I><U>G/L</U></I>xxx</b>",
+                    "MktValue": "<b><I><U>Mkt&nbsp;Value</U></I>xxx</b>"
+                };
+
                 let sTitleDividend = {
                     "Symbol": "<b><I><U>Symbol</U></I></b>",
                     "DivPercent": "<b><I><U>Div%</U></I></b>",
@@ -12981,6 +13021,7 @@ function GetWatchlistPrices() {
                         gsFieldWidthsWL.PurchaseDate = gsFieldWidthsWLBase.PurchaseDate;
                         gsFieldWidthsWL.Qty = gsFieldWidthsWLBase.Qty;
                         gsFieldWidthsWL.Symbol = gsFieldWidthsWLBase.Symbol;
+                        gsFieldWidthsWL.SymbolDescription = gsFieldWidthsWLBase.SymbolDescription;
 
                         gsFieldColSpanWL.Amt = gsFieldColSpanWLBase.Amt;
                         gsFieldColSpanWL.Ask = gsFieldColSpanWLBase.Ask;
@@ -13000,6 +13041,7 @@ function GetWatchlistPrices() {
                         gsFieldColSpanWL.PurchaseDate = gsFieldColSpanWLBase.PurchaseDate;
                         gsFieldColSpanWL.Qty = gsFieldColSpanWLBase.Qty;
                         gsFieldColSpanWL.Symbol = gsFieldColSpanWLBase.Symbol;
+                        gsFieldColSpanWL.SymbolDescription = gsFieldColSpanWLBase.SymbolDescription;
 
                     }
 
@@ -13028,6 +13070,8 @@ function GetWatchlistPrices() {
                         sTitleDividend[gWatchlists[idxWLMain].sSortOrderFields] = sTitleDividendWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
                     } else if (bDoingAccountWL) {
                         sTitleAccount[gWatchlists[idxWLMain].sSortOrderFields] = sTitleAccountWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
+                    } else if (bDoingCurrentTrade) {
+                        sTitleCurrentTrade[gWatchlists[idxWLMain].sSortOrderFields] = sTitleCurrentTradeWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
                     } else {
                         sTitle[gWatchlists[idxWLMain].sSortOrderFields] = sTitleWithArrow[gWatchlists[idxWLMain].sSortOrderFields].replace("xxx", sArrow);
                     }
@@ -13092,6 +13136,9 @@ function GetWatchlistPrices() {
                         if (bDoingDividendWL) {
                             sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthDiv + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                             sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthDiv + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                        } else if (bDoingCurrentTrade) {
+                            sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthCurrentTrade + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
+                            sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthC + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                         } else {
                             sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                             sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
@@ -13223,7 +13270,6 @@ function GetWatchlistPrices() {
                         sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
                         sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
 
-
                         if (bDoingDividendWL) {
                             sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                 "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
@@ -13242,8 +13288,20 @@ function GetWatchlistPrices() {
 
                             sThisDiv = sThisDiv + "</th > ";
 
-                        } else {
+                        } else if (bDoingCurrentTrade) {
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                                "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
+                                "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">" +
+                                "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
+                                "<input id=\"txtWLshares" + sThisId + "\" name=\"txtWLshares" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">Shares";
 
+                            sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
+                                "&nbsp;&nbsp;&nbsp;<span title=\"Last time the Update G/L button was pressed that caused a G/L value to change\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+
+                            sThisDiv = sThisDiv + "</th > ";
+                        } else {
                             if (bDoingAccountWL) {
                                 sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
                                     "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
@@ -13372,6 +13430,50 @@ function GetWatchlistPrices() {
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.CostPerShare + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.CostPerShare + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleAccount.CostPerShare + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.MktValue);
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.MktValue + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.MktValue + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleAccount.MktValue + "</td>";
+                    } else if (bDoingCurrentTrade) {
+                        let sonClickChangeOrderBase = "onclick =\"wlChangeOrder(" + idxWLMain.toString() + ", 'xxx')\"";
+                        let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Symbol);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Symbol + " style=\"" + gsFieldWidthsWL.Symbol + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
+                            "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
+                            "<span " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                            sTitle.Symbol + "</span></td > ";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.PurchaseDate + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.SymbolDescription);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.SymbolDescription + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.SymbolDescription + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.SymbolDescription + "</td>";
+
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Qty + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Qty + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.Qty + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Price + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Price + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.Price + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgPercent);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.ChgPercent + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.ChgPercent + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.ChgPercent + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.ChgDollar);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.ChgDollar + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.ChgDollar + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.ChgDollar + "</td>";
+                        sonClickChangeOrder = "";
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Bid + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Bid + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.Bid + "</td>";
+                        sonClickChangeOrder = "";
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Ask + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Ask + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.Ask + "</td>";
+                        if (gbUsingCell && gbCellWLSpecial) {
+                            sThisTableTitleInside = sThisTableTitleInside + "</tr>";
+                            sThisTableTitleInside = sThisTableTitleInside + "<tr style=\"height:" + giTitleHeight.toString() + "px; \">";
+                            //sLine2InitSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                            sLine2InitSpaces = "";
+                        }
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.DayGain);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.DayGain + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.DayGain + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.DayGain + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainDollar);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.GainDollar + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.GainDollar + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.GainDollar + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GainPercent);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.GainPercent + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.GainPercent + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.GainPercent + "</td>";
+                        sonClickChangeOrder = "";
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.CostPerShare + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.CostPerShare + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sLine2InitSpaces + sTitleCurrentTrade.CostPerShare + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.GL);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.GL + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.GL + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.GL + "</td>";
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.MktValue);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.MktValue + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.MktValue + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.MktValue + "</td>";
                     } else {
                         let sonClickChangeOrderBase = "onclick =\"wlChangeOrder(" + idxWLMain.toString() + ", 'xxx')\"";
                         let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Symbol);
@@ -13381,13 +13483,8 @@ function GetWatchlistPrices() {
                             sTitle.Symbol + "</span></td > ";
 
                         //not doing dividend WL
-                        if (sLastWLName.toUpperCase().indexOf("CURRENT TRADE") != -1) {
-                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
-                            sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.PurchaseDate.replace("Acquired", "Catalyst") + "</td>";
-                        } else {
-                            sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
-                            sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.PurchaseDate + "</td>";
-                        }
+                        sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
+                        sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.PurchaseDate + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Qty);
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Qty + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.Qty + "text-align:" + sHeadingTextAlign + ";vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitle.Qty + "</td>";
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.Price);
@@ -13494,32 +13591,39 @@ function GetWatchlistPrices() {
                                         sTitlePE = sTmp;
                                     }
                                     sTmp = "";
-                                    if (!((gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol] == null) || (isUndefined(gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol])))) {
-                                        if (gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription == "") {
-                                            if (sTitlePE == "") {
-                                                sSymbolTitle = "";
-                                            } else {
-                                                sSymbolTitle = " title=\"PE: " + sTitlePE + "\" ";
-                                            }
-                                        } else {
-                                            if (sTitlePE == "") {
-                                                sSymbolTitle = " title=\"" + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription + "\" ";
-                                            } else {
-                                                sSymbolTitle = " title=\"" + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription + " -- PE: " + sTitlePE + "\" ";
-                                            }
-                                        }
-                                    } else {
+                                    if (oWLDisplayed.symbolDescription == "") {
                                         if (sTitlePE == "") {
                                             sSymbolTitle = "";
                                         } else {
                                             sSymbolTitle = " title=\"PE: " + sTitlePE + "\" ";
                                         }
+                                    } else {
+                                        if (sTitlePE == "") {
+                                            sSymbolTitle = " title=\"" + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription + "\" ";
+                                        } else {
+                                            sSymbolTitle = " title=\"" + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription + " -- PE: " + sTitlePE + "\" ";
+                                        }
                                     }
 
-                                    //for (let idxTmp = 0; idxTmp < gWatchlists[idxWLMain].WLItems.length; idxTmp++) {
-                                    //    if (gWatchlists[idxWLMain].WLItems[idxTmp].symbol == sSymbol) {
-                                    //        sTmp = "&nbsp;(" + gWatchlists[idxWLMain].WLItems[idxTmp].sequenceId + ")";
-                                    //        break;
+                                    //if (!((gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol] == null) || (isUndefined(gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol])))) {
+                                    //    if (gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription == "") {
+                                    //        if (sTitlePE == "") {
+                                    //            sSymbolTitle = "";
+                                    //        } else {
+                                    //            sSymbolTitle = " title=\"PE: " + sTitlePE + "\" ";
+                                    //        }
+                                    //    } else {
+                                    //        if (sTitlePE == "") {
+                                    //            sSymbolTitle = " title=\"" + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription + "\" ";
+                                    //        } else {
+                                    //            sSymbolTitle = " title=\"" + gSymbolsGL[gWatchlists[idxWLMain].accountId + sSymbol].symbolDescription + " -- PE: " + sTitlePE + "\" ";
+                                    //        }
+                                    //    }
+                                    //} else {
+                                    //    if (sTitlePE == "") {
+                                    //        sSymbolTitle = "";
+                                    //    } else {
+                                    //        sSymbolTitle = " title=\"PE: " + sTitlePE + "\" ";
                                     //    }
                                     //}
 
@@ -13566,7 +13670,8 @@ function GetWatchlistPrices() {
                                         "peRatio": oWLItemDetail.peRatio,
                                         "divAmount": oWLItemDetail.divAmount,
                                         "divDate": oWLItemDetail.divDate,
-                                        "divYield": oWLItemDetail.divYield
+                                        "divYield": oWLItemDetail.divYield,
+                                        "symbolDescription": oWLDisplayed.symbolDescription
                                     }
                                     goWLDisplayed[sThisId + sSymbol] = oT;
                                 }
@@ -13684,6 +13789,28 @@ function GetWatchlistPrices() {
                                                 sThisTable = sThisTable + "<td " + gsFieldColSpanWL.PurchaseDate + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sAcquiredSpaces + sTmp + "</b></td>";
                                             }
                                             goWLDisplayed[sThisId + sSymbol].purchasedDate = sTmp;
+                                        }
+                                    }
+                                }
+
+                                if (bDoingCurrentTrade) {
+                                    //Symbol Description
+                                    if (!oWLDisplayed.bHidden) {
+                                        let sSymbolDescriptionSpaces = "&nbsp;&nbsp;&nbsp;&nbsp;";
+                                        sTmp = oWLDisplayed.symbolDescription;
+                                        if (goWLDisplayed[sThisId + sSymbol].symbolDescription == sTmp) {
+                                            if (sTmp == "") {
+                                                sThisTable = sThisTable + "<td " + gsFieldColSpanWL.SymbolDescription + " style=\"" + gsFieldWidthsWL.SymbolDescription + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sSymbolDescriptionSpaces + "&nbsp;</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td " + gsFieldColSpanWL.SymbolDescription + " style=\"" + gsFieldWidthsWL.SymbolDescription + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sSymbolDescriptionSpaces + sTmp + "</td>";
+                                            }
+                                        } else {
+                                            if (sTmp == "") {
+                                                sThisTable = sThisTable + "<td " + gsFieldColSpanWL.SymbolDescription + " style=\"" + gsFieldWidthsWL.SymbolDescription + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sSymbolDescriptionSpaces + "&nbsp;</td>";
+                                            } else {
+                                                sThisTable = sThisTable + "<td " + gsFieldColSpanWL.SymbolDescription + " style=\"" + gsFieldWidthsWL.SymbolDescription + "text-align:left; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sSymbolDescriptionSpaces + sTmp + "</b></td>";
+                                            }
+                                            goWLDisplayed[sThisId + sSymbol].symbolDescription = sTmp;
                                         }
                                     }
                                 }
@@ -17449,7 +17576,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    debugger
+    //debugger
     //determine if production or test or localhost
     let sBearerCode = location.search;
 //    alert("sBearerCode = " + sBearerCode);
@@ -21418,11 +21545,11 @@ function sortWL(a, b) {
         case gsSortOrderFields.SymbolDescription:
             {
                 let sX = "                                                  ";
-                if (a.symbolDescription.length < 20) {
-                    aStr = a.symbolDescription + sX.substr(0, 20 - a.symbolDescription.length);
+                if (a.symbolDescription.length < 50) {
+                    aStr = a.symbolDescription + sX.substr(0, 50 - a.symbolDescription.length);
                 }
-                if (b.symbolDescription.length < 20) {
-                    bStr = b.symbolDescription + sX.substr(0, 20 - b.symbolDescription.length);
+                if (b.symbolDescription.length < 50) {
+                    bStr = b.symbolDescription + sX.substr(0, 50 - b.symbolDescription.length);
                 }
                 bString = true;
                 break;
