@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.96 2021-11-01 22:54"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.96 2021-11-01 23:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -549,7 +549,7 @@ var gsFieldWidthsWL = {
     "GainDollar": "width:60px;",
     "GainPercent": "width:60px;",
     "CostPerShare": "width:60px;",
-    "PurchaseDate": "width:100px;",
+    "PurchaseDate": "width:90px;",
     "GL": "width:60px;",
     "MktValue": "width:70px;",
     "DivPercent": "width:60px;",
@@ -571,7 +571,7 @@ var gsFieldWidthsWLBase = {
     "GainDollar": "width:60px;",
     "GainPercent": "width:60px;",
     "CostPerShare": "width:60px;",
-    "PurchaseDate": "width:100px;",
+    "PurchaseDate": "width:90px;",
     "GL": "width:60px;",
     "MktValue": "width:70px;",
     "DivPercent": "width:60px;",
@@ -13138,7 +13138,7 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthDiv + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                         } else if (bDoingCurrentTrade) {
                             sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidthCurrentTrade + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                            sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthC + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                            sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidthCurrentTrade + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                         } else {
                             sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                             sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
