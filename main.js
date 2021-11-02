@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.96 2021-11-01 22:50"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.96 2021-11-01 22:54"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -507,7 +507,7 @@ var gsSymbolDetailSpanPrefix = "symboldetail";
 const lengthsWL = {
     WLWidth: "930px",
     WLWidthDiv: "1120px",
-    WLWidthCurrentTrade: "1120px",
+    WLWidthCurrentTrade: "1140px",
     WLTrailingstopPercentWidth: "40px",
     WLColOpenLabelWidth: 80,
     WLColOpenEntryWidth: 60,
