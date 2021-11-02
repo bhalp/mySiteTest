@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.96 2021-11-01 23:04"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.96 2021-11-01 23:10"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -556,7 +556,7 @@ var gsFieldWidthsWL = {
     "DivDollar": "width:50px;",
     "Amt": "width:60px;",
     "DivDate": "width:90px;",
-    "SymbolDescription": "width:180px;"
+    "SymbolDescription": "width:160px;"
 }
 
 var gsFieldWidthsWLBase = {
@@ -578,7 +578,7 @@ var gsFieldWidthsWLBase = {
     "DivDollar": "width:50px;",
     "Amt": "width:60px;",
     "DivDate": "width:90px;",
-    "SymbolDescription": "width:180px;"
+    "SymbolDescription": "width:160px;"
 }
 
 var gsFieldWidthsWLCell = {
