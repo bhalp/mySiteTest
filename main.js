@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.96 2021-11-01 23:10"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.97 2021-11-04 17:36"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -633,7 +633,7 @@ var gsFieldColSpanWL = {
     "Ask": "",
     "DayGain": "",
     "GainDollar": "",
-    "GainPercent": ";",
+    "GainPercent": "",
     "CostPerShare": "",
     "PurchaseDate": "",
     "GL": "",
@@ -655,7 +655,7 @@ var gsFieldColSpanWLBase = {
     "Ask": "",
     "DayGain": "",
     "GainDollar": "",
-    "GainPercent": ";",
+    "GainPercent": "",
     "CostPerShare": "",
     "PurchaseDate": "",
     "GL": "",
@@ -3446,12 +3446,16 @@ function DoWLOpenSymbols(iFromWhere, watchlistId, sLastWLAccountId) {
         // 1 - something in txtwlopen and something in txtwlacquired - only one symbol allowed, use txtwlacquired as starting date for trades - require deleting existing before adding new
         // 2 - something in txtwlopen and nothing in txtwlacquired - adding a symbol with no acquired date - set starting and ending time to last update time, set GL value to 0
         // iFromWhere = 2
-        // 3 - nothing entered in txtwlopen and something in txtwlacquired - updating acquired date only - need to select at least one symbol - don't change GL value or dates
-        // 4 - nothing entered in txtwlopen and nothing in txtwlacquired - clearing acquired date only - need to select at least one symbol - don't change GL value or dates
+        // 3 - something in txtwlacquired - updating acquired date only - need to select at least one symbol - don't change GL value or dates
+        // 4 - nothing in txtwlacquired - clearing acquired date only - need to select at least one symbol - don't change GL value or dates
         // iFromWhere = 3
         // hide selected
         // iFromWhere = 4
         // unhide all
+        // iFromWhere = 5
+        // update the acquired date or the symbol description from the data in txtwlacquired
+        // 3 - something in txtwlacquired - updating acquired date or symbol description only - need to select at least one symbol - don't change GL value or dates
+        // 4 - nothing in txtwlacquired - clearing acquired date  or symbol description only - need to select at least one symbol - don't change GL value or dates
 
         let idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
         if (idxWL != -1) {
@@ -3893,6 +3897,52 @@ function DoWLOpenSymbols(iFromWhere, watchlistId, sLastWLAccountId) {
                     }
                     break;
                 }
+                case 5: { //update img - update the acquired date or the symbol description 
+                    if (window.confirm("Press OK to update the Symbol Description\nPress Cancel to update the Acquired Date")) {
+                        //update symbol description
+                        if (stxtwlacquired != "") { //case 3
+                            if (iNumSelected != 1) {
+                                alert("Please select one symbol to change the description.")
+                                return;
+                            }
+                            window.setTimeout("DoWLUpdateOGLSymbols(6, '" + sAccountId + "', '" + sSymbolsToLookup + "', '', '" + stxtwlacquired + "')", 10);
+                        } else { //case 4
+                            if (iNumSelected != 1) {
+                                alert("Please select one symbol to clear the description.")
+                                return;
+                            }
+                            window.setTimeout("DoWLUpdateOGLSymbols(6, '" + sAccountId + "', '" + sSymbolsToLookup + "', '', '" + stxtwlacquired + "')", 10);
+                        }
+                    } else {
+                        //update the acquired date
+                        if (stxtwlacquired != "") { //case 3
+                            if (iNumSelected == 0) {
+                                alert("Please select at least one symbol to change the Acquired date.")
+                                return;
+                            }
+                            let sConfirmMsg = "";
+                            sConfirmMsg = "Changing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+                            if (AreYouSure(sConfirmMsg)) {
+                                window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '" + stxtwlacquired + "', '', 0, 0)", 10);
+                            }
+                        } else { //case 4
+                            if (iNumSelected == 0) {
+                                alert("Please select at least one symbol to clear the Acquired date.")
+                                return;
+                            }
+                            if (iNumSelected == gWatchlists[idxWL].WLItems.length) {
+                                alert("Cannot select all symbols to clear the Acquired Date. Leave at least one symbol unselected.")
+                                return;
+                            }
+                            let sConfirmMsg = "";
+                            sConfirmMsg = "Clearing the Acquired Date for " + sSymbolsToLookup.toUpperCase() + ". ";
+                            if (AreYouSure(sConfirmMsg)) {
+                                window.setTimeout("GenerateWLOpenSymbolOrders('" + sAccountId + "', " + idxWL + ", '', '', '', 0, 0)", 10);
+                            }
+                        }
+                    }
+                    break;
+                }
             }
         }
         return;
@@ -4017,9 +4067,15 @@ function DoWLTrailingStop(watchlistId, sLastWLAccountId) {
     }
 }
 
-function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
-    //iFromWhere = 1 - GetTrades, 2 - WL Add button, 3 - WL Delete button, 4 - WL Update GL button, 5 - WL Update Symbol Description button
+function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn, sSymbolDescIn) {
+    /*iFromWhere = 1 - GetTrades, 2 - WL Add button, 3 - WL Delete button, 
+     *             4 - WL Update GL button, 5 - WL Update Symbol Description button, 
+     *             6 - Current Trades WL Update Acquired Date Button (to update description) */
     if (!gbDoingCreateOrders && !gbDoingGetTrades && !gbDoingGetTDData && !gbDoingStockPriceHistory) {
+        let sSymbolDesc6 = "";
+        if (!isUndefined(sSymbolDescIn)) {
+            sSymbolDesc6 = sSymbolDescIn;
+        }
         let idxWL = -1;
         let sOldGL = sOldGLIn;
         let sSymbol = sSymbolIn;
@@ -4244,7 +4300,7 @@ function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
                                 alert("DoWLUpdateOGLSymbols - Program error - " + sSymbol + " not found in gSymbolsGL.");
                             } else {
                                 if (sSymbolDescription == gSymbolsGL[sAccountId + sSymbol].symbolDescription) {
-                                    alert("The symbol description has not changed. Nothing to update.")
+                                    alert("The symbol description has not changed. Nothing to update.");
                                 } else {
                                     let sConfirmMsg = "";
                                     if (sSymbolDescription == "") {
@@ -4255,6 +4311,44 @@ function DoWLUpdateOGLSymbols(iFromWhere, sAccountId, sSymbolIn, sOldGLIn) {
                                     if (AreYouSure(sConfirmMsg)) {
                                         window.setTimeout("GenerateWLUpdateOGLSymbolOrders(" + iFromWhere.toString() + ", '" + sAccountId + "', '" + sSymbol.toUpperCase() + "', '" + sOldGL + "', '" + sSymbolDescription + "')", 10);
                                     }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                case 6: //Current Trades WL Update Acquired Date Button (to update description)
+                    {
+                        let sSymbolDescription = sSymbolDesc6;
+                        if (sSymbolDescription.length > gisymbolDescriptionMax) {
+                            alert("Please enter a symbol description no longer than " + gisymbolDescriptionMax.toString() + " letters, including spaces.");
+                            return;
+                        }
+                        //sSymbol should have been passed
+
+                        if ((gSymbolsGL[sAccountId + sSymbol] == null) || (isUndefined(gSymbolsGL[sAccountId + sSymbol]))) {
+                            //symbol not in the OldGl Wl so add it
+                            let sConfirmMsg = "";
+                            if (sSymbolDescription == "") {
+                                alert("The symbol description has not changed. Nothing to update.");
+                            } else {
+                                sConfirmMsg = "Setting the description to \"" + sSymbolDescription + "\" for " + sSymbol + ". ";
+                                if (AreYouSure(sConfirmMsg)) {
+                                    window.setTimeout("GenerateWLUpdateOGLSymbolOrders(2, '" + sAccountId + "', '" + sSymbol.toUpperCase() + "', '0.0', '" + sSymbolDescription + "')", 10);
+                                }
+                            }
+                            //alert("DoWLUpdateOGLSymbols - Program error - " + sSymbol + " not found in gSymbolsGL.");
+                        } else {
+                            if (sSymbolDescription == gSymbolsGL[sAccountId + sSymbol].symbolDescription) {
+                                alert("The symbol description has not changed. Nothing to update.")
+                            } else {
+                                let sConfirmMsg = "";
+                                if (sSymbolDescription == "") {
+                                    sConfirmMsg = "Clearing the description for " + sSymbol + ". ";
+                                } else {
+                                    sConfirmMsg = "Setting the description to \"" + sSymbolDescription + "\" for " + sSymbol + ". ";
+                                }
+                                if (AreYouSure(sConfirmMsg)) {
+                                    window.setTimeout("GenerateWLUpdateOGLSymbolOrders(" + iFromWhere.toString() + ", '" + sAccountId + "', '" + sSymbol.toUpperCase() + "', '" + sOldGL + "', '" + sSymbolDescription + "')", 10);
                                 }
                             }
                         }
@@ -6886,6 +6980,164 @@ function GenerateWLUpdateOGLSymbolOrders(iFromWhere, sAccountId, sSymbolIn, sOld
                 break;
             }
         case 5: //WL Update Symbol Description button
+            {
+                gTDWLOrders.length = 0;
+                //check the symbol already exist in this account
+                if ((gSymbolsGL[sAccountId + sSymbol] == null) || (isUndefined(gSymbolsGL[sAccountId + sSymbol]))) {
+                    alert("GenerateWLUpdateOGLSymbolOrders - Program error - " + sSymbol + " not found in gSymbolsGL.");
+                } else {
+
+                    let oTDWLOrderAdd = new TDWLOrder();
+                    oTDWLOrderAdd.aWL01name = oTDWLOrderAdd.aWL01name + "\"" + gSymbolsGL[sAccountId + sSymbol].WLName + "\", ";
+                    oTDWLOrderAdd.aWL02watchlistId = oTDWLOrderAdd.aWL02watchlistId + "\"" + gSymbolsGL[sAccountId + sSymbol].WLId + "\", ";
+                    oTDWLOrderAdd.aWL04sequenceId = "";
+                    sOldGL = FormatDecimalNumber(gSymbolsGL[sAccountId + sSymbol].averagePrice, 5, 2, "");
+                    if (gSymbolsGL[sAccountId + sSymbol].averagePrice < 0.0) {
+                        sOldGL = FormatDecimalNumber(((-1 * gSymbolsGL[sAccountId + sSymbol].averagePrice) + 1000000.0), 5, 2, "");
+                    }
+                    oTDWLOrderAdd.aWL07commission = oTDWLOrderAdd.aWL07commission + sOldGL + ", ";
+                    oTDWLOrderAdd.aWL07purchasedDate = "";
+
+                    if (sSymbolDescription != "") {
+                        oTDWLOrderAdd.aWL09symbol = oTDWLOrderAdd.aWL09symbol + "\"" + sSymbol + "|" + sSymbolDescription + "\" ,";
+                    } else {
+                        oTDWLOrderAdd.aWL09symbol = oTDWLOrderAdd.aWL09symbol + "\"" + sSymbol + "\" ,";
+                    }
+                    oTDWLOrderAdd.symbol = sSymbol;
+                    oTDWLOrderAdd.symbolDescription = sSymbolDescription;
+
+                    let sOrderAdd = oTDWLOrderAdd.aWL00Start +
+                        oTDWLOrderAdd.aWL01name +
+                        oTDWLOrderAdd.aWL02watchlistId +
+                        oTDWLOrderAdd.aWL03watchlistItemsStart +
+                        oTDWLOrderAdd.aWL03watchlistItemStart +
+                        oTDWLOrderAdd.aWL04sequenceId +
+                        oTDWLOrderAdd.aWL05quantity +
+                        oTDWLOrderAdd.aWL06averagePrice +
+                        oTDWLOrderAdd.aWL07commission +
+                        oTDWLOrderAdd.aWL07purchasedDate +
+                        oTDWLOrderAdd.aWL08instrumentStart +
+                        oTDWLOrderAdd.aWL09symbol +
+                        oTDWLOrderAdd.aWL10assetType +
+                        oTDWLOrderAdd.aWL11instrumentEnd +
+                        oTDWLOrderAdd.aWL12watchlistItemEnd +
+                        oTDWLOrderAdd.aWL12watchlistItemsEnd +
+                        oTDWLOrderAdd.aWL13end;
+
+
+                    let oTDWLOrderDelete = new TDWLOrder();
+                    oTDWLOrderDelete.sWLId = gSymbolsGL[sAccountId + sSymbol].WLId;
+                    oTDWLOrderDelete.sWLName = gSymbolsGL[sAccountId + sSymbol].WLName;
+                    oTDWLOrderDelete.sequenceId = gSymbolsGL[sAccountId + sSymbol].sequenceId;
+                    oTDWLOrderDelete.bDoingPurchasedDateClear = true;
+                    oTDWLOrderDelete.aWL01name = oTDWLOrderDelete.aWL01name + "\"" + gSymbolsGL[sAccountId + sSymbol].WLName + "\", ";
+                    oTDWLOrderDelete.aWL02watchlistId = oTDWLOrderDelete.aWL02watchlistId + "\"" + gSymbolsGL[sAccountId + sSymbol].WLId + "\", ";
+                    oTDWLOrderDelete.aWL04sequenceId = oTDWLOrderDelete.aWL04sequenceId + gSymbolsGL[sAccountId + sSymbol].sequenceId + " ";
+                    oTDWLOrderDelete.aWL05quantity = "";
+                    oTDWLOrderDelete.aWL06averagePrice = "";
+                    oTDWLOrderDelete.aWL07commission = "";
+                    oTDWLOrderDelete.aWL07purchasedDate = "";
+                    oTDWLOrderDelete.aWL08instrumentStart = "";
+                    oTDWLOrderDelete.aWL09symbol = "";
+                    oTDWLOrderDelete.aWL10assetType = "";
+                    oTDWLOrderDelete.aWL11instrumentEnd = "";
+
+                    let sOrderDelete = oTDWLOrderDelete.aWL00Start +
+                        oTDWLOrderDelete.aWL01name +
+                        oTDWLOrderDelete.aWL02watchlistId +
+                        oTDWLOrderDelete.aWL03watchlistItemsStart +
+                        oTDWLOrderDelete.aWL03watchlistItemStart +
+                        oTDWLOrderDelete.aWL04sequenceId +
+                        oTDWLOrderDelete.aWL05quantity +
+                        oTDWLOrderDelete.aWL06averagePrice +
+                        oTDWLOrderDelete.aWL07commission +
+                        oTDWLOrderDelete.aWL07purchasedDate +
+                        oTDWLOrderDelete.aWL08instrumentStart +
+                        oTDWLOrderDelete.aWL09symbol +
+                        oTDWLOrderDelete.aWL10assetType +
+                        oTDWLOrderDelete.aWL11instrumentEnd +
+                        oTDWLOrderDelete.aWL12watchlistItemEnd +
+                        oTDWLOrderDelete.aWL12watchlistItemsEnd +
+                        oTDWLOrderDelete.aWL13end;
+
+                    //should we add then delete or delete then add
+                    let bDeleteThenAdd = true;
+                    for (let idx = 0; idx < gWatchlists.length; idx++) {
+                        if (gWatchlists[idx].watchlistId == gSymbolsGL[sAccountId + sSymbol].WLId) {
+                            if (gWatchlists[idx].WLItems.length == 1) {
+                                //add then delete
+                                bDeleteThenAdd = false;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (bDeleteThenAdd) {
+                        //delete then add
+                        //delete
+                        if (PostTDWLOrder(sAccountId, gSymbolsGL[sAccountId + sSymbol].WLId, sOrderDelete) == 0) {
+                            //success
+                            //now do add
+                            if (PostTDWLOrder(sAccountId, gSymbolsGL[sAccountId + sSymbol].WLId, sOrderAdd) == 0) {
+                                //success
+                                //all done
+                                gbDoResetWatchlists = true;
+                                if (giGetTDDataTimeoutId != 0) {
+                                    window.clearTimeout(giGetTDDataTimeoutId);
+                                    giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+                                }
+                                if (idxWL != -1) {
+                                    ClearAllWLInputFields(idxWL);
+                                }
+                                gbDoingCreateOrders = false;
+                                SetDefault();
+                            } else {
+                                let sMsg = ""
+                                sMsg = sMsg + "Error adding new symbol -- ";
+                                sMsg = sMsg + gsLastError;
+                                alert(sMsg);
+                            }
+                        } else {
+                            let sMsg = ""
+                            sMsg = sMsg + "Error deleting original symbol -- ";
+                            sMsg = sMsg + gsLastError;
+                            alert(sMsg);
+                        }
+                    } else {
+                        //add then delete
+                        if (PostTDWLOrder(sAccountId, gSymbolsGL[sAccountId + sSymbol].WLId, sOrderAdd) == 0) {
+                            //success
+                            //now do delete
+                            if (PostTDWLOrder(sAccountId, gSymbolsGL[sAccountId + sSymbol].WLId, sOrderDelete) == 0) {
+                                //success
+                                //all done
+                                gbDoResetWatchlists = true;
+                                if (giGetTDDataTimeoutId != 0) {
+                                    window.clearTimeout(giGetTDDataTimeoutId);
+                                    giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 100);
+                                }
+                                if (idxWL != -1) {
+                                    ClearAllWLInputFields(idxWL);
+                                }
+                                gbDoingCreateOrders = false;
+                                SetDefault();
+                            } else {
+                                let sMsg = ""
+                                sMsg = sMsg + "Error deleting original symbol -- ";
+                                sMsg = sMsg + gsLastError;
+                                alert(sMsg);
+                            }
+                        } else {
+                            let sMsg = ""
+                            sMsg = sMsg + "Error adding new symbol -- ";
+                            sMsg = sMsg + gsLastError;
+                            alert(sMsg);
+                        }
+                    }
+                }
+                break;
+            }
+        case 6: //Current Trades WL Update Acquired Date Button (to update symbol description)
             {
                 gTDWLOrders.length = 0;
                 //check the symbol already exist in this account
@@ -12522,6 +12774,17 @@ function GetWatchlistPrices() {
                 gWLDisplayed.length = 0;
                 let bDoingDividendWL = false;
                 let bDoingCurrentTrade = false;
+
+                //reset sort order if just opening WL
+                let bNeedResetSortOrder = false;
+                if (gWatchlists[idxWLMain].spanName == "") {
+                    bNeedResetSortOrder = true;
+                } else {
+                    if (document.getElementById(gWatchlists[idxWLMain].spanName).innerHTML == "") {
+                        bNeedResetSortOrder = true;
+                    }
+                }
+
                 if (gWatchlists[idxWLMain].name.toUpperCase().indexOf("DIVIDEND") != -1) {
                     bDoingDividendWL = true;
                 }
@@ -12533,6 +12796,16 @@ function GetWatchlistPrices() {
                 let bDoingAccountWL = false;
                 if (gWatchlists[idxWLMain].watchlistId == gWatchlists[idxWLMain].accountId) { //don't show Open and Close if this is an Account watchlist
                     bDoingAccountWL = true;
+                }
+
+                if (bNeedResetSortOrder) {
+                    if (bDoingCurrentTrade) {
+                        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.PurchaseDate; 
+                        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
+                    } else {
+                        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.Symbol;
+                        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
+                    }
                 }
 
                 for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
@@ -13174,12 +13447,21 @@ function GetWatchlistPrices() {
                             sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
 
                         } else {
-                            sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColOpenLabelWidth + lengthsWL.WLColOpenEntryWidth + lengthsWL.WLColAcquiredDateEntryWidth + 40).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                                "<img title=\"Delete Selected Symbols\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;&nbsp;<img title=\"Add a new symbol optionally using the Acquired date as the start date for initializing the G/L.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(1,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;<input title=\"Symbol to Add\" placeholder=\"Symbol\" id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
-                                "&nbsp;&nbsp;<img title=\"Change the Acquired Date of one selected symbol.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLOpenSymbols(2,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                                "&nbsp;<input title=\"Acquired Date as yyyy-mm-dd\" placeholder=\"Acquired Date\" id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+                            if (bDoingCurrentTrade) {
+                                sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColOpenLabelWidth + lengthsWL.WLColOpenEntryWidth + lengthsWL.WLColAcquiredDateEntryWidth + 40).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                                    "<img title=\"Delete Selected Symbols\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                    "&nbsp;&nbsp;<img title=\"Add a new symbol optionally using the Acquired date as the start date for initializing the G/L.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(1,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                    "&nbsp;<input title=\"Symbol to Add\" placeholder=\"Symbol\" id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                                    "&nbsp;&nbsp;<img title=\"Change the Acquired Date or the Description of one selected symbol.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLOpenSymbols(5,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                    "&nbsp;<input title=\"Acquired Date as yyyy-mm-dd or symbol description (max " + gisymbolDescriptionMax.toString() + " chars)\" placeholder=\"Acquired Date\" id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+                            } else {
+                                sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColOpenLabelWidth + lengthsWL.WLColOpenEntryWidth + lengthsWL.WLColAcquiredDateEntryWidth + 40).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
+                                    "<img title=\"Delete Selected Symbols\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"delete-button-24px.png\" onclick=\"DoWLDeleteSymbols('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                    "&nbsp;&nbsp;<img title=\"Add a new symbol optionally using the Acquired date as the start date for initializing the G/L.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"add-button.png\" onclick=\"DoWLOpenSymbols(1,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                    "&nbsp;<input title=\"Symbol to Add\" placeholder=\"Symbol\" id=\"txtwlopen" + sThisId + "\" name=\"txtwlopen" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColOpenEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\">" +
+                                    "&nbsp;&nbsp;<img title=\"Change the Acquired Date of one selected symbol.\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLOpenSymbols(2,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
+                                    "&nbsp;<input title=\"Acquired Date as yyyy-mm-dd\" placeholder=\"Acquired Date\" id=\"txtwlacquired" + sThisId + "\" name=\"txtwlacquired" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColAcquiredDateEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + FormatCurrentDateForTD() + "\"></th>";
+                            }
 
                             sThisDiv = sThisDiv + "<th style=\"width:" + lengthsWL.WLColTitleWidth.toString() + "px; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:0px; border-style:solid;border-spacing:0px;border-color:White\">" +
                                 "<span style=\"vertical-align: middle;\" id=\"spanWLNumChecked" + sThisId + "\" name=\"spanWLNumChecked" + sThisId + "\">&nbsp;</span>" +
@@ -13194,23 +13476,6 @@ function GetWatchlistPrices() {
                                 "&nbsp;<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                                 "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + sdefaultUpdateGLDate + "\"></th>";
-
-                            //if (bSomeHidden) {
-                            //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            //        "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            //        "<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:none; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            //        "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            //        "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-                            //} else {
-                            //    sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColCloseLabelWidth + lengthsWL.WLColCloseEntryWidth).toString() + "px;text-align:right;vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:0px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
-                            //        "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle + "\" width=\"20\" height=\"20\" style=\"display:none; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"DoWLOpenSymbols(4,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            //        "<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            //        "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            //        "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing all G/L values, otherwise leave blank.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"\"></th>";
-                            //}
-
-
-                            //"<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Update G/L\" >" +
 
                             sThisDiv = sThisDiv + "<th title=\"Close\" style=\"width:" + lengthsWL.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
@@ -13436,7 +13701,7 @@ function GetWatchlistPrices() {
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.Symbol + " style=\"" + gsFieldWidthsWL.Symbol + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
                             "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + "-1" + ")\">" +
                             "<span " + sonClickChangeOrder + " style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
-                            sTitle.Symbol + "</span></td > ";
+                            sTitleCurrentTrade.Symbol + "</span></td > ";
 
                         sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFields.PurchaseDate);
                         sThisTableTitleInside = sThisTableTitleInside + "<td " + gsFieldColSpanWL.PurchaseDate + sonClickChangeOrder + " style=\"" + gsFieldWidthsWL.PurchaseDate + "text-align:center;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" + sTitleCurrentTrade.PurchaseDate + "</td>";
