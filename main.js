@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.97 2021-11-04 17:36"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.98 2021-11-22 10:31"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -12799,13 +12799,15 @@ function GetWatchlistPrices() {
                 }
 
                 if (bNeedResetSortOrder) {
-                    if (bDoingCurrentTrade) {
-                        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.PurchaseDate; 
-                        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
-                    } else {
-                        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.Symbol;
-                        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
-                    }
+                    //if (bDoingCurrentTrade) {
+                    //    gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.PurchaseDate; 
+                    //    gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
+                    //} else {
+                    //    gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.Symbol;
+                    //    gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
+                    //}
+                    gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.Symbol;
+                    gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
                 }
 
                 for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
@@ -14997,10 +14999,10 @@ function GetWatchlists(bDoingReset) {
                 oWL.watchlistId = oCMWL[idxWL].watchlistId
                 oWL.name = oCMWL[idxWL].name;
                 GetdefaultUpdateGLDate(oWL);
-                if (oWL.name.toUpperCase().indexOf("CURRENT TRADE") != -1) {
-                    oWL.sSortOrderFields = gsSortOrderFields.PurchaseDate; //10/20/21
-                    oWL.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending //10/22/21
-                }
+                //if (oWL.name.toUpperCase().indexOf("CURRENT TRADE") != -1) {
+                //    oWL.sSortOrderFields = gsSortOrderFields.PurchaseDate; //10/20/21
+                //    oWL.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending //10/22/21
+                //}
                 if (sWLExclusionList.indexOf("," + UnReplace_XMLChar(oWL.name).toUpperCase() + ",") == -1) {
                     if (gAccounts.length > 0) {
                         for (let idxAccounts = 0; idxAccounts < gAccounts.length; idxAccounts++) {
