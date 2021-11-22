@@ -1,4 +1,4 @@
-var gsCurrentVersion = "8.98 2021-11-22 10:31"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "8.98 2021-11-22 11:41"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gsRefreshToken = "";
@@ -464,7 +464,7 @@ function WLWatchList() {
     this.bSelectedWLSummary = false;
     this.bSelectedWLSummaryTemp = false;
     this.bShowAllAccountsForEachSymbol = false;
-    this.bShowMaximized = false;
+    this.bShowMaximized = true;
     this.sSortOrderFields = gsSortOrderFields.Symbol; //look at gsSortOrderFields
     this.iSortOrderAscDesc = 0; //0 - ascending, 1 - descending
     this.spanName = "";
