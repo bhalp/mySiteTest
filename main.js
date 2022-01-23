@@ -18556,7 +18556,7 @@ function OpenSocket() {
 }
 
 function PageLoad() {
-    //debugger
+    debugger
     SetupWLColumnDefaults();
     //determine if production or test or localhost
     let sBearerCode = location.search;
