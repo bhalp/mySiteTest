@@ -1,4 +1,4 @@
-var gsCurrentVersion = "9.5 2021-12-11 15:39"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
+var gsCurrentVersion = "10.2 2022-01-22 15:57"  // 1/5/21 - v5.6 - added the ability to show the current version by pressing shift F12
 var gsInitialStartDate = "2020-05-01";
 
 var gbInTestMode = false; //if true will getDataTest.php instead of getData.php
@@ -38,6 +38,8 @@ var gsSortOrderFields = {
     "Ask": "Ask",
     "High": "High",
     "Low": "Low",
+    "High52Wk": "High52Wk",
+    "Low52Wk": "Low52Wk",
     "DayGain": "DayGain",
     "GainDollar": "GainDollar",
     "GainPercent": "GainPercent",
@@ -51,6 +53,7 @@ var gsSortOrderFields = {
     "CatalystDate": "CatalystDate",
     "OldGL": "OldGL",
     "GL": "GL",
+    "GLF": "GLF",
     "MktValue": "MktValue"
 }
 //sortascdesc = 0, asc, 1 = desc
@@ -67,18 +70,21 @@ var gsWLColumnsAll = {
     "Ask": { "name": "Ask", "displayname": "Ask", "sortorder": 18, "selected": true, "width": 60, "sortable": false, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
     "High": { "name": "High", "displayname": "High", "sortorder": 20, "selected": false, "width": 60, "sortable": false, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
     "Low": { "name": "Low", "displayname": "Low", "sortorder": 22, "selected": false, "width": 60, "sortable": false, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "DayGain": { "name": "DayGain", "displayname": "Day gain$", "sortorder": 24, "selected": true, "width": 90, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "GainDollar": { "name": "GainDollar", "displayname": "Gain$", "sortorder": 26, "selected": true, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "GainPercent": { "name": "GainPercent", "displayname": "Gain%", "sortorder": 28, "selected": true, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "CostPerShare": { "name": "CostPerShare", "displayname": "Cost", "sortorder": 30, "selected": true, "width": 60, "sortable": false, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "DivPercent": { "name": "DivPercent", "displayname": "Div%", "sortorder": 32, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "DivDollar": { "name": "DivDollar", "displayname": "Div$", "sortorder": 34, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "Amt": { "name": "Amt", "displayname": "Amt", "sortorder": 36, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "DivDate": { "name": "DivDate", "displayname": "Div Date", "sortorder": 38, "selected": false, "width": 90, "sortable": true, "aligndata": "right", "alignheading": "center", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "PE": { "name": "PE", "displayname": "PE", "sortorder": 40, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "GL": { "name": "GL", "displayname": "GL", "sortorder": 42, "selected": true, "width": 80, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "OldGL": { "name": "OldGL", "displayname": "OldGL", "sortorder": 44, "selected": false, "width": 80, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
-    "MktValue": { "name": "MktValue", "displayname": "Mkt Value", "sortorder": 46, "selected": true, "width": 80, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 }
+    "High52Wk": { "name": "High52Wk", "displayname": "52Wk H", "sortorder": 24, "selected": false, "width": 60, "sortable": false, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "Low52Wk": { "name": "Low52Wk", "displayname": "52Wk L", "sortorder": 26, "selected": false, "width": 60, "sortable": false, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "DayGain": { "name": "DayGain", "displayname": "Day gain$", "sortorder": 28, "selected": true, "width": 90, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "GainDollar": { "name": "GainDollar", "displayname": "Gain$", "sortorder": 30, "selected": true, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "GainPercent": { "name": "GainPercent", "displayname": "Gain%", "sortorder": 32, "selected": true, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "CostPerShare": { "name": "CostPerShare", "displayname": "Cost", "sortorder": 34, "selected": true, "width": 60, "sortable": false, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "DivPercent": { "name": "DivPercent", "displayname": "Div%", "sortorder": 36, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "DivDollar": { "name": "DivDollar", "displayname": "Div$", "sortorder": 38, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "Amt": { "name": "Amt", "displayname": "Amt", "sortorder": 40, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "DivDate": { "name": "DivDate", "displayname": "Div Date", "sortorder": 42, "selected": false, "width": 90, "sortable": true, "aligndata": "right", "alignheading": "center", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "PE": { "name": "PE", "displayname": "PE", "sortorder": 44, "selected": false, "width": 60, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "GL": { "name": "GL", "displayname": "GL", "sortorder": 46, "selected": true, "width": 80, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "GLF": { "name": "GLF", "displayname": "GLF", "sortorder": 48, "selected": false, "width": 80, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "OldGL": { "name": "OldGL", "displayname": "OldGL", "sortorder": 50, "selected": false, "width": 80, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 },
+    "MktValue": { "name": "MktValue", "displayname": "Mkt Value", "sortorder": 52, "selected": true, "width": 80, "sortable": true, "aligndata": "right", "alignheading": "right", "selectedtomove": false, "sortonthisfield": false, "sortascdesc": 0 }
 }
 
 var gsWLColumnsDefault = [];
@@ -149,13 +155,15 @@ var giProgressIntervalId = 0;
 var giProgress = 0;
 var gbStopProgress = false;
 var gsSaveOrdersSummaryMsg = "";
-var gdAccountMinimumLiquidationValue = 1000.00;
+var gdAccountMinimumLiquidationValue = 500.00;
 var giPopupOffset = 90;
 var giPopupOkCancelWidth = 80;
 var giPopupOkCancelWidthSmall = 60;
 
 var gaUnhideSymbols = new Array();
 var giUnHideSymbolsChecked = 0;
+
+var gsTopCheckboxIdSuffix = "XXX";
 
 var gsNegativeColor = "darkred";
 
@@ -266,6 +274,9 @@ function SymbolPrice() {
     this.totalVolume = 0;
     this.tradeTimeInLong = 0;
     this.quoteTimeInLong = 0;
+    this.d52WkHigh = 0.0;
+    this.d52WkLow = 0.0;
+    this.close = 0.0;
 }
 
 function MarketIndex() {
@@ -317,6 +328,8 @@ function WLItemDetail() {
     this.askPrice = 0.0; //Ask
     this.highPrice = 0.0; //High
     this.lowPrice = 0.0; //Low
+    this.highPrice52Wk = 0.0; //52Wk High
+    this.lowPrice52Wk = 0.0; //52Wk Low
     this.lastPrice = 0.0; //Last
     this.netChange = 0.0; //Net Chng
     this.netPercentChangeInDouble = 0.0; //Net Chng %
@@ -330,6 +343,7 @@ function WLItemDetail() {
     this.gain = 0.0; //total gain = shares * (regularMarketLastPrice - shareCost)
     this.gainPercent = 0.0; // (regularMarketLastPrice / shareCost) - 1 * 100
     this.averagePrice = 0.0; //from WL info - used for GL
+    this.averagePriceF = 0.0; //same as averageprice - used for GLF
     this.GLUpdateDate = 0; //from WL info averagePrice field - the date the GL was automatically updated
     this.GLUpdateStartDate = 0; //from WL info quantity field - the start date used to automatically update the GL
     this.oldgl = 0.0; 
@@ -402,7 +416,7 @@ function WLSummaryDisplayed() {
 var gWLSummaryDisplayed = new Array(); //array of WLSummaryDisplayed objects
 var goWLSummaryDisplayed = []; //will contain the last WLSummary item values to be used to determine if the display should be highlighted
 
-var gisymbolDescriptionMax = 20;
+var gisymbolDescriptionMax = 30;
 var giwlnameMax = 20;
 
 function WLPurchasedDateHidden() {
@@ -422,6 +436,7 @@ function WLItem() {
     this.sequenceId = 0;
     this.purchasedDate = "";
     this.catalystDate = "";
+    this.wlName = ""; //only used when storing copy information
     this.priceInfo = new WLItemDetail();
 }
 var gWatchlistItemsToCopy = new Array(); //array of WLItem objects
@@ -606,6 +621,7 @@ var gsFieldWidthsWL = {
     "CostPerShare": "width:" + gsWLColumnsAll.CostPerShare.width.toString() + "px;",
     "PurchaseDate": "width:" + gsWLColumnsAll.PurchaseDate.width.toString() + "px;",
     "GL": "width:" + gsWLColumnsAll.GL.width.toString() + "px;",
+    "GLF": "width:" + gsWLColumnsAll.GLF.width.toString() + "px;",
     "MktValue": "width:" + gsWLColumnsAll.MktValue.width.toString() + "px;",
     "DivPercent": "width:" + gsWLColumnsAll.DivPercent.width.toString() + "px;",
     "DivDollar": "width:" + gsWLColumnsAll.DivDollar.width.toString() + "px;",
@@ -614,6 +630,8 @@ var gsFieldWidthsWL = {
     "OldGL": "width:" + gsWLColumnsAll.OldGL.width.toString() + "px;",
     "High": "width:" + gsWLColumnsAll.High.width.toString() + "px;",
     "Low": "width:" + gsWLColumnsAll.Low.width.toString() + "px;",
+    "High52Wk": "width:" + gsWLColumnsAll.High52Wk.width.toString() + "px;",
+    "Low52Wk": "width:" + gsWLColumnsAll.Low52Wk.width.toString() + "px;",
     "PE": "width:" + gsWLColumnsAll.PE.width.toString() + "px;",
     "CatalystDate": "width:" + gsWLColumnsAll.CatalystDate.width.toString() + "px;",
     "SymbolDescription": "width:" + gsWLColumnsAll.SymbolDescription.width.toString() + "px;"
@@ -633,6 +651,7 @@ var gsFieldWidthsWLBase = {
     "CostPerShare": "width:" + gsWLColumnsAll.CostPerShare.width.toString() + "px;",
     "PurchaseDate": "width:" + gsWLColumnsAll.PurchaseDate.width.toString() + "px;",
     "GL": "width:" + gsWLColumnsAll.GL.width.toString() + "px;",
+    "GLF": "width:" + gsWLColumnsAll.GLF.width.toString() + "px;",
     "MktValue": "width:" + gsWLColumnsAll.MktValue.width.toString() + "px;",
     "DivPercent": "width:" + gsWLColumnsAll.DivPercent.width.toString() + "px;",
     "DivDollar": "width:" + gsWLColumnsAll.DivDollar.width.toString() + "px;",
@@ -641,6 +660,8 @@ var gsFieldWidthsWLBase = {
     "OldGL": "width:" + gsWLColumnsAll.OldGL.width.toString() + "px;",
     "High": "width:" + gsWLColumnsAll.High.width.toString() + "px;",
     "Low": "width:" + gsWLColumnsAll.Low.width.toString() + "px;",
+    "High52Wk": "width:" + gsWLColumnsAll.High52Wk.width.toString() + "px;",
+    "Low52Wk": "width:" + gsWLColumnsAll.Low52Wk.width.toString() + "px;",
     "PE": "width:" + gsWLColumnsAll.PE.width.toString() + "px;",
     "CatalystDate": "width:" + gsWLColumnsAll.CatalystDate.width.toString() + "px;",
     "SymbolDescription": "width:" + gsWLColumnsAll.SymbolDescription.width.toString() + "px;"
@@ -662,8 +683,11 @@ var gsFieldColSpanWL = {
     "CatalystDate": "",
     "High": "",
     "Low": "",
+    "High52Wk": "",
+    "Low52Wk": "",
     "PE": "",
     "GL": "",
+    "GLF": "",
     "OldGL": "",
     "MktValue": "",
     "DivPercent": "",
@@ -689,8 +713,11 @@ var gsFieldColSpanWLBase = {
     "CatalystDate": "",
     "High": "",
     "Low": "",
+    "High52Wk": "",
+    "Low52Wk": "",
     "PE": "",
     "GL": "",
+    "GLF": "",
     "OldGL": "",
     "MktValue": "",
     "DivPercent": "",
@@ -698,48 +725,6 @@ var gsFieldColSpanWLBase = {
     "Amt": "",
     "DivDate": "",
     "SymbolDescription": ""
-}
-
-var gsFieldColSpanWLCell = {
-    "Symbol": "",
-    "Qty": "",
-    "Price": "",
-    "ChgDollar": "",
-    "ChgPercent": "",
-    "Bid": "",
-    "Ask": "",
-    "DayGain": "colspan=\"2\"",
-    "GainDollar": "colspan=\"2\"",
-    "GainPercent": "",
-    "CostPerShare": "",
-    "PurchaseDate": "",
-    "GL": "",
-    "MktValue": "",
-    "DivPercent": "",
-    "DivDollar": "",
-    "Amt": "",
-    "DivDate": ""
-}
-
-var gsFieldColSpanWLCellDiv = {
-    "Symbol": "",
-    "Qty": "",
-    "Price": "",
-    "ChgDollar": "",
-    "ChgPercent": "",
-    "Bid": "",
-    "Ask": "",
-    "DayGain": "",
-    "GainDollar": "",
-    "GainPercent": "",
-    "CostPerShare": "colspan=\"3\"",
-    "PurchaseDate": "",
-    "GL": "colspan=\"4\"",
-    "MktValue": "colspan=\"4\"",
-    "DivPercent": "",
-    "DivDollar": "",
-    "Amt": "",
-    "DivDate": ""
 }
 
 //Status 	Action 	Quantity  Symbol 	Type 	Price  Act.Price  Time-in-Force  Opened Closed
@@ -1000,6 +985,174 @@ function TDOrderSummary() {
 var giTDPostOrderRetryCnt = 0;
 
 var gPriceMinutes = new Array(); //collection innerHTML strings for last set of price data for each symbol
+
+//-----------------------------------------------------------------------------------------------------------
+//start symbol Price History Stuff
+
+const skipped = (ctx, value) => ctx.p0.skip || ctx.p1.skip ? value : undefined;
+const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
+const same = (ctx, value) => ctx.p0.parsed.y == ctx.p1.parsed.y ? value : undefined;
+
+const beforeBodyDay = (tooltipItems) => {
+    let sDayNum = "";
+    tooltipItems.forEach(function (tooltipItem) {
+        sDayNum = tooltipItem.label;
+    });
+    return 'Day: ' + sDayNum;
+};
+const beforeBodyTime = (tooltipItems) => {
+    let sTime = "";
+    tooltipItems.forEach(function (tooltipItem) {
+        sTime = tooltipItem.label;
+    });
+    return 'Time: ' + sTime;
+};
+//const footer = (tooltipItems) => {
+//    let sum = 0;
+
+//    tooltipItems.forEach(function (tooltipItem) {
+//        sum += tooltipItem.parsed.y;
+//    });
+//    return 'Sum: ' + sum;
+//};
+
+const CHART_COLORS = {
+    red: 'rgb(255, 99, 132)',
+    orange: 'rgb(255, 159, 64)',
+    yellow: 'rgb(255, 205, 86)',
+    green: 'rgb(75, 192, 192)',
+    blue: 'rgb(54, 162, 235)',
+    purple: 'rgb(153, 102, 255)',
+    grey: 'rgb(201, 203, 207)',
+    black: 'rgb(0, 0, 0)',
+    brightGreen: 'rgb(71, 255, 51)',
+    brightRed: 'rgb(255, 51, 94)',
+    volume: 'rgb(51, 195, 255)'
+};
+
+let CIlabels = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+];
+//let CIdata = {
+//    labels: [],
+//    datasets: [{
+//        label: 'High',
+//        backgroundColor: CHART_COLORS.black,
+//        borderColor: CHART_COLORS.black,
+//        data: []
+//    }, {
+//        label: 'Low',
+//        backgroundColor: CHART_COLORS.green,
+//        bordercolor: CHART_COLORS.green,
+//        data: []
+//    }, {
+//        label: '52Wk High',
+//        backgroundColor: CHART_COLORS.blue,
+//        bordercolor: CHART_COLORS.blue,
+//        data: []
+//    }, {
+//        label: '52Wk Low',
+//        backgroundColor: CHART_COLORS.red,
+//        bordercolor: CHART_COLORS.red,
+//        data: []
+//    }]
+//};
+
+//let data = {
+//    labels: [],
+//    datasets: [{
+//        label: 'High',
+//        backgroundColor: CHART_COLORS.black,
+//        borderColor: CHART_COLORS.black,
+//        data: [0, 10, 5, 2, 20, 30, 45]
+//    }, {
+//        label: 'Low',
+//        backgroundColor: CHART_COLORS.green,
+//        bordercolor: CHART_COLORS.green,
+//        borderDash: [5, 5],
+//        data: [5, 2, 12, 2, 15, 32, 25]
+//    }]
+//};
+
+//const CIconfig = {
+//    type: 'line',
+//    data: CIdata,
+//    options: {
+//        plugins: {
+//            legend: false,
+//            tooltip: true,
+//        }
+//    }
+
+//};
+
+function CIChartInfo() {
+    this.symbol = "";
+    this.spanName = "";
+    this.chartType = 4; //1 - 1 month by day, 2 - 2 months by day, 3 - 3 months by day, 4 - last year by month, 5 - today frequency 1 minute, 6 - today frequency 10 minutes, 7 - today frequency 30 minutes, 8 - last hour by minute - updated every second
+    this.bRealTime = false;
+    this.iLastMonthIdx = -1;
+    this.iLastDayIdx = -1;
+    this.iLastMinuteIdx = -1;
+    this.iLastPriceChartDataIdx = -1;
+    this.dMaxClose = 0.0;
+    this.dMinClose = 0.0;
+    this.dMaxVolume = 0.0;
+    this.dMinVolume = 0.0;
+    this.chart = null;
+}
+var gChartInfo = new Array(); //array of CIChartInfo objects
+
+function PriceTodayMinute() {
+    this.dateTime = 0;
+    this.hour = 0;
+    this.minute = 0; //minute time since trading opened today
+    this.high = 0.0;
+    this.low = 0.0;
+    this.open = 0.0;
+    this.close = 0.0;
+    this.volume = 0.0;
+    this.totalVolume = 0.0; //the total daily volume at the beginning of this minute
+}
+
+function PriceDay() {
+    this.dateTime = 0;
+    this.day = 0;
+    this.high = 0.0;
+    this.low = 0.0;
+    this.close = 0.0;
+    this.minutes = new Array(); //collection of PriceTodayMinute objects
+}
+
+function PriceMonth() {
+    this.month = 0;
+    this.year = 0;
+    this.high = 0.0;
+    this.low = 1000000000.0;
+    this.close = 0.0;
+    this.days = new Array(); //collection of PriceDay objects
+}
+
+function PriceChartData() {
+    this.symbol = "";
+    this.months = new Array(); //collection of PriceMonth objects
+}
+
+var gPriceChartData = new Array(); //collection PriceChartData objects for the last 12 months of high/low data for all currently selected symbols
+//end symbol Price History Stuff
+//-----------------------------------------------------------------------------------------------------------
+
 
 var gsLastError = "";
 var gsLastErrors = new Array();
@@ -2456,6 +2609,12 @@ function ChangeWLName(idxWL, sName) {
     SetDefault();
 }
 
+function ChartDataChanged(sData) {
+    if (document.getElementById("spanDebug") != null) {
+        document.getElementById("spanDebug").innerHTML = sData;
+    }
+}
+
 function CheckHTTPOpen(xhttp, sWhereTo, sErrorMsg, bAsync) {
     let bDone = false;
     let iTryCount = 0;
@@ -2630,11 +2789,11 @@ function ClearAllWLSelected(idxWL) {
     for (let idx = 0; idx < gWatchlists[idxWL].WLItems.length; idx++) {
         gWatchlists[idxWL].WLItems[idx].bSelectedForOrder = false;
         iChangedItem = idx;
-    }
-    if (iChangedItem != -1) {
-        gWatchlists[idxWL].WLItems[iChangedItem].bSelectedForOrder = true;
-        wlMarkSelectedItemDoMark(idxWL, iChangedItem);
-        //wlMarkSelectedItem(idxWL, iChangedItem);
+        if (iChangedItem != -1) {
+            gWatchlists[idxWL].WLItems[iChangedItem].bSelectedForOrder = true;
+            wlMarkSelectedItemDoMark(idxWL, iChangedItem);
+            //wlMarkSelectedItem(idxWL, iChangedItem);
+        }
     }
 }
 
@@ -2663,6 +2822,7 @@ function CopySelected(idxWL) {
             let oWLItemDetail = new WLItemDetail();
             oWLItemDetail = gWatchlists[idxWL].WLItems[idxWLItem].priceInfo;
             gWatchlistItemsToCopy[gWatchlistItemsToCopy.length - 1].priceInfo = oWLItemDetail;
+            gWatchlistItemsToCopy[gWatchlistItemsToCopy.length - 1].wlName = gWatchlists[idxWL].accountName + " -- " + gWatchlists[idxWL].name;
         }
     }
 }
@@ -2957,7 +3117,7 @@ function DoCopySymbols(iFromWhere,  idxWL, sThisIdToRemove) {
     sConfirmMsg = "Copying the following symbols: " + sSymbolsToLookup.toUpperCase() + ". ";
     if (AreYouSure(sConfirmMsg)) {
         CopySelected(idxWL);
-        alert("Selected symbols available to paste.");
+        alert("Selected symbol(s) ready to be pasted.");
         ClearAllWLSelected(idxWL);
         if (iFromWhere == 2) {
             wlDoRemoveDivPopup(sThisIdToRemove);
@@ -3016,13 +3176,11 @@ function DoGetTDData() {
     if (giGetTDDataTimeoutId != 0) {
         window.clearTimeout(giGetTDDataTimeoutId);
         giGetTDDataTimeoutId = 0;
-        if (!gbDoingGetTDData) {
-            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 30);
-        } else {
-            giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 1000);
-        }
-    } else {
+    }
+    if (!gbDoingGetTDData) {
         giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 30);
+    } else {
+        window.setTimeout("DoGetTDData()", 50);
     }
 }
 
@@ -3210,6 +3368,18 @@ function DoResetWatchlists() {
     DoGetTDData();
 }
 
+function DoShowCharts() {
+    let sSymbolToLookup = "";
+    let sSymbolsToLookupTmp = TrimLikeVB(document.getElementById("txtSymbols").value);
+
+    if (sSymbolsToLookupTmp == "") {
+        alert("Please enter at least one symbol to chart.");
+    } else {
+        sSymbolToLookup = GetUniqueListOfSymbols(sSymbolsToLookupTmp);
+        window.setTimeout("ShowPriceHistory('" + sSymbolToLookup + "', 0)", 10);
+    }
+}
+
 function DoShowPriceHistory(idxPriceInfo, idxPriceHistory) {
     if (!gbGettingStockPriceHistory) {
         DoShowPriceHistoryDetail(idxPriceInfo, idxPriceHistory, true);
@@ -3253,6 +3423,12 @@ function DoShowPriceHistoryDetail(idxPriceInfo, idxPriceHistory, bClicked) {
         document.getElementById("tblDetail").style.top = (document.getElementById("tblSymbols").clientHeight + iPwdFormHeight).toString() + "px";
         document.getElementById("tblDetail").style.visibility = "visible";
     }
+}
+
+function DoShowIndexPriceHistory(idxIndex) {
+    let oMI = new MarketIndex();
+    oMI = gMarketIndexes[idxIndex];
+    setTimeout("ShowPriceHistory('" + oMI.symbol + "', 0, '" + oMI.description + "')", 10);
 }
 
 function DoSODeleteOrders(watchlistId, sLastWLAccountId) {
@@ -3342,6 +3518,165 @@ function DoSOPlaceOrders(watchlistId, sLastWLAccountId) {
         return;
     }
 }
+
+function DoUpdateCharts() {
+    let sSymbols = "";
+    let sSymbolsSep = "";
+
+    let dDate = new Date();
+    let iCurrYear = dDate.getUTCFullYear();
+    let iCurrMonth = dDate.getUTCMonth() + 1;
+    let iCurrDay = dDate.getUTCDate();
+    let iCurrHour = dDate.getUTCHours();
+    let iCurrMinute = dDate.getUTCMinutes();
+
+    if (gChartInfo.length > 0) {
+        for (let idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+            if (gChartInfo[idxCI].spanName != "") {
+                if (document.getElementById(gChartInfo[idxCI].spanName) != null) {
+                    if (gChartInfo[idxCI].chart != null) {
+                        if (gChartInfo[idxCI].chart.attached) {
+                            if (gChartInfo[idxCI].chartType == 8) {
+                                let sSymbolIn = gChartInfo[idxCI].symbol;
+                                if (!isUndefined(oMDQ[sSymbolIn])) {
+                                    let dClosePrice = 0.0;
+                                    let dTotalVolume = 0.0;
+
+                                    if (!isUndefined(oMDQ[sSymbolIn]["regularMarketLastPrice"])) {
+                                        dClosePrice = oMDQ[sSymbolIn]["regularMarketLastPrice"];
+                                        let sTmp = FormatDecimalNumber(dClosePrice, 5, 2, "");
+                                        dClosePrice = parseFloat(sTmp);
+                                    }
+                                    if (!isUndefined(oMDQ[sSymbolIn]["totalVolume"])) {
+                                        dTotalVolume = oMDQ[sSymbolIn]["totalVolume"];
+                                    }
+
+                                    let bOkToUpdateChart = false;
+                                    let bAddedMinute = false;
+
+                                    let iCurrPCDIdx = gChartInfo[idxCI].iLastPriceChartDataIdx;
+                                    let iCurrPCDMIdx = gChartInfo[idxCI].iLastMonthIdx;
+                                    let iCurrPCDMDIdx = gChartInfo[idxCI].iLastDayIdx;
+                                    let iCurrPCDDMIdx = gChartInfo[idxCI].iLastMinuteIdx;
+
+                                    let oPCDMD = new PriceDay();
+                                    oPCDMD = gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days[iCurrPCDMDIdx];
+                                    let oPCDDM = new PriceTodayMinute();
+                                    oPCDDM = oPCDMD.minutes[iCurrPCDDMIdx];
+                                    if ((oPCDDM.hour == iCurrHour) && (oPCDDM.minute == iCurrMinute)) {
+                                        //update the current minute
+                                        if (oPCDDM.totalVolume == -1) {
+                                            if ((dTotalVolume - oPCDDM.volume) < 0) {
+                                                oPCDDM.totalVolume = 0;
+                                            } else {
+                                                oPCDDM.totalVolume = dTotalVolume - oPCDDM.volume;
+                                            }
+                                        } else { //update the chart
+                                            oPCDDM.volume = dTotalVolume - oPCDDM.totalVolume;
+                                            oPCDDM.close = dClosePrice;
+                                            bOkToUpdateChart = true;
+                                        }
+                                    } else { //need to add a new minute
+                                        let oPCDDMNew = new PriceTodayMinute();
+                                        oPCDDMNew.hour = iCurrHour;
+                                        oPCDDMNew.minute = iCurrMinute;
+                                        if (oPCDDM.totalVolume != -1) {
+                                            oPCDDMNew.totalVolume = oPCDDM.totalVolume + oPCDDM.volume;
+                                        } else { //update the chart
+                                            oPCDDMNew.totalVolume = dTotalVolume;
+                                        }
+                                        oPCDDMNew.volume = dTotalVolume - oPCDDMNew.totalVolume;
+                                        oPCDDMNew.close = dClosePrice;
+                                        oPCDMD.minutes.push(oPCDDMNew);
+                                        iCurrPCDDMIdx = gChartInfo[idxCI].iLastMinuteIdx + 1;
+                                        gChartInfo[idxCI].iLastMinuteIdx = iCurrPCDDMIdx;
+                                        bOkToUpdateChart = true;
+                                        bAddedMinute = true;
+                                    }
+                                    if (bOkToUpdateChart) {
+                                        let dMaxClose = 0;
+                                        let dMinClose = 10000000000;
+                                        let dCloseStepSize = 0;
+                                        let dMaxVolume = 0;
+                                        let dMinVolume = 10000000000;
+                                        let dVolumeStepSize = 0;
+                                        //determine min, max and step size
+                                        dMaxClose = gChartInfo[idxCI].dMaxClose;
+                                        dMinClose = gChartInfo[idxCI].dMinClose;
+                                        dMaxVolume = gChartInfo[idxCI].dMaxVolume;
+                                        dMinVolume = gChartInfo[idxCI].dMinVolume;
+
+                                        let oPCDM = new PriceTodayMinute();
+                                        oPCDM = oPCDMD.minutes[oPCDMD.minutes.length - 1];
+
+                                        if (oPCDM.close < dMinClose) {
+                                            dMinClose = oPCDM.close;
+                                        }
+                                        if (oPCDM.close > dMaxClose) {
+                                            dMaxClose = oPCDM.close;
+                                        }
+                                        if (oPCDM.volume < dMinVolume) {
+                                            dMinVolume = oPCDM.volume;
+                                        }
+                                        if (oPCDM.volume > dMaxVolume) {
+                                            dMaxVolume = oPCDM.volume;
+                                        }
+
+                                        gChartInfo[idxCI].dMaxClose = dMaxClose;
+                                        gChartInfo[idxCI].dMinClose = dMinClose;
+                                        gChartInfo[idxCI].dMaxVolume = dMaxVolume;
+                                        gChartInfo[idxCI].dMinVolume = dMinVolume;
+
+                                        dCloseStepSize = (dMaxClose - dMinClose) / 10;
+                                        dMinClose = dMinClose - (3 * dCloseStepSize);
+                                        dMaxClose = dMaxClose + dCloseStepSize;
+                                        dVolumeStepSize = (dMaxVolume - dMinVolume);
+                                        dMaxVolume = dVolumeStepSize * 6;
+
+                                        let data = gChartInfo[idxCI].chart.data;
+                                        if (data.datasets.length > 0) {
+                                            //find out how many points need to add to end
+                                            if (bAddedMinute) {
+                                                let sTmp = FormatIntegerNumber(oPCDM.hour, 2, "0") + ":" + FormatIntegerNumber(oPCDM.minute, 2, "0");
+                                                data.labels.push(sTmp);
+                                                data.labels.shift();
+                                                data.datasets[0].data.push(oPCDM.close);
+                                                data.datasets[0].data.shift();
+                                                data.datasets[1].data.push(oPCDM.volume);
+                                                data.datasets[1].data.shift();
+                                            } else {
+                                                let idxTmp = data.datasets[0].data.length - 1;
+                                                let sTmp = FormatIntegerNumber(oPCDM.hour, 2, "0") + ":" + FormatIntegerNumber(oPCDM.minute, 2, "0");
+                                                data.labels[idxTmp] = sTmp;
+                                                data.datasets[0].data[idxTmp] = oPCDM.close;
+                                                data.datasets[1].data[idxTmp] = oPCDM.volume;
+                                            }
+                                            gChartInfo[idxCI].chart.scales.yClose.max = dMaxClose;
+                                            gChartInfo[idxCI].chart.scales.yClose.min = dMinClose;
+                                            gChartInfo[idxCI].chart.scales.yVolume.max = dMaxVolume;
+                                            gChartInfo[idxCI].chart.scales.yVolume.min = dMinVolume;
+                                            gChartInfo[idxCI].chart.update();
+                                        }
+                                        //--------------------------------------------------------------------
+                                    //    let sData = "";
+                                    //    sData = gPriceChartData[iCurrPCDIdx].symbol + " - " + FormatIntegerNumber(oPCDMD.minutes[oPCDMD.minutes.length - 1].hour, 2, "0") + ":" + FormatIntegerNumber(oPCDMD.minutes[oPCDMD.minutes.length - 1].minute, 2, "0") + 
+                                    //        " " + FormatDecimalNumber(oPCDMD.minutes[oPCDMD.minutes.length - 1].close, 5, 2, "") + " " + FormatDecimalNumber(oPCDMD.minutes[oPCDMD.minutes.length - 1].volume, 5, 0, "");
+                                    //    window.setTimeout("ChartDataChanged('" + sData + "')" ,10);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    window.setTimeout("DoUpdateCharts()", 1000);
+}
+
+//function DoUpdateGraph(sSymbolIn, sThisId) {
+
+//}
 
 function DoURLEncode(sData) {
     let sReturn = "";
@@ -3585,146 +3920,34 @@ function DoWLCloseSymbol(watchlistId, sLastWLAccountId) {
                     return;
                 }
 
-                let sSymbolsToLookup = "";
-                let sSymbolsToLookupSep = "";
-                let iNumSelected = 0;
-                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                        iNumSelected++;
-                        sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-                        sSymbolsToLookupSep = ", ";
-                    }
-                }
+                window.setTimeout("ShowGLInitializePopupSelection('" + watchlistId + "', '" + sLastWLAccountId + "')", 10); //initialize all or only selected
 
-                let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+                //let sSymbolsToLookup = "";
+                //let sSymbolsToLookupSep = "";
+                //let iNumSelected = 0;
+                //for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                //    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                //        iNumSelected++;
+                //        sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                //        sSymbolsToLookupSep = ", ";
+                //    }
+                //}
 
-                let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
+                //let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
-                if ((iNumSelected > 0) && (sDollars != "")) {
-                //if (iNumSelected > 0) {
-                    window.setTimeout("ShowGLInitializePopupSelection('" + watchlistId + "', '" + sLastWLAccountId + "')", 10); //initialize all or only selected
-                } else {
-                    if (sDollars != "") {
-                        WLInitializeGLSymbols(2, idxWL); //initialize all
-                    } else {
-                        WLInitializeGLSymbols(3, idxWL); //update all
-                    }
-                }
+                //let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
 
-            //    let dtEndDate = new Date();
-            //    let iEndDate = dtEndDate.getTime();
-            //    let sEndDate = FormatDateForTD(dtEndDate);
-            //    let sCurrentDate = sEndDate;
+                //if ((iNumSelected > 0) && (sDollars != "")) {
+                ////if (iNumSelected > 0) {
+                //    window.setTimeout("ShowGLInitializePopupSelection('" + watchlistId + "', '" + sLastWLAccountId + "')", 10); //initialize all or only selected
+                //} else {
+                //    if (sDollars != "") {
+                //        WLInitializeGLSymbols(2, idxWL); //initialize all
+                //    } else {
+                //        WLInitializeGLSymbols(3, idxWL); //update all
+                //    }
+                //}
 
-            //    if (sDollars != "") {
-            //        //treat as date
-            //        if (ValidateTDDate(sDollars, false)) {
-            //            if (sDollars > sEndDate) {
-            //                alert("Invalid initialization start date. Please enter a start date less than or equal to " + sEndDate + ".");
-            //                gbDoingCreateOrders = false;
-            //                DoGetTDData();
-            //                return;
-            //            }
-            //            if (sEndDate > sCurrentDate) {
-            //                alert("Invalid initialization end date. Please enter an end date less than or equal to " + sCurrentDate + ".");
-            //                gbDoingCreateOrders = false;
-            //                DoGetTDData();
-            //                return;
-            //            }
-            //            let bInitAll = true;
-            //            if (iNumSelected > 0) {
-            //                if (window.confirm("Press OK to Initialize the GL for only the selected symbols\nPress Cancel to Initialize the GL for all of the symbols in the watchlist")) {
-            //                    bInitAll = false;
-            //                }
-            //            }
-            //            if (bInitAll) {
-            //                let sConfirmMsg = "";
-            //                sConfirmMsg = "Initializing the G/L for all of the symbols in the watchlist using " + sDollars + " as the start date and " + sEndDate + " as the end date. ";
-            //                if (AreYouSure(sConfirmMsg)) {
-            //                    //get the trade info for the selected symbols
-            //                    let aStartDate = sDollars.split("-");
-            //                    let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
-
-            //                    gWatchlists[idxWL].defaultUpdateGLDate = sDollars;
-
-            //                    window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", true, '', " + iEndDate + ", '', true, '', '', '', '', true)", 10);
-            //                } else {
-            //                    gbDoingCreateOrders = false;
-            //                    DoGetTDData();
-            //                    return;
-            //                }
-            //            } else { //only initialize the GL for the selected symbols
-            //                //use the entered date as the start date and the highest update date as the end date
-            //                //get the highest last update date
-            //                let iHighestUpdateDate = 0;
-            //                iHighestUpdateDate = GetHighestUpdateDate(idxWL, true);
-            //                if (iHighestUpdateDate == -1) {
-            //                    //what does this mean
-            //                    gbDoingCreateOrders = false;
-            //                    DoGetTDData();
-            //                    return;
-            //                }
-
-            //                let sHighestUpdateDate = FormatDateForTD(new Date(iHighestUpdateDate));
-
-            //                if (sDollars > sHighestUpdateDate) {
-            //                    sDollars = sHighestUpdateDate;
-            //                }
-            //                let sConfirmMsg = "";
-            //                sConfirmMsg = "Initializing the G/L for " + sSymbolsToLookup.toUpperCase() + " using " + sDollars + " as the start date and " + sHighestUpdateDate + " as the end date. ";
-            //                if (AreYouSure(sConfirmMsg)) {
-            //                    //get the trade info for the selected symbols
-
-            //                    sSymbolsToLookup = "";
-            //                    sSymbolsToLookupSep = "";
-            //                    for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-            //                        if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-            //                            sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
-            //                            sSymbolsToLookupSep = ",";
-            //                        }
-            //                    }
-
-            //                    let aStartDate = sDollars.split("-");
-            //                    let iStartDate = (new Date(parseInt(aStartDate[0]), parseInt(aStartDate[1] - 1), parseInt(aStartDate[2]))).getTime();
-
-            //                    gWatchlists[idxWL].defaultUpdateGLDate = sDollars;
-
-            //                    window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", true, '" + sSymbolsToLookup.toUpperCase() + "', " + iHighestUpdateDate + ", '', false, '', '', '', '', true)", 10);
-            //                } else {
-            //                    gbDoingCreateOrders = false;
-            //                    DoGetTDData();
-            //                    return;
-            //                }
-            //            }
-            //        } else {
-            //            alert("Please enter an initialization start date as yyyy-mm-dd.")
-            //            gbDoingCreateOrders = false;
-            //            DoGetTDData();
-            //            return;
-            //        }
-            //    } else {
-            //        //updating G/L for each symbol in the watchlist using the latest update date found in the watchlist
-            //        let sConfirmMsg = "";
-            //        sConfirmMsg = "Updating the G/L for all of the symbols in the watchlist. ";
-            //        if (AreYouSure(sConfirmMsg)) {
-            //            //get the highest last update date
-            //            let iHighestUpdateDate = 0;
-            //            iHighestUpdateDate = GetHighestUpdateDate(idxWL, true);
-            //            if (iHighestUpdateDate == -1) {
-            //                gbDoingCreateOrders = false;
-            //                DoGetTDData();
-            //                return;
-            //            }
-
-            //            //get the trade info for the selected symbols
-            //            window.setTimeout("GetTradesAutoBase(true, " + iHighestUpdateDate + ", " + idxWL + ", false, '', " + iEndDate + ", '', false, '', '', '', '', true)", 10);
-            //        } else {
-            //            gbDoingCreateOrders = false;
-            //            DoGetTDData();
-            //            return;
-            //        }
-            //        return;
-            //    }
             } else {
                 gbDoingCreateOrders = false;
                 DoGetTDData();
@@ -3793,7 +4016,7 @@ function DoWLDeleteSymbols(iWhatToDelete, idxWL, sThisIdToRemove) {
 }
 
 function DoWLInitializeGLSymbols(iSelectedOrAll, idxWL, sThisIdIn) {
-    wlDoRemoveDivPopupNoClear(sThisIdIn);
+    //wlDoRemoveDivPopupNoClear(sThisIdIn);
     window.setTimeout("WLInitializeGLSymbols(" + iSelectedOrAll.toString() + ", " + idxWL.toString() + ")", 10);
 }
 
@@ -3848,7 +4071,11 @@ function DoWLOpenSymbols(iFromWhere, watchlistId, sLastWLAccountId) {
                             return;
                         }
                     } else { //doing copy
-                        DoCopySymbols(1, idxWL, "");
+                        if (gWatchlistItemsToCopy.length > 0) {
+                            ShowCopyPastePopupSelection(idxWL);
+                        } else {
+                            DoCopySymbols(1, idxWL, "");
+                        }
                         return;
                     }
                     break;
@@ -4334,6 +4561,444 @@ function drag_divWL(div_id) {
         }
     }, true);
 
+}
+
+function DrawEmptyGraphGrid(iXShiftLeft, iYShiftUp, sThisId) {
+//    let iLineCnt = 0;
+//    let x = 0.0;
+//    let y = 0.0
+//    let iDay = 0;
+//    let iVerticalLineSpacing = 0;
+//    let iPressure = 0;
+//    let sDate = "";
+//    let iCurrentMonth = 0;
+//    let iNumMonths = 0;
+//    let xObj = null;
+//    let iDayIdx = 0;
+//    let dDayHrsMax = 0.0;
+//    let dHr = 0.0;
+//    let dMin = 0.0;
+//    let iXWidth = 0;
+//    let iXInc = 0;
+//    let iXMod = 0;
+//    let iXLabelInc = 0;
+
+//    xObj = document.getElementById("radioChart1Month" + sThisId);
+//    if (xObj.checked) {
+//        iNumMonths = 1;
+//    }
+
+//    xObj = document.getElementById("radioChart2Month" + sThisId);
+//    if (xObj.checked) {
+//        iNumMonths = 2;
+//    }
+
+//    xObj = document.getElementById("radioChart3Month" + sThisId);
+//    if (xObj.checked) {
+//        iNumMonths = 3;
+//    }
+
+//    xObj = document.getElementById("radioChart12Month" + sThisId);
+//    if (xObj.checked) {
+//        iNumMonths = 12;
+//    }
+
+//    let c_canvas = document.getElementById("cvsDetail" + sThisId);
+//    let context = c_canvas.getContext("2d");
+
+//    //clear canvas 
+//    context.clearRect(0, 0, c_canvas.width, c_canvas.height);
+//    context.beginPath();
+
+//    //draw the graph veritcal lines
+//    iLineCnt = 0;
+//    var iYMax = 0;
+//    var iYMod = 0;
+//    if (iNumMonths == 1) //# of hrs per day so axis from 12 to 0 or 6 to 0 
+//    {
+//        dDayHrsMax = getDayMaxHrs(iYearIdx, iMonthIdx);
+//        iYMax = 222;
+//        iXWidth = 265;
+//        iXInc = 5;
+//        iXMod = 5;
+//    }
+//    else //# of hrs per month so axis from 100 to 0
+//    {
+//        iYMax = 302;
+//        sDate = FormatCurrentDate();
+//        iCurrentMonth = parseInt(sDate.split("/")[0]);
+//        giStartYear = parseInt(sDate.split("/")[2]);
+//        switch (iNumMonths) {
+//            case 6:
+//                {
+//                    if (iCurrentMonth - 6 <= 0) {
+//                        giStartMonth = 12 + (iCurrentMonth - 6);
+//                        giStartYear = giStartYear - 1;
+//                    }
+//                    else {
+//                        giStartMonth = iCurrentMonth - 6;
+//                    }
+//                    iXWidth = 225;
+//                    iXInc = 20;
+//                    iXMod = 1;
+//                    break;
+//                }
+//            case 12:
+//                {
+//                    if (iCurrentMonth == 12) {
+//                        iCurrentMonth = 11; //12/4/19
+//                        giStartMonth = 12; //12/4/19
+//                        //giStartMonth = 1;
+//                    }
+//                    else {
+//                        giStartMonth = iCurrentMonth + 1;
+//                    }
+//                    giStartYear = giStartYear - 1;
+//                    iXWidth = 225;
+//                    iXInc = 10;
+//                    iXMod = 2;
+//                    break;
+//                }
+//            case 30:
+//                {
+//                    if (iCurrentMonth - 6 <= 0) {
+//                        giStartMonth = 12 + (iCurrentMonth - 6);
+//                        giStartYear = giStartYear - 3;
+//                    }
+//                    else {
+//                        giStartMonth = iCurrentMonth - 6;
+//                        giStartYear = giStartYear - 2;
+//                    }
+//                    iXWidth = 265;
+//                    iXInc = 5;
+//                    iXMod = 5;
+//                    break;
+//                }
+//        }
+//    }
+//    for (x = 100.5 - iXShiftLeft; x < iXWidth - iXShiftLeft; x += iXInc) {
+//        switch (iLineCnt % iXMod) {
+//            case 0:
+//                {
+//                    context.moveTo(x, 95 - iYShiftUp);
+//                    context.lineTo(x, iYMax - iYShiftUp);
+//                    break;
+//                }
+//            default:
+//                {
+//                    context.moveTo(x, 100 - iYShiftUp);
+//                    context.lineTo(x, iYMax - iYShiftUp);
+//                    break;
+//                }
+//        }
+//        iLineCnt++;
+//    }
+
+//    //draw the graph horizontal lines
+//    switch (iNumMonths) {
+//        case 1: //# of hrs per day so axis from 12 to 0 
+//            {
+//                iVerticalLineSpacing = 20;
+//                iYMod = 1;
+//                break;
+//            }
+//        case 6:
+//        case 12:
+//        case 30: //# of hrs per month so axis from 100 to 0
+//            {
+//                iVerticalLineSpacing = 10;
+//                iYMod = 2;
+//                break;
+//            }
+//    }
+//    iLineCnt = 0;
+//    for (y = 100.5 - iYShiftUp; y < iYMax - iYShiftUp; y += iVerticalLineSpacing) {
+//        switch (iLineCnt % iYMod) {
+//            case 0:
+//                {
+//                    context.moveTo(95 - iXShiftLeft, y);
+//                    context.lineTo(iXWidth - 5 - iXShiftLeft, y);
+//                    break;
+//                }
+//            default:
+//                {
+//                    context.moveTo(100 - iXShiftLeft, y);
+//                    context.lineTo(iXWidth - 5 - iXShiftLeft, y);
+//                    break;
+//                }
+//        }
+//        iLineCnt++;
+//    }
+
+//    context.strokeStyle = "#eee";
+//    context.stroke();
+
+//    //add the axis labels
+//    context.font = "bold 12px sans-serif";
+//    context.textBaseline = "top";
+//    context.textAlign = "left";
+//    //shows days or months along the top
+//    var iDayInc = 0;
+//    var iDayMod = 0;
+//    switch (iNumMonths) {
+//        case 1: //show days
+//            {
+//                iDay = 0;
+//                iDayInc = 5;
+//                iDayMod = 40;
+//                iXLabelInc = 25;
+//                break;
+//            }
+//        case 6: //show months starting with giStartMonth for 6 months
+//            {
+//                iDay = giStartMonth;
+//                iDayInc = 1;
+//                iDayMod = 12;
+//                iXLabelInc = 20;
+//                break;
+//            }
+//        case 12: //show months starting with giStartMonth for 12 months
+//            {
+//                iDay = giStartMonth;
+//                iDayInc = 2;
+//                iDayMod = 12;
+//                iXLabelInc = 20;
+//                break;
+//            }
+//        case 30: //show months starting with giStartMonth for 30 months
+//            {
+//                iDay = giStartMonth;
+//                iDayInc = 5;
+//                iDayMod = 12;
+//                iXLabelInc = 25;
+//                break;
+//            }
+//    }
+
+//    for (x = 100.5 - iXShiftLeft; x < iXWidth - iXShiftLeft; x += iXLabelInc) {
+//        if (iDayMod == 12) {
+//            if ((iDay % iDayMod) == 0) {
+//                context.fillText("12", x - 5, 80 - iYShiftUp);
+//            }
+//            else {
+//                context.fillText((iDay % iDayMod).toString(), x - 5, 80 - iYShiftUp);
+//            }
+//            iDay += iDayInc;
+//        }
+//        else {
+//            context.fillText(iDay.toString(), x - 5, 80 - iYShiftUp);
+//            iDay += iDayInc;
+//        }
+//    }
+
+//    //show number of hours along side
+//    context.textBaseline = "middle";
+//    context.textAlign = "right";
+//    var iPressureInc = 0;
+//    switch (iNumMonths) {
+//        case 1: //# of hrs per day so axis from 12 to 0 or 6 to 0
+//            {
+//                if (dDayHrsMax > 6.0) {
+//                    iPressure = 12;
+//                    iPressureInc = 2;
+//                }
+//                else {
+//                    iPressure = 6;
+//                    iPressureInc = 1;
+//                }
+//                break;
+//            }
+//        case 6:
+//            {
+//                iPressure = 100;
+//                iPressureInc = 10;
+//                iVerticalLineSpacing = iVerticalLineSpacing * 2;
+//                break;
+//            }
+//        case 12:
+//            {
+//                iPressure = 100;
+//                iPressureInc = 10;
+//                iVerticalLineSpacing = iVerticalLineSpacing * 2;
+//                break;
+//            }
+//        case 30: //# of hrs per month so axis from 100 to 0
+//            {
+//                iPressure = 100;
+//                iPressureInc = 10;
+//                iVerticalLineSpacing = iVerticalLineSpacing * 2;
+//                break;
+//            }
+//    }
+//    for (var y = 100.5 - iYShiftUp; y < iYMax - iYShiftUp; y += iVerticalLineSpacing) {
+//        context.fillText(iPressure.toString(), 90 - iXShiftLeft, y);
+//        iPressure = iPressure - iPressureInc;
+//    }
+}
+
+function DrawGraphGridData(sDataType, iXShiftLeft, iYShiftUp) {
+//    var iData = 0;
+//    var iDay = 0;
+//    var iMonth = 0;
+//    var iDayIdx = 0;
+//    var iYearIdx = 0;
+//    var iMonthIdx = 0;
+//    var iNumMonths = 0;
+//    var sDataColor = "";
+//    var ksColors = new Array("black", "red");
+//    var bFirstTime = true;
+//    var dHr = 0.0;
+//    var dMin = 0.0;
+//    var dDayHrsMax = 0.0;
+//    var dYMultiplier = 0.0;
+//    var dYMaxValue = 0.0;
+//    var xObj = null;
+//    var bDoMeditation = false;
+//    var bDoExercise = false;
+//    var iLastDay = 0;
+
+//    xObj = document.getElementById("radioGraph1Month");
+//    if (xObj.checked) {
+//        iNumMonths = 1;
+//    }
+
+//    xObj = document.getElementById("radioGraph30Months");
+//    if (xObj.checked) {
+//        iNumMonths = 30;
+//    }
+
+//    xObj = document.getElementById("radioGraph6Months");
+//    if (xObj.checked) {
+//        iNumMonths = 6;
+//    }
+
+//    xObj = document.getElementById("radioGraph12Months");
+//    if (xObj.checked) {
+//        iNumMonths = 12;
+//    }
+
+//    xObj = document.getElementById("optGraphMonth");
+//    if (xObj.selectedIndex != -1) {
+//        iMonthIdx = xObj.selectedIndex;
+//        xObj = document.getElementById("optGraphYear");
+//        iYearIdx = xObj.selectedIndex;
+//    }
+
+//    xObj = document.getElementById("chkGraphMeditation");
+//    bDoMeditation = xObj.checked;
+
+//    xObj = document.getElementById("chkGraphExercise");
+//    bDoExercise = xObj.checked;
+
+//    switch (sDataType) {
+//        case "Meditation":
+//            {
+//                if (!bDoMeditation) {
+//                    return;
+//                }
+//                break;
+//            }
+//        case "Exercise":
+//            {
+//                if (!bDoExercise) {
+//                    return;
+//                }
+//                break;
+//            }
+//    }
+
+//    var c_canvas = document.getElementById("cvsDetail");
+
+//    //draw the graph veritcal lines
+//    var context = c_canvas.getContext("2d");
+
+//    switch (sDataType) {
+//        case "Meditation":
+//            {
+//                sDataColor = ksColors[0];
+//                break;
+//            }
+//        case "Exercise":
+//            {
+//                sDataColor = ksColors[1];
+//                break;
+//            }
+//    }
+
+//    switch (iNumMonths) {
+//        case 1:
+//            {
+//                bFirstTime = true;
+//                dDayHrsMax = getDayMaxHrs(iYearIdx, iMonthIdx);
+//                if (dDayHrsMax > 6.0) {
+//                    dYMaxValue = 12.0;
+//                    dYMultiplier = 10.0;
+//                }
+//                else {
+//                    dYMaxValue = 6.0;
+//                    dYMultiplier = 20.0;
+//                }
+
+//                for (iDayIdx = 0; iDayIdx < gMeditationYears[iYearIdx].Months[iMonthIdx].Days.length; iDayIdx++) {
+//                    if (gMeditationYears[iYearIdx].Months[iMonthIdx].Days[iDayIdx] != null) {
+//                        iDay = gMeditationYears[iYearIdx].Months[iMonthIdx].Days[iDayIdx].iDay;
+//                        switch (sDataType) {
+//                            case "Meditation":
+//                                {
+//                                    dHr = parseFloat(gMeditationYears[iYearIdx].Months[iMonthIdx].Days[iDayIdx].iMeditationHours);
+//                                    dMin = parseFloat(gMeditationYears[iYearIdx].Months[iMonthIdx].Days[iDayIdx].iMeditationMinutes) / 60;
+//                                    iData = dHr + dMin;
+//                                    break;
+//                                }
+//                            case "Exercise":
+//                                {
+//                                    dHr = parseFloat(gMeditationYears[iYearIdx].Months[iMonthIdx].Days[iDayIdx].iExerciseHours);
+//                                    dMin = parseFloat(gMeditationYears[iYearIdx].Months[iMonthIdx].Days[iDayIdx].iExerciseMinutes) / 60;
+//                                    iData = dHr + dMin;
+//                                    break;
+//                                }
+//                        }
+//                        if (iData > dYMaxValue) {
+//                            iData = dYMaxValue;
+//                        }
+//                        if (bFirstTime) {
+//                            context.beginPath();
+//                            context.moveTo((100 - iXShiftLeft) + (iDay * 5), (100 - iYShiftUp) + (dYMultiplier * (dYMaxValue - iData)));
+//                            bFirstTime = false;
+//                        }
+//                        else {
+//                            while ((iLastDay + 1) < iDay) {
+//                                //graph a 0 value for hrs for months with no data
+//                                context.lineTo((100 - iXShiftLeft) + (iLastDay * 5), (100 - iYShiftUp) + (dYMultiplier * dYMaxValue));
+//                                iLastDay = iLastDay + 1;
+//                            }
+//                            context.lineTo((100 - iXShiftLeft) + (iDay * 5), (100 - iYShiftUp) + (dYMultiplier * (dYMaxValue - iData)));
+//                        }
+//                        iLastDay = iDay;
+//                    }
+//                }
+//                if (!bFirstTime) {
+//                    context.strokeStyle = sDataColor;
+//                    context.stroke();
+//                }
+//                break;
+//            }
+//        case 6:
+//            {
+//                DrawGraphGridDataMonthTotals(iXShiftLeft, iYShiftUp, sDataType, sDataColor, context, 20);
+//                break;
+//            }
+//        case 12:
+//            {
+//                DrawGraphGridDataMonthTotals(iXShiftLeft, iYShiftUp, sDataType, sDataColor, context, 10);
+//                break;
+//            }
+//        case 30:
+//            {
+//                DrawGraphGridDataMonthTotals(iXShiftLeft, iYShiftUp, sDataType, sDataColor, context, 5);
+//                break;
+//            }
+//    }
 }
 
 function EnableAllShow() {
@@ -6292,6 +6957,21 @@ function GetCurrentPrice(sSymbol) {
                                     } else {
                                         oSymbolPrice.totalVolume = oCM[sSymbol].totalVolume;
                                     }
+                                    if (oCM[sSymbol].closePrice == undefined) {
+                                        oSymbolPrice.close = 0;
+                                    } else {
+                                        oSymbolPrice.close = oCM[sSymbol].closePrice;
+                                    }
+                                    if (oCM[sSymbol]["52WkHigh"] == undefined) {
+                                        oSymbolPrice.d52WkHigh = 0;
+                                    } else {
+                                        oSymbolPrice.d52WkHigh = oCM[sSymbol]["52WkHigh"];
+                                    }
+                                    if (oCM[sSymbol]["52WkLow"] == undefined) {
+                                        oSymbolPrice.d52WkLow = 0;
+                                    } else {
+                                        oSymbolPrice.d52WkLow = oCM[sSymbol]["52WkLow"];
+                                    }
                                     if (oCM[sSymbol].lastPrice == undefined) {
                                         oSymbolPrice.description = "Price not found.";
                                         oSymbolPrice.price = 0.0;
@@ -6941,6 +7621,17 @@ function GetIndexValues() {
     return;
 }
 
+function GetLabelFromDatetime(dDatetime) {
+    let sReturn = "";
+    try {
+        let dtDate = new Date(dDatetime);
+        sReturn = FormatIntegerNumber(dtDate.getHours(), 2, "0") + ":" + FormatIntegerNumber(dtDate.getMinutes(), 2, "0");
+    } catch (e1) {
+        sReturn = "";
+    }
+    return sReturn;
+}
+
 function GetSectionHeights() {
     if (document.getElementById("tdIndexes") != null) {
         giSectionHeights.IndexSelection.height = document.getElementById("tdIndexes").offsetHeight;
@@ -7488,6 +8179,1459 @@ function GetStockPriceHistory() {
     }
 }
 
+function GetStockPriceHistoryData(sSymbolsIn, sThisId, iWhatToShowIn, iSymbolIdxIn) {
+    //iWhatToShow - 1 = show one month by day, 2 = show 2 months by day, 3= show 3 months by day, 4 = show 12 months by month, 5 = show today by minute, 6 = show today by every 10 minutes, 7 = show today by every 30 minutes, 8 = last hour by minute
+    let aSymbolsIn = sSymbolsIn.split(",");
+
+    let sSymbolIn = aSymbolsIn[iSymbolIdxIn];
+    let iTryCount = 0;
+    let idxCandle = 0;
+    let bOk = false;
+    let iWhatToShow = 4; //default to 12 months by month
+
+    let sServerBaseMinutePeriod = "https://api.tdameritrade.com/v1/marketdata/" + sSymbolIn + "/pricehistory?periodType=day&period=1";
+    let sServerBaseMinute = "https://api.tdameritrade.com/v1/marketdata/" + sSymbolIn + "/pricehistory?startDate=xxxxxxx&endDate=yyyyyyy";
+    let sServerBaseYear = "https://api.tdameritrade.com/v1/marketdata/" + sSymbolIn + "/pricehistory?periodType=year&frequencyType=daily";
+    let sServerUrlBase = sServerBaseYear;
+    let bUsingMinutePeriod = false;
+    let sFrequency = "";
+
+    let oCM;
+    let d52WkHigh = 0.0;
+    let d52WkLow = 0.0;
+    let dClosePrice = 0.0;
+    let dTotalVolume = -1;
+
+    let bExists = false;
+    let bShown = false;
+    let iCurrentChartType = 0;
+    let idxCurr  = 0;
+
+    if (gChartInfo.length > 0) {
+        for (let idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+            if (gChartInfo[idxCI].symbol == sSymbolIn) {
+                bExists = true;
+                if (gChartInfo[idxCI].spanName != "") {
+                    if (document.getElementById(gChartInfo[idxCI].spanName) != null) {
+                        if (gChartInfo[idxCI].chart != null) {
+                            if (gChartInfo[idxCI].chart.attached) {
+                                bShown = true;
+                            }
+                        }
+                    }
+                    idxCurr = idxCI;
+                    iCurrentChartType = gChartInfo[idxCI].chartType;
+                }
+                break;
+            }
+        }
+    }
+    if (!isUndefined(iWhatToShowIn)) {
+        if (iWhatToShowIn == iCurrentChartType) {
+            if ((iCurrentChartType == 8) && (bShown)) {
+                if ((iSymbolIdxIn + 1) < aSymbolsIn.length) {
+                    window.setTimeout("ShowPriceHistory('" + sSymbolsIn + "',  " + (iSymbolIdxIn + 1).toString() + ")", 10);
+                }
+                return; //do nothing, it will be updated elsewhere
+            }
+        }
+    }
+        
+
+    setWaitPHPopup(sThisId);
+
+    if (!isUndefined(oMDQ[sSymbolIn])) {
+        if (!isUndefined(oMDQ[sSymbolIn]["52WkHigh"])) {
+            d52WkHigh = oMDQ[sSymbolIn]["52WkHigh"];
+        }
+        if (!isUndefined(oMDQ[sSymbolIn]["52WkLow"])) {
+            d52WkLow = oMDQ[sSymbolIn]["52WkLow"];
+        }
+        if (!isUndefined(oMDQ[sSymbolIn]["closePrice"])) {
+            dClosePrice = oMDQ[sSymbolIn]["closePrice"];
+            let sTmp = FormatDecimalNumber(dClosePrice, 5, 2, "");
+            dClosePrice = parseFloat(sTmp);
+        }
+        if (!isUndefined(oMDQ[sSymbolIn]["totalVolume"])) {
+            dTotalVolume = oMDQ[sSymbolIn]["totalVolume"];
+        }
+    } else {
+        let oSymbolPrice = GetCurrentPrice(sSymbolIn);
+        d52WkHigh = oSymbolPrice.d52WkHigh;
+        d52WkLow = oSymbolPrice.d52WkLow;
+        dClosePrice = oSymbolPrice.close;
+        let sTmp = FormatDecimalNumber(dClosePrice, 5, 2, "");
+        dClosePrice = parseFloat(sTmp);
+    }
+
+    if (!isUndefined(iWhatToShowIn)) {
+        iWhatToShow = iWhatToShowIn;
+        switch (iWhatToShow) {
+            case 5: //show today frequency 1 minute
+                {
+                    sFrequency = "&frequency=1";
+                    break;
+                }
+            case 6: //show today frequency 10 minutes
+                {
+                    sFrequency = "&frequency=10";
+                    break;
+                }
+            case 7: //show today frequency 30 minutes
+                {
+                    sFrequency = "&frequency=30";
+                    break;
+                }
+            case 8: //show today frequency 1 minutes
+                {
+                    sFrequency = "&frequency=1";
+                    break;
+                }
+            default:
+                break;
+        }
+
+        if ((iWhatToShow == 5) || (iWhatToShow == 6) || (iWhatToShow == 7) || (iWhatToShow == 8)) {
+            let sStartDateLongOrig = "";
+            let sEndDate = "";
+            if (gMarketStatus.isInitialized) {
+                if (gMarketStatus.isOpen) {
+                    //open - there is trading on this day
+                    let dtCurrDate = new Date();
+                    if (dtCurrDate < gMarketStatus.dtPreStart) {
+                        //use last trading day and only use the last days data
+                        sServerUrlBase = sServerBaseMinutePeriod + sFrequency;
+                        bUsingMinutePeriod = true;
+                    } else {
+                        sStartDateLongOrig = gMarketStatus.dtPreStart.getTime().toString();
+                        sEndDate = gMarketStatus.dtPostEnd.getTime().toString();
+                        sServerUrlBase = sServerBaseMinute + sFrequency;
+                        sServerUrlBase = sServerUrlBase.replace("xxxxxxx", sStartDateLongOrig);
+                        sServerUrlBase = sServerUrlBase.replace("yyyyyyy", sEndDate);
+                    }
+                } else {
+                    //not open - no trading on this day - use last trading day and only use the last days data
+                    sServerUrlBase = sServerBaseMinutePeriod + sFrequency;
+                    bUsingMinutePeriod = true;
+                }
+            } else {
+                //not open - no trading on this day - use last trading day and only use the last days data
+                sServerUrlBase = sServerBaseMinutePeriod + sFrequency;
+                bUsingMinutePeriod = true;
+            }
+        }
+    }
+
+    iTryCount = 0;
+
+    while (iTryCount < 2) {
+        let xhttp = null;
+        let iInnerTryCount = 0;
+        xhttp = oHTTP();
+        while ((xhttp == null) && (iInnerTryCount < 5)) {
+            xhttp = oHTTP();
+            iInnerTryCount = iInnerTryCount + 1;
+        }
+        iInnerTryCount = 0;
+        if (CheckHTTPOpenGet(xhttp, sServerUrlBase, "Error during xhttp.open to " + sServerUrlBase, false, false, "", "")) {
+            // set the request header
+            xhttp.setRequestHeader("AUTHORIZATION", "Bearer " + gAccessToken.access_token);
+
+            // send the request
+            try {
+                xhttp.send();
+                if (xhttp.responseText != null) {
+                    if (xhttp.responseText != "") {
+                        //might be something like - "error":"The access token being passed has expired or is invalid."
+                        let oCMLength = 0;
+                        oCM = myJSON.parse(xhttp.responseText);
+                        switch (checkTDAPIError(oCM)) {
+                            case 0: //no error
+                                {
+                                    try {
+                                        oCMLength = oCM.candles.length;
+                                    } catch (e2) {
+                                        oCMLength = 0;
+                                    }
+                                    break;
+                                }
+                            case 1: //acces code expired
+                                {
+                                    xhttp = null;
+                                    if (GetAccessCodeUsingRefreshToken()) {
+                                        oCMLength = 0;
+                                    } else {
+                                        alert("An error occurred attempting to refresh the access code. Please reload the app.");
+                                        gbDoingCreateOrders = false;
+                                        return;
+                                    }
+                                    break;
+                                }
+                            case 2: //other error
+                                {
+                                    if (oCM.error.toUpperCase() == "BAD REQUEST.") {
+                                        alert("Make sure the Start Date is a valid trading day and then try again.");
+                                        gbDoingCreateOrders = false;
+                                        return;
+                                    } else {
+                                        oCMLength = 0;
+                                    }
+                                    break;
+                                }
+                            default:
+                                {
+                                    oCMLength = 0;
+                                    break;
+                                }
+                        }
+
+                        if (oCMLength > 0) {
+                            bOk = true;
+                            let iLastCandleMonth = 0;
+                            let iLastCandleDay = 0;
+                            let iCurrPCDIdx = -1;
+                            let iCurrPCDMIdx = -1;
+                            let oPCD = new PriceChartData();
+                            if (gPriceChartData.length == 0) {
+                                oPCD = new PriceChartData();
+                                oPCD.symbol = sSymbolIn;
+                                gPriceChartData[gPriceChartData.length] = oPCD;
+                                iCurrPCDIdx = gPriceChartData.length - 1;
+                            } else {
+                                let bFound = false;
+                                for (let idx = 0; idx < gPriceChartData.length; idx++) {
+                                    if (gPriceChartData[idx].symbol == sSymbolIn) {
+                                        gPriceChartData[idx].months = new Array();
+                                        bFound = true;
+                                        iCurrPCDIdx = idx;
+                                        break;
+                                    }
+                                }
+                                if (!bFound) {
+                                    oPCD = new PriceChartData();
+                                    oPCD.symbol = sSymbolIn;
+                                    gPriceChartData[gPriceChartData.length] = oPCD;
+                                    iCurrPCDIdx = gPriceChartData.length - 1;
+                                }
+                            }
+                            if ((iWhatToShow == 5) || (iWhatToShow == 6) || (iWhatToShow == 7) || (iWhatToShow == 8)) { //show todays data
+                                let idxDayStart = 0;
+                                if (bUsingMinutePeriod) {
+                                    //find out where to start reading candles
+                                    let iLastDay = 0;
+                                    for (idxCandle = oCM.candles.length - 1; idxCandle > -1 ; idxCandle--) {
+                                        let candleDate = new Date(oCM.candles[idxCandle].datetime);
+                                        let iMonth = candleDate.getUTCMonth() + 1;
+                                        let iDay = candleDate.getUTCDate();
+                                        let iYear = candleDate.getUTCFullYear();
+                                        if (iLastDay == 0) {
+                                            iLastDay = iDay;
+                                        } else if (iDay != iLastDay) {
+                                            idxDayStart = idxCandle;
+                                            break;
+                                        }
+                                    }
+                                }
+                                let oPCDD = new PriceDay();
+                                let dLastVolume = 0;
+                                for (idxCandle = idxDayStart; idxCandle < oCM.candles.length; idxCandle++) {
+                                    let candleDate = new Date(oCM.candles[idxCandle].datetime);
+                                    let iMonth = candleDate.getUTCMonth() + 1;
+                                    let iDay = candleDate.getUTCDate();
+                                    let iYear = candleDate.getUTCFullYear();
+                                    let oPCDM = new PriceMonth();
+                                    if (iLastCandleMonth != iMonth) {
+                                        iLastCandleMonth = iMonth;
+                                        iLastCandleDay = 0;
+                                        oPCDM = new PriceMonth();
+                                        oPCDM.month = iMonth;
+                                        oPCDM.year = iYear;
+                                        gPriceChartData[iCurrPCDIdx].months[gPriceChartData[iCurrPCDIdx].months.length] = oPCDM;
+                                        iCurrPCDMIdx = gPriceChartData[iCurrPCDIdx].months.length - 1;
+                                    }
+                                    //today (or last trading day) with values every minute from market open until now
+                                    if (iLastCandleDay != iDay) {
+                                        iLastCandleDay = iDay;
+                                        oPCDD = new PriceDay();
+                                        oPCDD.high = oCM.candles[idxCandle].high;
+                                        oPCDD.low = oCM.candles[idxCandle].low;
+                                    }
+                                    if (oCM.candles[idxCandle].high > oPCDD.high) {
+                                        oPCDD.high = oCM.candles[idxCandle].high;
+                                    }
+                                    if (oCM.candles[idxCandle].low > oPCDD.low) {
+                                        oPCDD.low = oCM.candles[idxCandle].low;
+                                    }
+                                    //add minutes here
+                                    let oPCDDM = new PriceTodayMinute();
+                                    oPCDDM.dateTime = oCM.candles[idxCandle].datetime;
+                                    oPCDDM.hour = candleDate.getUTCHours();
+                                    oPCDDM.minute = candleDate.getUTCMinutes();
+                                    oPCDDM.high = oCM.candles[idxCandle].high;
+                                    oPCDDM.low = oCM.candles[idxCandle].low;
+                                    oPCDDM.open = oCM.candles[idxCandle].open;
+                                    oPCDDM.close = oCM.candles[idxCandle].close;
+                                    if (oCM.candles[idxCandle].volume < 0) {
+                                        oPCDDM.volume = 0;
+                                    } else {
+                                        oPCDDM.volume = oCM.candles[idxCandle].volume;
+                                    }
+                                    dLastVolume = oPCDDM.volume;
+                                    oPCDD.minutes[oPCDD.minutes.length] = oPCDDM;
+                                }
+                                gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days[gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days.length] = oPCDD;
+                                gChartInfo[idxCurr].iLastPriceChartDataIdx = iCurrPCDIdx;
+                                gChartInfo[idxCurr].iLastMonthIdx = iCurrPCDMIdx;
+                                gChartInfo[idxCurr].iLastDayIdx = gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days.length - 1;
+                                gChartInfo[idxCurr].iLastMinuteIdx = gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days[gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days.length - 1].minutes.length - 1;
+                                if (dTotalVolume != -1) {
+                                    if ((dTotalVolume - dLastVolume) < 0) {
+                                        gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days[gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days.length - 1].minutes[gChartInfo[idxCurr].iLastMinuteIdx].totalVolume = 0;
+                                    } else {
+                                        gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days[gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days.length - 1].minutes[gChartInfo[idxCurr].iLastMinuteIdx].totalVolume = dTotalVolume - dLastVolume;
+                                    }
+                                } else {
+                                    gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days[gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days.length - 1].minutes[gChartInfo[idxCurr].iLastMinuteIdx].totalVolume = -1;
+                                }
+                            } else {
+                                let oPCDD = new PriceDay();
+                                for (idxCandle = 0; idxCandle < oCM.candles.length; idxCandle++) {
+                                    let candleDate = new Date(oCM.candles[idxCandle].datetime);
+                                    let iMonth = candleDate.getUTCMonth() + 1;
+                                    let iDay = candleDate.getUTCDate();
+                                    let iYear = candleDate.getUTCFullYear();
+                                    let oPCDM = new PriceMonth();
+                                    if (iLastCandleMonth != iMonth) {
+                                        iLastCandleMonth = iMonth;
+                                        iLastCandleDay = 0;
+                                        oPCDM = new PriceMonth();
+                                        oPCDM.month = iMonth;
+                                        oPCDM.year = iYear;
+                                        gPriceChartData[iCurrPCDIdx].months[gPriceChartData[iCurrPCDIdx].months.length] = oPCDM;
+                                        iCurrPCDMIdx = gPriceChartData[iCurrPCDIdx].months.length - 1;
+                                    }
+                                    //the past 12 months with 1 value per day
+                                    oPCDD = new PriceDay();
+                                    oPCDD.dateTime = oCM.candles[idxCandle].datetime;
+                                    oPCDD.high = oCM.candles[idxCandle].high;
+                                    oPCDD.low = oCM.candles[idxCandle].low;
+                                    oPCDD.close = oCM.candles[idxCandle].close;
+                                    gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].close = oCM.candles[idxCandle].close;
+                                    oPCDD.day = iDay;
+                                    if (gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].high < oPCDD.high) {
+                                        gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].high = oPCDD.high;
+                                    }
+                                    if (oPCDD.low < gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].low) {
+                                        gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].low = oPCDD.low;
+                                    }
+                                    gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days[gPriceChartData[iCurrPCDIdx].months[iCurrPCDMIdx].days.length] = oPCDD;
+                                }
+                            }
+                        }
+
+                        switch (iWhatToShow) {
+                            case 1: { //show 1 month by day
+                                if (gPriceChartData.length > 0) {
+                                    for (let idx = 0; idx < gPriceChartData.length; idx++) {
+                                        if (gPriceChartData[idx].symbol == sSymbolIn) {
+                                            if (gPriceChartData[idx].months.length > 0) {
+                                                let aHigh = new Array();
+                                                let aLow = new Array();
+                                                let aLabels = new Array();
+                                                let a52WkHigh = new Array();
+                                                let a52WkLow = new Array();
+                                                let aClose = new Array();
+                                                let bFirstMonth = true;
+                                                let oPCDM = new PriceMonth();
+                                                let iStartidx = gPriceChartData[idx].months.length - 1;
+                                                let oDays = gPriceChartData[idx].months[gPriceChartData[idx].months.length - 1].days;
+                                                if (oDays[oDays.length - 1].day < 15) {
+                                                    if (gPriceChartData[idx].months.length > 1) {
+                                                        iStartidx = gPriceChartData[idx].months.length - 2;
+                                                    }
+                                                }
+                                                for (idxMonth = iStartidx; idxMonth < gPriceChartData[idx].months.length; idxMonth++) {
+                                                    if (!bFirstMonth) {
+                                                        //need to add days to start of new month with the last value of the previous month?
+                                                        let oPCDD = oPCDM.days[oPCDM.days.length - 1]; //last day of previous month
+                                                        oPCDM = new PriceMonth();
+                                                        oPCDM = gPriceChartData[idx].months[idxMonth];
+                                                        if (oPCDM.days[0].day > 1) {
+                                                            for (idxFill = 1; idxFill < oPCDM.days[0].day; idxFill++) {
+                                                                aHigh[aHigh.length] = aHigh[aHigh.length - 1];
+                                                                aLow[aLow.length] = aLow[aLow.length - 1];
+                                                                aClose[aClose.length] = aClose[aClose.length - 1];
+                                                                aLabels[aLabels.length] = idxFill;
+                                                                a52WkHigh[a52WkHigh.length] = d52WkHigh;
+                                                                a52WkLow[a52WkLow.length] = d52WkLow;
+                                                            }
+                                                        }
+                                                    } else {
+                                                        oPCDM = new PriceMonth();
+                                                        oPCDM = gPriceChartData[idx].months[idxMonth];
+                                                    }
+                                                    if (oPCDM.days.length > 0) {
+                                                        let iDayOfMonth = 0;
+                                                        GetStockPriceHistoryDataChart1(iDayOfMonth, oPCDM, aHigh, aLow, aLabels, a52WkHigh, a52WkLow, d52WkHigh, d52WkLow, aClose);
+                                                        bFirstMonth = false;
+                                                    }
+                                                }
+                                                for (idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+                                                    if (gChartInfo[idxCI].symbol == sSymbolIn) {
+                                                        if (gChartInfo[idxCI].chart != null) {
+                                                            gChartInfo[idxCI].chart.destroy();
+                                                        }
+                                                        let CIdata = {
+                                                            labels: aLabels,
+                                                            datasets: [{
+                                                                label: 'High',
+                                                                borderColor: CHART_COLORS.black,
+                                                                data: aHigh,
+                                                                yAxisID: 'y',
+                                                            }, {
+                                                                label: 'Low',
+                                                                borderColor: CHART_COLORS.green,
+                                                                data: aLow,
+                                                                yAxisID: 'y',
+                                                            }, {
+                                                                label: 'Close',
+                                                                backgroundColor: CHART_COLORS.yellow,
+                                                                borderColor: CHART_COLORS.yellow,
+                                                                data: aClose
+                                                            }, {
+                                                                label: '52Wk High',
+                                                                borderColor: CHART_COLORS.blue,
+                                                                data: a52WkHigh,
+                                                                yAxisID: 'y1',
+                                                            }, {
+                                                                label: '52Wk Low',
+                                                                borderColor: CHART_COLORS.red,
+                                                                data: a52WkLow,
+                                                                yAxisID: 'y1',
+                                                            }]
+                                                        };
+
+                                                        const CIconfig = {
+                                                            type: 'line',
+                                                            data: CIdata,
+                                                            options: {
+                                                                plugins: {
+                                                                    legend: false,
+                                                                    tooltip: true,
+                                                                    tooltip: {
+                                                                        callbacks: {
+                                                                            title: beforeBodyDay,
+                                                                        }
+                                                                    },
+                                                                },
+                                                                radius: 0,
+                                                                interaction: {
+                                                                    intersect: false,
+                                                                    mode: 'index',
+                                                                },
+                                                                scales: {
+                                                                    x: {
+                                                                        display: true,
+                                                                    },
+                                                                    y: {
+                                                                        type: 'linear',
+                                                                        display: true,
+                                                                        position: 'left',
+                                                                    },
+                                                                    y1: {
+                                                                        type: 'linear',
+                                                                        display: true,
+                                                                        position: 'right',
+
+                                                                        // grid line settings
+                                                                        grid: {
+                                                                            drawOnChartArea: false, // only want the grid lines for one axis to show up
+                                                                        },
+                                                                    },
+                                                                }
+                                                            }
+                                                        };
+                                                        gChartInfo[idxCI].chart = new Chart(
+                                                            document.getElementById("cvsDetail" + sThisId),
+                                                            CIconfig
+                                                        );
+                                                        gChartInfo[idxCI].chartType = iWhatToShow;
+                                                        //gChartInfo[idxCI].bRealTime = false;
+                                                        //if (document.getElementById("spanRealTime" + sThisId) != null) {
+                                                        //    document.getElementById("chkRealTime" + sThisId).checked = false;
+                                                        //    document.getElementById("spanRealTime" + sThisId).style.visibility = "hidden";
+                                                        //}
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case 2: { //show 2 months by day
+                                if (gPriceChartData.length > 0) {
+                                    for (let idx = 0; idx < gPriceChartData.length; idx++) {
+                                        if (gPriceChartData[idx].symbol == sSymbolIn) {
+                                            if (gPriceChartData[idx].months.length > 0) {
+                                                if (gPriceChartData[idx].months.length > 1) {
+                                                    let aHigh = new Array();
+                                                    let aLow = new Array();
+                                                    let aClose = new Array();
+                                                    let aLabels = new Array();
+                                                    let a52WkHigh = new Array();
+                                                    let a52WkLow = new Array();
+                                                    let bFirstMonth = true;
+                                                    let oPCDM = new PriceMonth();
+
+                                                    let iStartidx = gPriceChartData[idx].months.length - 2;
+                                                    let oDays = gPriceChartData[idx].months[gPriceChartData[idx].months.length - 1].days;
+                                                    if (oDays[oDays.length - 1].day < 15) {
+                                                        if (gPriceChartData[idx].months.length > 2) {
+                                                            iStartidx = gPriceChartData[idx].months.length - 3;
+                                                        }
+                                                    }
+
+                                                    for (idxMonth = iStartidx; idxMonth < gPriceChartData[idx].months.length; idxMonth++) {
+                                                        if (!bFirstMonth) {
+                                                            //need to add days to start of new month with the last value of the previous month?
+                                                            let oPCDD = oPCDM.days[oPCDM.days.length - 1]; //last day of previous month
+                                                            oPCDM = new PriceMonth();
+                                                            oPCDM = gPriceChartData[idx].months[idxMonth];
+                                                            if (oPCDM.days[0].day > 1) {
+                                                                for (idxFill = 1; idxFill < oPCDM.days[0].day; idxFill++) {
+                                                                    aHigh[aHigh.length] = aHigh[aHigh.length - 1];
+                                                                    aLow[aLow.length] = aLow[aLow.length - 1];
+                                                                    aClose[aClose.length] = aClose[aClose.length - 1];
+                                                                    aLabels[aLabels.length] = idxFill;
+                                                                    a52WkHigh[a52WkHigh.length] = d52WkHigh;
+                                                                    a52WkLow[a52WkLow.length] = d52WkLow;
+                                                                }
+                                                            }
+                                                        } else {
+                                                            oPCDM = new PriceMonth();
+                                                            oPCDM = gPriceChartData[idx].months[idxMonth];
+                                                        }
+                                                        if (oPCDM.days.length > 0) {
+                                                            let iDayOfMonth = 0;
+                                                            GetStockPriceHistoryDataChart1(iDayOfMonth, oPCDM, aHigh, aLow, aLabels, a52WkHigh, a52WkLow, d52WkHigh, d52WkLow, aClose);
+                                                            bFirstMonth = false;
+                                                        }
+                                                    }
+                                                    for (idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+                                                        if (gChartInfo[idxCI].symbol == sSymbolIn) {
+                                                            if (gChartInfo[idxCI].chart != null) {
+                                                                gChartInfo[idxCI].chart.destroy();
+                                                            }
+                                                            let CIdata = {
+                                                                labels: aLabels,
+                                                                datasets: [{
+                                                                    label: 'High',
+                                                                    borderColor: CHART_COLORS.black,
+                                                                    data: aHigh,
+                                                                    yAxisID: 'y',
+                                                                }, {
+                                                                    label: 'Low',
+                                                                    borderColor: CHART_COLORS.green,
+                                                                    data: aLow,
+                                                                    yAxisID: 'y',
+                                                                }, {
+                                                                    label: 'Close',
+                                                                    backgroundColor: CHART_COLORS.yellow,
+                                                                    borderColor: CHART_COLORS.yellow,
+                                                                    data: aClose
+                                                                }, {
+                                                                    label: '52Wk High',
+                                                                    borderColor: CHART_COLORS.blue,
+                                                                    data: a52WkHigh,
+                                                                    yAxisID: 'y1',
+                                                                }, {
+                                                                    label: '52Wk Low',
+                                                                    borderColor: CHART_COLORS.red,
+                                                                    data: a52WkLow,
+                                                                    yAxisID: 'y1',
+                                                                }]
+                                                            };
+
+                                                            const CIconfig = {
+                                                                type: 'line',
+                                                                data: CIdata,
+                                                                options: {
+                                                                    plugins: {
+                                                                        legend: false,
+                                                                        tooltip: true,
+                                                                        tooltip: {
+                                                                            callbacks: {
+                                                                                title: beforeBodyDay,
+                                                                            }
+                                                                        },
+                                                                    },
+                                                                    radius: 0,
+                                                                    interaction: {
+                                                                        intersect: false,
+                                                                        mode: 'index',
+                                                                    },
+                                                                    scales: {
+                                                                        y: {
+                                                                            type: 'linear',
+                                                                            display: true,
+                                                                            position: 'left',
+                                                                        },
+                                                                        y1: {
+                                                                            type: 'linear',
+                                                                            display: true,
+                                                                            position: 'right',
+
+                                                                            // grid line settings
+                                                                            grid: {
+                                                                                drawOnChartArea: false, // only want the grid lines for one axis to show up
+                                                                            },
+                                                                        },
+                                                                    }
+                                                                }
+                                                            };
+                                                            gChartInfo[idxCI].chart = new Chart(
+                                                                document.getElementById("cvsDetail" + sThisId),
+                                                                CIconfig
+                                                            );
+                                                            gChartInfo[idxCI].chartType = iWhatToShow;
+                                                            //gChartInfo[idxCI].bRealTime = false;
+                                                            //if (document.getElementById("spanRealTime" + sThisId) != null) {
+                                                            //    document.getElementById("chkRealTime" + sThisId).checked = false;
+                                                            //    document.getElementById("spanRealTime" + sThisId).style.visibility = "hidden";
+                                                            //}
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case 3: { //show 3 months by day
+                                if (gPriceChartData.length > 0) {
+                                    for (let idx = 0; idx < gPriceChartData.length; idx++) {
+                                        if (gPriceChartData[idx].symbol == sSymbolIn) {
+                                            if (gPriceChartData[idx].months.length > 0) {
+                                                if (gPriceChartData[idx].months.length > 2) {
+                                                    let aHigh = new Array();
+                                                    let aLow = new Array();
+                                                    let aClose = new Array();
+                                                    let aLabels = new Array();
+                                                    let a52WkHigh = new Array();
+                                                    let a52WkLow = new Array();
+                                                    let bFirstMonth = true;
+                                                    let oPCDM = new PriceMonth();
+                                                    let iStartidx = gPriceChartData[idx].months.length - 3;
+                                                    let oDays = gPriceChartData[idx].months[gPriceChartData[idx].months.length - 1].days;
+                                                    if (oDays[oDays.length - 1].day < 15) {
+                                                        if (gPriceChartData[idx].months.length > 3) {
+                                                            iStartidx = gPriceChartData[idx].months.length - 4;
+                                                        }
+                                                    }
+                                                    for (idxMonth = iStartidx; idxMonth < gPriceChartData[idx].months.length; idxMonth++) {
+                                                        if (!bFirstMonth) {
+                                                            //need to add days to start of new month with the last value of the previous month?
+                                                            let oPCDD = oPCDM.days[oPCDM.days.length - 1]; //last day of previous month
+                                                            oPCDM = new PriceMonth();
+                                                            oPCDM = gPriceChartData[idx].months[idxMonth];
+                                                            if (oPCDM.days[0].day > 1) {
+                                                                for (idxFill = 1; idxFill < oPCDM.days[0].day; idxFill++) {
+                                                                    aHigh[aHigh.length] = aHigh[aHigh.length - 1];
+                                                                    aLow[aLow.length] = aLow[aLow.length - 1];
+                                                                    aClose[aClose.length] = aClose[aClose.length - 1];
+                                                                    aLabels[aLabels.length] = idxFill;
+                                                                    a52WkHigh[a52WkHigh.length] = d52WkHigh;
+                                                                    a52WkLow[a52WkLow.length] = d52WkLow;
+                                                                }
+                                                            }
+                                                        } else {
+                                                            oPCDM = new PriceMonth();
+                                                            oPCDM = gPriceChartData[idx].months[idxMonth];
+                                                        }
+                                                        if (oPCDM.days.length > 0) {
+                                                            let iDayOfMonth = 0;
+                                                            GetStockPriceHistoryDataChart1(iDayOfMonth, oPCDM, aHigh, aLow, aLabels, a52WkHigh, a52WkLow, d52WkHigh, d52WkLow, aClose);
+                                                            bFirstMonth = false;
+                                                        }
+                                                    }
+                                                    for (idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+                                                        if (gChartInfo[idxCI].symbol == sSymbolIn) {
+                                                            if (gChartInfo[idxCI].chart != null) {
+                                                                gChartInfo[idxCI].chart.destroy();
+                                                            }
+                                                            let CIdata = {
+                                                                labels: aLabels,
+                                                                datasets: [{
+                                                                    label: 'High',
+                                                                    backgroundColor: CHART_COLORS.black,
+                                                                    borderColor: CHART_COLORS.black,
+                                                                    data: aHigh,
+                                                                    yAxisID: 'y',
+                                                                }, {
+                                                                    label: 'Low',
+                                                                    backgroundColor: CHART_COLORS.green,
+                                                                    borderColor: CHART_COLORS.green,
+                                                                    data: aLow,
+                                                                    yAxisID: 'y',
+                                                                }, {
+                                                                    label: 'Close',
+                                                                    backgroundColor: CHART_COLORS.yellow,
+                                                                    borderColor: CHART_COLORS.yellow,
+                                                                    data: aClose
+                                                                }, {
+                                                                    label: '52Wk High',
+                                                                    backgroundColor: CHART_COLORS.blue,
+                                                                    borderColor: CHART_COLORS.blue,
+                                                                    data: a52WkHigh,
+                                                                    yAxisID: 'y1',
+                                                                }, {
+                                                                    label: '52Wk Low',
+                                                                    backgroundColor: CHART_COLORS.red,
+                                                                    borderColor: CHART_COLORS.red,
+                                                                    data: a52WkLow,
+                                                                    yAxisID: 'y1',
+                                                                }]
+                                                            };
+
+                                                            const CIconfig = {
+                                                                type: 'line',
+                                                                data: CIdata,
+                                                                options: {
+                                                                    plugins: {
+                                                                        legend: false,
+                                                                        tooltip: true,
+                                                                        tooltip: {
+                                                                            callbacks: {
+                                                                                title: beforeBodyDay,
+                                                                            }
+                                                                        },
+                                                                    },
+                                                                    radius: 0,
+                                                                    interaction: {
+                                                                        intersect: false,
+                                                                        mode: 'index',
+                                                                    },
+                                                                    scales: {
+                                                                        y: {
+                                                                            type: 'linear',
+                                                                            display: true,
+                                                                            position: 'left',
+                                                                        },
+                                                                        y1: {
+                                                                            type: 'linear',
+                                                                            display: true,
+                                                                            position: 'right',
+
+                                                                            // grid line settings
+                                                                            grid: {
+                                                                                drawOnChartArea: false, // only want the grid lines for one axis to show up
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                }
+                                                            };
+                                                            gChartInfo[idxCI].chart = new Chart(
+                                                                document.getElementById("cvsDetail" + sThisId),
+                                                                CIconfig
+                                                            );
+                                                            gChartInfo[idxCI].chartType = iWhatToShow;
+                                                            //gChartInfo[idxCI].bRealTime = false;
+                                                            //if (document.getElementById("spanRealTime" + sThisId) != null) {
+                                                            //    document.getElementById("chkRealTime" + sThisId).checked = false;
+                                                            //    document.getElementById("spanRealTime" + sThisId).style.visibility = "hidden";
+                                                            //}
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case 4: { //show 12 months by month
+                                if (gPriceChartData.length > 0) {
+                                    for (let idx = 0; idx < gPriceChartData.length; idx++) {
+                                        if (gPriceChartData[idx].symbol == sSymbolIn) {
+                                            if (gPriceChartData[idx].months.length > 0) {
+                                                let aHigh = new Array();
+                                                let aLow = new Array();
+                                                let aClose = new Array();
+                                                let aLabels = new Array();
+                                                let a52WkHigh = new Array();
+                                                let a52WkLow = new Array();
+                                                for (let idxMonth = 0; idxMonth < gPriceChartData[idx].months.length; idxMonth++) {
+                                                    aHigh[aHigh.length] = gPriceChartData[idx].months[idxMonth].high;
+                                                    aLow[aLow.length] = gPriceChartData[idx].months[idxMonth].low;
+                                                    aClose[aClose.length] = gPriceChartData[idx].months[idxMonth].close;
+                                                    aLabels[aLabels.length] = CIlabels[gPriceChartData[idx].months[idxMonth].month - 1];
+                                                    a52WkHigh[a52WkHigh.length] = d52WkHigh;
+                                                    a52WkLow[a52WkLow.length] = d52WkLow;
+                                                }
+                                                for (idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+                                                    if (gChartInfo[idxCI].symbol == sSymbolIn) {
+                                                        if (gChartInfo[idxCI].chart != null) {
+                                                            gChartInfo[idxCI].chart.destroy();
+                                                        }
+                                                        let CIdata = {
+                                                            labels: aLabels,
+                                                            datasets: [{
+                                                                label: 'High',
+                                                                backgroundColor: CHART_COLORS.black,
+                                                                borderColor: CHART_COLORS.black,
+                                                                data: aHigh
+                                                            }, {
+                                                                label: 'Low',
+                                                                backgroundColor: CHART_COLORS.green,
+                                                                borderColor: CHART_COLORS.green,
+                                                                data: aLow
+                                                            }, {
+                                                                label: 'Close',
+                                                                backgroundColor: CHART_COLORS.yellow,
+                                                                borderColor: CHART_COLORS.yellow,
+                                                                data: aClose
+                                                            }, {
+                                                                label: '52Wk High',
+                                                                backgroundColor: CHART_COLORS.blue,
+                                                                borderColor: CHART_COLORS.blue,
+                                                                data: a52WkHigh
+                                                            }, {
+                                                                label: '52Wk Low',
+                                                                backgroundColor: CHART_COLORS.red,
+                                                                borderColor: CHART_COLORS.red,
+                                                                data: a52WkLow
+                                                            }]
+                                                        };
+
+                                                        const CIconfig = {
+                                                            type: 'line',
+                                                            data: CIdata,
+                                                            options: {
+                                                                plugins: {
+                                                                    legend: false,
+                                                                    tooltip: true,
+                                                                },
+                                                                radius: 0,
+                                                                interaction: {
+                                                                    intersect: false,
+                                                                    mode: 'index',
+                                                                },
+                                                            }
+
+                                                        };
+                                                        gChartInfo[idxCI].chart = new Chart(
+                                                            document.getElementById("cvsDetail" + sThisId),
+                                                            CIconfig
+                                                        );
+                                                        gChartInfo[idxCI].chartType = iWhatToShow;
+                                                        //gChartInfo[idxCI].bRealTime = false;
+                                                        //if (document.getElementById("spanRealTime" + sThisId) != null) {
+                                                        //    document.getElementById("chkRealTime" + sThisId).checked = false;
+                                                        //    document.getElementById("spanRealTime" + sThisId).style.visibility = "hidden";
+                                                        //}
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case 5: //show today frequency 1 minutes
+                            case 6: //show today frequency 10 minutes
+                            case 7: //show today frequency 30 minutes
+                                { 
+                                if (gPriceChartData.length > 0) {
+                                    for (let idx = 0; idx < gPriceChartData.length; idx++) {
+                                        if (gPriceChartData[idx].symbol == sSymbolIn) {
+                                            if (gPriceChartData[idx].months.length > 0) {
+                                                let oPCM = new PriceMonth();
+                                                let oPCD = new PriceDay();
+                                                let oPCDM = new PriceTodayMinute();
+                                                let dFirstOpen = 0.0;
+                                                oPCM = gPriceChartData[idx].months[0];
+                                                if (oPCM.days.length > 0) {
+                                                    let aClose = new Array();
+                                                    let aOpen = new Array();
+                                                    let aVolume = new Array();
+                                                    let aLabels = new Array();
+                                                    let dMaxClose = 0;
+                                                    let dMinClose = 10000000000;
+                                                    let dCloseStepSize = 0;
+                                                    let dMaxVolume = 0;
+                                                    let dMinVolume = 10000000000;
+                                                    let dVolumeStepSize = 0;
+                                                    oPCD = oPCM.days[0];
+                                                    if (oPCD.minutes.length > 0) {
+                                                        for (let idxMinute = 0; idxMinute < oPCD.minutes.length; idxMinute++) {
+                                                            oPCDM = oPCD.minutes[idxMinute];
+                                                            if (dFirstOpen == 0.0) {
+                                                                if (dClosePrice != 0.0) {
+                                                                    dFirstOpen = dClosePrice;
+                                                                } else {
+                                                                    dFirstOpen = oPCDM.open;
+                                                                }
+                                                            }
+                                                            aClose[aClose.length] = oPCDM.close;
+                                                            aOpen[aOpen.length] = dFirstOpen;
+                                                            aVolume[aVolume.length] = oPCDM.volume;
+                                                            if (oPCDM.close < dMinClose) {
+                                                                dMinClose = oPCDM.close;
+                                                            }
+                                                            if (oPCDM.close > dMaxClose) {
+                                                                dMaxClose = oPCDM.close;
+                                                            }
+                                                            if (oPCDM.volume < dMinVolume) {
+                                                                dMinVolume = oPCDM.volume;
+                                                            }
+                                                            if (oPCDM.volume > dMaxVolume) {
+                                                                dMaxVolume = oPCDM.volume;
+                                                            } 
+                                                            aLabels[aLabels.length] = GetLabelFromDatetime(oPCDM.dateTime);
+                                                            //aLabels[aLabels.length] = FormatIntegerNumber(oPCDM.hour, 2, "0") + ":" + FormatIntegerNumber(oPCDM.minute, 2, "0");
+                                                        }
+                                                        //determine min, max and step size
+                                                        if (dFirstOpen < dMinClose) {
+                                                            dMinClose = dFirstOpen;
+                                                        }
+                                                        if (dFirstOpen > dMaxClose) {
+                                                            dMaxClose = dFirstOpen;
+                                                        }
+                                                        dCloseStepSize = (dMaxClose - dMinClose) / 10;
+                                                        dMinClose = dMinClose - (3 * dCloseStepSize);
+                                                        dMaxClose = dMaxClose + dCloseStepSize;
+                                                        dVolumeStepSize = (dMaxVolume - dMinVolume);
+                                                        dMaxVolume = (dVolumeStepSize * 6);
+                                                        for (idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+                                                            if (gChartInfo[idxCI].symbol == sSymbolIn) {
+                                                                if (gChartInfo[idxCI].chart != null) {
+                                                                    gChartInfo[idxCI].chart.destroy();
+                                                                }
+                                                                let CIdata = {
+                                                                    labels: aLabels,
+                                                                    datasets: [{
+                                                                        label: '',
+                                                                        data: aClose,
+                                                                        backgroundColor: CHART_COLORS.black,
+                                                                        borderColor: CHART_COLORS.brightGreen,
+                                                                        segment: {
+                                                                            borderColor: ctx => skipped(ctx, CHART_COLORS.black) || down(ctx, CHART_COLORS.brightRed) || same(ctx, CHART_COLORS.black),
+                                                                        },
+                                                                        spanGaps: true,
+                                                                        yAxisID: 'yClose',
+                                                                    }, {
+                                                                        label: 'Volume',
+                                                                        data: aVolume,
+                                                                        backgroundColor: CHART_COLORS.black,
+                                                                        borderColor: CHART_COLORS.volume,
+                                                                        yAxisID: 'yVolume',
+                                                                    }, {
+                                                                        label: "Yesterday's Close",
+                                                                        backgroundColor: CHART_COLORS.green,
+                                                                        borderColor: CHART_COLORS.green,
+                                                                        data: aOpen,
+                                                                    }]
+                                                                };
+
+                                                                const CIconfig = {
+                                                                    type: 'line',
+                                                                    data: CIdata,
+                                                                    options: {
+                                                                        plugins: {
+                                                                            legend: false,
+                                                                            tooltip: true,
+                                                                            tooltip: {
+                                                                                callbacks: {
+                                                                                    title: beforeBodyTime,
+                                                                                }
+                                                                            },
+                                                                        },
+                                                                        fill: false,
+                                                                        interaction: {
+                                                                            intersect: false,
+                                                                            mode: 'index',
+                                                                        },
+                                                                        radius: 0,
+                                                                        scales: {
+                                                                            yClose: {
+                                                                                display: true,
+                                                                                position: 'left',
+                                                                                min: dMinClose,
+                                                                                max: dMaxClose,
+                                                                                ticks: {
+                                                                                    // forces step size to be 50 units
+                                                                                    stepSize: dCloseStepSize,
+                                                                                },
+                                                                            },
+                                                                            yVolume: {
+                                                                                display: false,
+                                                                                min: dMinVolume,
+                                                                                max: dMaxVolume,
+                                                                                // grid line settings
+                                                                                grid: {
+                                                                                    drawOnChartArea: false, // only want the grid lines for one axis to show up
+                                                                                },
+                                                                                ticks: {
+                                                                                    // forces step size to be 50 units
+                                                                                    stepSize: dVolumeStepSize,
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    }
+
+                                                                };
+                                                                gChartInfo[idxCI].chart = new Chart(
+                                                                    document.getElementById("cvsDetail" + sThisId),
+                                                                    CIconfig
+                                                                );
+                                                                
+                                                                //gChartInfo[idxCI].bRealTime = false;
+                                                                //if (document.getElementById("spanRealTime" + sThisId) != null) {
+                                                                //    document.getElementById("chkRealTime" + sThisId).checked = false;
+                                                                //    document.getElementById("spanRealTime" + sThisId).style.visibility = "hidden";
+                                                                //}
+                                                                gChartInfo[idxCI].chartType = iWhatToShow;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case 8: { //show today frequency 1 minute - only show last 60 minutes updated every 2 seconds
+                                if (gPriceChartData.length > 0) {
+                                    for (let idx = 0; idx < gPriceChartData.length; idx++) {
+                                        if (gPriceChartData[idx].symbol == sSymbolIn) {
+                                            if (gPriceChartData[idx].months.length > 0) {
+                                                let oPCM = new PriceMonth();
+                                                let oPCD = new PriceDay();
+                                                let oPCDM = new PriceTodayMinute();
+                                                //let dFirstOpen = 0.0;
+                                                oPCM = gPriceChartData[idx].months[0];
+                                                if (oPCM.days.length > 0) {
+                                                    let aClose = new Array();
+                                                    let aVolume = new Array();
+                                                    let aLabels = new Array();
+                                                    let dMaxClose = 0;
+                                                    let dMinClose = 10000000000;
+                                                    let dCloseStepSize = 0;
+                                                    let dMaxVolume = 0;
+                                                    let dMinVolume = 10000000000;
+                                                    let dVolumeStepSize = 0;
+
+                                                    oPCD = oPCM.days[0];
+                                                    if (oPCD.minutes.length > 0) {
+                                                        let idxStart = 0;
+                                                        if (oPCD.minutes.length > 60) {
+                                                            idxStart = oPCD.minutes.length - 60;
+                                                        }
+                                                        for (let idxMinute = idxStart; idxMinute < oPCD.minutes.length; idxMinute++) {
+                                                            oPCDM = oPCD.minutes[idxMinute];
+                                                            //if (dFirstOpen == 0.0) {
+                                                            //    dFirstOpen = oPCDM.open;
+                                                            //}
+                                                            aClose[aClose.length] = oPCDM.close;
+                                                            aVolume[aVolume.length] = oPCDM.volume;
+                                                            if (oPCDM.close < dMinClose) {
+                                                                dMinClose = oPCDM.close;
+                                                            }
+                                                            if (oPCDM.close > dMaxClose) {
+                                                                dMaxClose = oPCDM.close;
+                                                            }
+                                                            if (oPCDM.volume < dMinVolume) {
+                                                                dMinVolume = oPCDM.volume;
+                                                            }
+                                                            if (oPCDM.volume > dMaxVolume) {
+                                                                dMaxVolume = oPCDM.volume;
+                                                            }
+                                                            aLabels[aLabels.length] = GetLabelFromDatetime(oPCDM.dateTime);
+                                                            //aLabels[aLabels.length] = FormatIntegerNumber(oPCDM.hour, 2, "0") + ":" + FormatIntegerNumber(oPCDM.minute, 2, "0");
+                                                        }
+                                                        //determine min, max and step size
+                                                        gChartInfo[idxCurr].dMaxClose = dMaxClose;
+                                                        gChartInfo[idxCurr].dMinClose = dMinClose;
+                                                        gChartInfo[idxCurr].dMaxVolume = dMaxVolume;
+                                                        gChartInfo[idxCurr].dMinVolume = dMinVolume;
+
+                                                        dCloseStepSize = (dMaxClose - dMinClose) / 10;
+                                                        dMinClose = dMinClose - (3 * dCloseStepSize);
+                                                        dMaxClose = dMaxClose + dCloseStepSize;
+                                                        dVolumeStepSize = (dMaxVolume - dMinVolume);
+                                                        dMaxVolume = dVolumeStepSize * 6;
+
+                                                        if ((gChartInfo[idxCurr].chartType != iWhatToShow) || (!bShown)) {
+                                                            if (gChartInfo[idxCurr].chart != null) {
+                                                                gChartInfo[idxCurr].chart.destroy();
+                                                            }
+                                                            let CIdata = {
+                                                                labels: aLabels,
+                                                                datasets: [{
+                                                                    label: 'Close',
+                                                                    data: aClose,
+                                                                    backgroundColor: CHART_COLORS.black,
+                                                                    borderColor: CHART_COLORS.brightGreen,
+                                                                    segment: {
+                                                                        borderColor: ctx => skipped(ctx, CHART_COLORS.black) || down(ctx, CHART_COLORS.brightRed) || same(ctx, CHART_COLORS.black),
+                                                                    },
+                                                                    spanGaps: true,
+                                                                    yAxisID: 'yClose',
+                                                                }, {
+                                                                    label: 'Volume',
+                                                                    data: aVolume,
+                                                                    backgroundColor: CHART_COLORS.black,
+                                                                    borderColor: CHART_COLORS.volume,
+                                                                    yAxisID: 'yVolume',
+                                                                },]
+                                                            };
+
+                                                            const CIconfig = {
+                                                                type: 'line',
+                                                                data: CIdata,
+                                                                options: {
+                                                                    plugins: {
+                                                                        legend: false,
+                                                                        tooltip: true,
+                                                                        tooltip: {
+                                                                            callbacks: {
+                                                                                title: beforeBodyTime,
+                                                                            }
+                                                                        },
+                                                                    },
+                                                                    fill: false,
+                                                                    interaction: {
+                                                                        intersect: false,
+                                                                        mode: 'index',
+                                                                    },
+                                                                    radius: 0,
+                                                                    scales: {
+                                                                        yClose: {
+                                                                            display: true,
+                                                                            position: 'left',
+                                                                            min: dMinClose,
+                                                                            max: dMaxClose,
+                                                                            ticks: {
+                                                                                // forces step size to be 50 units
+                                                                                stepSize: dCloseStepSize,
+                                                                            },
+                                                                        },
+                                                                        yVolume: {
+                                                                            display: false,
+                                                                            min: dMinVolume,
+                                                                            max: dMaxVolume,
+                                                                            // grid line settings
+                                                                            grid: {
+                                                                                drawOnChartArea: false, // only want the grid lines for one axis to show up
+                                                                            },
+                                                                            ticks: {
+                                                                                // forces step size to be 50 units
+                                                                                stepSize: dVolumeStepSize,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                }
+
+                                                            };
+                                                            gChartInfo[idxCurr].chart = new Chart(
+                                                                document.getElementById("cvsDetail" + sThisId),
+                                                                CIconfig
+                                                            );
+                                                        } else {
+                                                            //just add new minutes or change the last minute
+                                                            if (gChartInfo[idxCurr].chart != null) {
+                                                                let data = gChartInfo[idxCurr].chart.data;
+                                                                if (data.datasets.length > 0) {
+                                                                    //find out how many points need to add to end
+                                                                    if (data.labels[data.labels.length - 1] != aLabels[aLabels.length - 1]) {
+                                                                        let idxLabel = aLabels.length - 1;
+                                                                        let idxLabelData = data.labels.length - 1;
+                                                                        while ((data.labels[idxLabelData] != aLabels[idxLabel]) || (idxLabel == 0)) {
+                                                                            idxLabel--;
+                                                                        }
+                                                                        if (idxLabel != 0) {
+                                                                            for (let idxTmp = idxLabel + 1; idxTmp < aLabels.length; idxTmp++) {
+                                                                                data.labels.push(aLabels[idxTmp]);
+                                                                                data.labels.shift();
+                                                                                data.datasets[0].data.push(aClose[idxTmp]);
+                                                                                data.datasets[0].data.shift();
+                                                                                data.datasets[1].data.push(aVolume[idxTmp]);
+                                                                                data.datasets[1].data.shift();
+                                                                            }
+                                                                        }
+                                                                    } else {
+                                                                        let idxTmp = aClose.length - 1;
+                                                                        data.labels[idxTmp] = aLabels[idxTmp];
+                                                                        data.datasets[0].data[idxTmp] = aClose[idxTmp];
+                                                                        data.datasets[1].data[idxTmp] = aVolume[idxTmp];
+                                                                    }
+                                                                    gChartInfo[idxCurr].chart.scales.yClose.max = dMaxClose;
+                                                                    gChartInfo[idxCurr].chart.scales.yClose.min = dMinClose;
+                                                                    gChartInfo[idxCurr].chart.scales.yVolume.max = dMaxVolume;
+                                                                    gChartInfo[idxCurr].chart.scales.yVolume.min = dMinVolume;
+                                                                    gChartInfo[idxCurr].chart.update();
+                                                                } else {
+                                                                    gChartInfo[idxCurr].chart.destroy();
+                                                                    let CIdata = {
+                                                                        labels: aLabels,
+                                                                        datasets: [{
+                                                                            label: 'Close',
+                                                                            data: aClose,
+                                                                            backgroundColor: CHART_COLORS.black,
+                                                                            borderColor: CHART_COLORS.brightGreen,
+                                                                            segment: {
+                                                                                borderColor: ctx => skipped(ctx, CHART_COLORS.black) || down(ctx, CHART_COLORS.brightRed) || same(ctx, CHART_COLORS.black),
+                                                                            },
+                                                                            spanGaps: true,
+                                                                            yAxisID: 'yClose',
+                                                                        }, {
+                                                                            label: 'Volume',
+                                                                            data: aVolume,
+                                                                            backgroundColor: CHART_COLORS.black,
+                                                                            borderColor: CHART_COLORS.volume,
+                                                                            yAxisID: 'yVolume',
+                                                                        },]
+                                                                    };
+
+                                                                    const CIconfig = {
+                                                                        type: 'line',
+                                                                        data: CIdata,
+                                                                        options: {
+                                                                            plugins: {
+                                                                                legend: false,
+                                                                                tooltip: true,
+                                                                                tooltip: {
+                                                                                    callbacks: {
+                                                                                        title: beforeBodyTime,
+                                                                                    }
+                                                                                },
+                                                                            },
+                                                                            fill: false,
+                                                                            interaction: {
+                                                                                intersect: false,
+                                                                                mode: 'index',
+                                                                            },
+                                                                            radius: 0,
+                                                                            scales: {
+                                                                                yClose: {
+                                                                                    display: true,
+                                                                                    position: 'left',
+                                                                                    min: dMinClose,
+                                                                                    max: dMaxClose,
+                                                                                    ticks: {
+                                                                                        // forces step size to be 50 units
+                                                                                        stepSize: dCloseStepSize,
+                                                                                    },
+                                                                                },
+                                                                                yVolume: {
+                                                                                    display: false,
+                                                                                    min: dMinVolume,
+                                                                                    max: dMaxVolume,
+                                                                                    // grid line settings
+                                                                                    grid: {
+                                                                                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                                                                                    },
+                                                                                    ticks: {
+                                                                                        // forces step size to be 50 units
+                                                                                        stepSize: dVolumeStepSize,
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                        }
+                                                                    };
+                                                                    gChartInfo[idxCurr].chart = new Chart(
+                                                                        document.getElementById("cvsDetail" + sThisId),
+                                                                        CIconfig
+                                                                    );
+                                                                }
+                                                            } else {
+                                                                let CIdata = {
+                                                                    labels: aLabels,
+                                                                    datasets: [{
+                                                                        label: 'Close',
+                                                                        data: aClose,
+                                                                        backgroundColor: CHART_COLORS.black,
+                                                                        borderColor: CHART_COLORS.brightGreen,
+                                                                        segment: {
+                                                                            borderColor: ctx => skipped(ctx, CHART_COLORS.black) || down(ctx, CHART_COLORS.brightRed) || same(ctx, CHART_COLORS.black),
+                                                                        },
+                                                                        spanGaps: true,
+                                                                        yAxisID: 'yClose',
+                                                                    }, {
+                                                                        label: 'Volume',
+                                                                        data: aVolume,
+                                                                        backgroundColor: CHART_COLORS.black,
+                                                                        borderColor: CHART_COLORS.volume,
+                                                                        yAxisID: 'yVolume',
+                                                                    },]
+                                                                };
+
+                                                                const CIconfig = {
+                                                                    type: 'line',
+                                                                    data: CIdata,
+                                                                    options: {
+                                                                        plugins: {
+                                                                            legend: false,
+                                                                            tooltip: true,
+                                                                            tooltip: {
+                                                                                callbacks: {
+                                                                                    title: beforeBodyTime,
+                                                                                }
+                                                                            },
+                                                                        },
+                                                                        fill: false,
+                                                                        interaction: {
+                                                                            intersect: false,
+                                                                            mode: 'index',
+                                                                        },
+                                                                        radius: 0,
+                                                                        scales: {
+                                                                            yClose: {
+                                                                                display: true,
+                                                                                position: 'left',
+                                                                                min: dMinClose,
+                                                                                max: dMaxClose,
+                                                                                ticks: {
+                                                                                    // forces step size to be 50 units
+                                                                                    stepSize: dCloseStepSize,
+                                                                                },
+                                                                            },
+                                                                            yVolume: {
+                                                                                display: false,
+                                                                                min: dMinVolume,
+                                                                                max: dMaxVolume,
+                                                                                // grid line settings
+                                                                                grid: {
+                                                                                    drawOnChartArea: false, // only want the grid lines for one axis to show up
+                                                                                },
+                                                                                ticks: {
+                                                                                    // forces step size to be 50 units
+                                                                                    stepSize: dVolumeStepSize,
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    }
+
+                                                                };
+                                                                gChartInfo[idxCurr].chart = new Chart(
+                                                                    document.getElementById("cvsDetail" + sThisId),
+                                                                    CIconfig
+                                                                );
+                                                            }
+                                                        }
+                                                        gChartInfo[idxCurr].chartType = iWhatToShow;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        iTryCount = 2;
+                    }
+                    else {
+                        iTryCount++;
+                        if (iTryCount < 2) {
+                            xhttp = null;
+                        }
+                        else {
+                            //alert ("GetStockPriceHistoryData Error - HTTP response is blank." + " (" + iTryCount.toString() + ")");
+                            bOk = false;
+                        }
+                    }
+                }
+                else {
+                    iTryCount++;
+                    if (iTryCount < 2) {
+                        xhttp = null;
+                    }
+                    else {
+                        //alert ("GetStockPriceHistoryData Error - HTTP response is null." + " (" + iTryCount.toString() + ")");
+                        bOk = false;
+                    }
+                }
+            }
+            catch (e1) {
+                //debugger
+                iTryCount++;
+                if (iTryCount < 2) {
+                    xhttp = null;
+                }
+                else {
+                    //alert("GetStockPriceHistoryData Error retrieving data (" + iTryCount.toString() + ") - " + e1.message);
+                    bOk = false;
+                }
+            }
+        }
+        else {
+            bOk = false;
+            break;
+        }
+    }
+    setDefaultPHPopup(sThisId);
+    if ((iSymbolIdxIn + 1) < aSymbolsIn.length) {
+        window.setTimeout("ShowPriceHistory('" + sSymbolsIn + "',  " + (iSymbolIdxIn + 1).toString() + ")", 10);
+    }
+    return;
+}
+
+function GetStockPriceHistoryDataChart1(iDayOfMonth, oPCDM, aHigh, aLow, aLabels, a52WkHigh, a52WkLow, d52WkHigh, d52WkLow, aClose) {
+    for (let idxDay = 0; idxDay < oPCDM.days.length; idxDay++) {
+        if (oPCDM.days[idxDay].day > iDayOfMonth) {
+            if (iDayOfMonth == 0) {
+                aHigh[aHigh.length] = oPCDM.days[idxDay].high;
+                aLow[aLow.length] = oPCDM.days[idxDay].low;
+                aClose[aClose.length] = oPCDM.days[idxDay].close;
+                aLabels[aLabels.length] = oPCDM.days[idxDay].day;
+                a52WkHigh[a52WkHigh.length] = d52WkHigh;
+                a52WkLow[a52WkLow.length] = d52WkLow;
+                iDayOfMonth = oPCDM.days[idxDay].day + 1;
+            } else {
+                for (idxFill = iDayOfMonth; idxFill < oPCDM.days[idxDay].day; idxFill++) {
+                    aHigh[aHigh.length] = aHigh[aHigh.length - 1];
+                    aLow[aLow.length] = aLow[aLow.length - 1];
+                    aClose[aClose.length] = aLow[aClose.length - 1];
+                    aLabels[aLabels.length] = aLabels[aLabels.length - 1] + 1;
+                    a52WkHigh[a52WkHigh.length] = d52WkHigh;
+                    a52WkLow[a52WkLow.length] = d52WkLow;
+                }
+                aHigh[aHigh.length] = oPCDM.days[idxDay].high;
+                aLow[aLow.length] = oPCDM.days[idxDay].low;
+                aClose[aClose.length] = oPCDM.days[idxDay].close;
+                aLabels[aLabels.length] = oPCDM.days[idxDay].day;
+                a52WkHigh[a52WkHigh.length] = d52WkHigh;
+                a52WkLow[a52WkLow.length] = d52WkLow;
+                iDayOfMonth = oPCDM.days[idxDay].day + 1;
+            }
+        } else {
+            aHigh[aHigh.length] = oPCDM.days[idxDay].high;
+            aLow[aLow.length] = oPCDM.days[idxDay].low;
+            aClose[aClose.length] = oPCDM.days[idxDay].close;
+            aLabels[aLabels.length] = iDayOfMonth;
+            a52WkHigh[a52WkHigh.length] = d52WkHigh;
+            a52WkLow[a52WkLow.length] = d52WkLow;
+            iDayOfMonth++;
+        }
+    }
+}
+
 function GetTDData(bFirstTime) {
     let iReturn = 0;
     let bOkToContinue = true;
@@ -7749,6 +9893,15 @@ function GetTDData(bFirstTime) {
                 }
             }
             if (bOkToContinue) {
+                if (gChartInfo.length > 0) {
+                    for (let idxCI = 0; idxCI < gChartInfo.length; idxCI++) {
+                        sSymbolsThatNeedQuotes = sSymbolsThatNeedQuotes + sSep + gChartInfo[idxCI].symbol;
+                        sSep = ",";
+                    }
+                }
+            }
+
+            if (bOkToContinue) {
                 SetLineCnt();
                 let iSymbolLimit = 200;
                 sSymbolsThatNeedQuotes = GetUniqueListOfSymbols(sSymbolsThatNeedQuotes);
@@ -7905,6 +10058,7 @@ function GetTDData(bFirstTime) {
                                 GetWatchlistO();
                                 GetWatchlistSO();
                                 GetWatchlistSummary();
+                                //DoUpdateCharts();
                             }
 
                         } else if (mySock[gimySockIdx].readyState == 3) { //socket is closed or couldn't be opened
@@ -7971,6 +10125,7 @@ function GetTDData(bFirstTime) {
                                     GetWatchlistO();
                                     GetWatchlistSO();
                                     GetWatchlistSummary();
+                                    //DoUpdateCharts();
                                 }
                                 //    iReturn = GetTDDataHTTP("https://api.tdameritrade.com/v1/marketdata/quotes?&symbol=" + DoURLEncode(sSymbolsThatNeedQuotes), 4);
                                 //    if (iReturn == 0) {
@@ -10688,124 +12843,136 @@ function GetWatchlistO() {
                     if (!isUndefined(oCMOrders.length)) {
                         for (let idxO = oCMOrders.length - 1; idxO > -1; idxO--) {
                             if (!isUndefined(oCMOrders[idxO].orderId)) {
-                                let oWLOItem = new WLItemOrder();
-                                if (!isUndefined(oCMOrders[idxO].activationPrice)) {
-                                    oWLOItem.activationPrice = oCMOrders[idxO].activationPrice;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].cancelTime)) {
-                                    oWLOItem.cancelTime = oCMOrders[idxO].cancelTime;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].closeTime)) {
-                                    oWLOItem.closeTime = oCMOrders[idxO].closeTime;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].duration)) {
-                                    oWLOItem.duration = oCMOrders[idxO].duration;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].enteredTime)) {
-                                    oWLOItem.enteredTime = oCMOrders[idxO].enteredTime;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].filledQuantity)) {
-                                    oWLOItem.filledQuantity = oCMOrders[idxO].filledQuantity;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].instruction)) {
-                                    oWLOItem.instruction = oCMOrders[idxO].orderLegCollection[0].instruction;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].orderId)) {
-                                    oWLOItem.orderId = oCMOrders[idxO].orderId;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].orderType)) {
-                                    oWLOItem.orderType = oCMOrders[idxO].orderType;
-                                }
+                                //add an oWLItgem for each execution leg
+                                if (!isUndefined(oCMOrders[idxO].orderActivityCollection)) {
+                                    if (oCMOrders[idxO].orderActivityCollection.length > 0) {
+                                        for (let idxOAC = 0; idxOAC < oCMOrders[idxO].orderActivityCollection.length; idxOAC++) {
+                                            if (!isUndefined(oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs)) {
+                                                if (oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs.length > 0) {
+                                                    for (let idxOACEL = 0; idxOACEL < oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs.length; idxOACEL++) {
+                                                        let oWLOItem = new WLItemOrder();
 
-                                oWLOItem.price = 0;
-                                if (!isUndefined(oCMOrders[idxO].price)) {
-                                    oWLOItem.price = oCMOrders[idxO].price;
-                                } else {
-                                    if (!isUndefined(oCMOrders[idxO].orderActivityCollection)) {
-                                        if (oCMOrders[idxO].orderActivityCollection.length > 0) {
-                                            if (!isUndefined(oCMOrders[idxO].orderActivityCollection[0].executionLegs)) {
-                                                if (oCMOrders[idxO].orderActivityCollection[0].executionLegs.length > 0) {
-                                                    if (!isUndefined(oCMOrders[idxO].orderActivityCollection[0].executionLegs[0].price)) {
-                                                        oWLOItem.price = oCMOrders[idxO].orderActivityCollection[0].executionLegs[0].price;
+                                                        if (!isUndefined(oCMOrders[idxO].activationPrice)) {
+                                                            oWLOItem.activationPrice = oCMOrders[idxO].activationPrice;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].cancelTime)) {
+                                                            oWLOItem.cancelTime = oCMOrders[idxO].cancelTime;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].duration)) {
+                                                            oWLOItem.duration = oCMOrders[idxO].duration;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].enteredTime)) {
+                                                            oWLOItem.enteredTime = oCMOrders[idxO].enteredTime;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].filledQuantity)) {
+                                                            oWLOItem.filledQuantity = oCMOrders[idxO].filledQuantity;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].instruction)) {
+                                                            oWLOItem.instruction = oCMOrders[idxO].orderLegCollection[0].instruction;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].orderId)) {
+                                                            oWLOItem.orderId = oCMOrders[idxO].orderId;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].orderType)) {
+                                                            oWLOItem.orderType = oCMOrders[idxO].orderType;
+                                                        }
+
+                                                        oWLOItem.closeTime = oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs[idxOACEL].time;
+
+                                                        oWLOItem.price = 0;
+                                                        if (!isUndefined(oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs[idxOACEL].price)) {
+                                                            oWLOItem.price = oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs[idxOACEL].price;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs[idxOACEL].quantity)) {
+                                                            oWLOItem.quantity = oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs[idxOACEL].quantity;
+                                                        }
+
+                                                        if (!isUndefined(oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs[idxOACEL].orderRemainingQuantity)) {
+                                                            oWLOItem.remainingQuantity = oCMOrders[idxO].orderActivityCollection[idxOAC].executionLegs[idxOACEL].orderRemainingQuantity;
+                                                        }
+
+                                                        if (!isUndefined(oCMOrders[idxO].session)) {
+                                                            oWLOItem.session = oCMOrders[idxO].session;
+                                                        }
+
+                                                        if (!isUndefined(oCMOrders[idxO].status)) {
+                                                            oWLOItem.status = oCMOrders[idxO].status;
+                                                            oWLOItem.bCheckboxEnabled = false;
+                                                            switch (oWLOItem.status.toUpperCase()) {
+                                                                case "AWAITING_PARENT_ORDER":
+                                                                case "AWAITING_CONDITION":
+                                                                case "AWAITING_MANUAL_REVIEW":
+                                                                case "ACCEPTED":
+                                                                case "AWAITING_UR_OUT":
+                                                                case "PENDING_ACTIVATION":
+                                                                case "QUEUED":
+                                                                case "WORKING": {
+                                                                    sTmp = "Open";
+                                                                    oWLOItem.bCheckboxEnabled = true;
+                                                                    break;
+                                                                }
+                                                                case "REJECTED": {
+                                                                    sTmp = "Rejected";
+                                                                    break;
+                                                                }
+                                                                case "PENDING_CANCEL": {
+                                                                    sTmp = "Pend Cncl";
+                                                                    break;
+                                                                }
+                                                                case "CANCELED": {
+                                                                    sTmp = "Canceled";
+                                                                    break;
+                                                                }
+                                                                case "PENDING_REPLACE": {
+                                                                    sTmp = "Pend Rplc";
+                                                                    break;
+                                                                }
+                                                                case "REPLACED": {
+                                                                    sTmp = "Replaced";
+                                                                    break;
+                                                                }
+                                                                case "FILLED": {
+                                                                    sTmp = "Filled";
+                                                                    break;
+                                                                }
+                                                                case "EXPIRED": {
+                                                                    sTmp = "Expired";
+                                                                    break;
+                                                                }
+                                                            }
+                                                            oWLOItem.status = sTmp;
+                                                        }
+
+                                                        if (!isUndefined(oCMOrders[idxO].stopPriceOffset)) {
+                                                            oWLOItem.stopPriceOffset = oCMOrders[idxO].stopPriceOffset;
+                                                        }
+                                                        if (!isUndefined(oCMOrders[idxO].stopPriceLinkType)) {
+                                                            oWLOItem.stopPriceLinkType = oCMOrders[idxO].stopPriceLinkType;
+                                                        }
+
+                                                        if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].instrument.symbol)) {
+                                                            oWLOItem.symbol = oCMOrders[idxO].orderLegCollection[0].instrument.symbol;
+                                                        }
+
+                                                        if ((!isUndefined(oCurrentOIDs[oCMOrders[idxO].orderId])) && (oWLOItem.bCheckboxEnabled)) {
+                                                            //already displayed so reset the selectfororder flag
+                                                            oWLOItem.bSelectedForOrder = oCurrentOIDs[oCMOrders[idxO].orderId];
+                                                        }
+                                                        oWLOItem.iSortOrderAscDesc = gWatchlists[idxWL].iSortOrderAscDesc;
+                                                        oWLOItem.sSortOrderFields = gWatchlists[idxWL].sSortOrderFields;
+                                                        gWatchlists[idxWL].WLItems[gWatchlists[idxWL].WLItems.length] = oWLOItem;
+
                                                     }
                                                 }
                                             }
-                                        }
-                                    }
-                                }
+                                        //    if (oCMOrders[idxO].orderActivityCollection[idxOAC].activityType == "EXECUTION") {
 
-                                if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].quantity)) {
-                                    oWLOItem.quantity = oCMOrders[idxO].orderLegCollection[0].quantity;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].remainingQuantity)) {
-                                    oWLOItem.remainingQuantity = oCMOrders[idxO].remainingQuantity;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].session)) {
-                                    oWLOItem.session = oCMOrders[idxO].session;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].status)) {
-                                    oWLOItem.status = oCMOrders[idxO].status;
-                                    oWLOItem.bCheckboxEnabled = false;
-                                    switch (oWLOItem.status.toUpperCase()) {
-                                        case "AWAITING_PARENT_ORDER":
-                                        case "AWAITING_CONDITION":
-                                        case "AWAITING_MANUAL_REVIEW":
-                                        case "ACCEPTED":
-                                        case "AWAITING_UR_OUT":
-                                        case "PENDING_ACTIVATION":
-                                        case "QUEUED":
-                                        case "WORKING": {
-                                            sTmp = "Open";
-                                            oWLOItem.bCheckboxEnabled = true;
-                                            break;
-                                        }
-                                        case "REJECTED": {
-                                            sTmp = "Rejected";
-                                            break;
-                                        }
-                                        case "PENDING_CANCEL": {
-                                            sTmp = "Pend Cncl";
-                                            break;
-                                        }
-                                        case "CANCELED": {
-                                            sTmp = "Canceled";
-                                            break;
-                                        }
-                                        case "PENDING_REPLACE": {
-                                            sTmp = "Pend Rplc";
-                                            break;
-                                        }
-                                        case "REPLACED": {
-                                            sTmp = "Replaced";
-                                            break;
-                                        }
-                                        case "FILLED": {
-                                            sTmp = "Filled";
-                                            break;
-                                        }
-                                        case "EXPIRED": {
-                                            sTmp = "Expired";
-                                            break;
+                                        //    } else { //it must be ORDER_ACTION
+
+                                        //    }
                                         }
                                     }
-                                    oWLOItem.status = sTmp;
                                 }
-                                if (!isUndefined(oCMOrders[idxO].stopPriceOffset)) {
-                                    oWLOItem.stopPriceOffset = oCMOrders[idxO].stopPriceOffset;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].stopPriceLinkType)) {
-                                    oWLOItem.stopPriceLinkType = oCMOrders[idxO].stopPriceLinkType;
-                                }
-                                if (!isUndefined(oCMOrders[idxO].orderLegCollection[0].instrument.symbol)) {
-                                    oWLOItem.symbol = oCMOrders[idxO].orderLegCollection[0].instrument.symbol;
-                                }
-                                if ((!isUndefined(oCurrentOIDs[oCMOrders[idxO].orderId])) && (oWLOItem.bCheckboxEnabled)) {
-                                    //already displayed so reset the selectfororder flag
-                                    oWLOItem.bSelectedForOrder = oCurrentOIDs[oCMOrders[idxO].orderId];
-                                }
-                                oWLOItem.iSortOrderAscDesc = gWatchlists[idxWL].iSortOrderAscDesc;
-                                oWLOItem.sSortOrderFields = gWatchlists[idxWL].sSortOrderFields;
-                                gWatchlists[idxWL].WLItems[gWatchlists[idxWL].WLItems.length] = oWLOItem;
                             }
                         }
                     }
@@ -10902,7 +13069,7 @@ function GetWatchlistO() {
                         };
 
 
-                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
+                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix;
                         let sonClickChangeOrderBase = "onclick =\"wlChangeOrderO(" + idxWL.toString() + ", 'xxx')\"";
                         let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsO.Status);
 
@@ -10965,11 +13132,17 @@ function GetWatchlistO() {
                         sThisTable = sThisTable + "<table style=\"border-collapse:collapse; border: 0px solid black;background-color:" + gsWLTableBackgroundColor + "; width:100%;border-width:0px;font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
 
                         iLineCnt = 0;
+                        let iOrderCnt = 0;
+                        let iLastOrderId = 0;
                         for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
 
                             let oWLOItem = new WLItemOrder();
                             oWLOItem = gWatchlists[idxWL].WLItems[idxWLItem];
                             iLineCnt++;
+                            if (oWLOItem.orderId != iLastOrderId) {
+                                iOrderCnt++;
+                                iLastOrderId = oWLOItem.orderId;
+                            }
                             let sChecked = "";
                             if (oWLOItem.bCheckboxEnabled) {
                                 if (oWLOItem.bSelectedForOrder) {
@@ -10984,7 +13157,8 @@ function GetWatchlistO() {
                             if (sChecked == "checked") {
                                 sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableSelectedRowBackgroundColor + ";\">";
                             } else {
-                                if ((iLineCnt % 2) == 0) {
+                                //if ((iLineCnt % 2) == 0) {
+                                if ((iOrderCnt % 2) == 0) {
                                     sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableEvenRowBackgroundColor + ";\">";
                                 } else {
                                     sThisTable = sThisTable + "<tr id=\"" + sThisTRId + "\"  name=\"" + sThisTRId + "\" style=\"background-color:" + gsWLTableOddRowBackgroundColor + ";\">";
@@ -11232,13 +13406,13 @@ function GetWatchlistPrices() {
                             }
                         }
                     }
-                //    if (bDoingCurrentTrade) {
-                //        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.CatalystDate;
-                //        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
-                //    } else {
-                //        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.Symbol;
-                //        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
-                //    }
+                    //    if (bDoingCurrentTrade) {
+                    //        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.CatalystDate;
+                    //        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
+                    //    } else {
+                    //        gWatchlists[idxWLMain].sSortOrderFields = gsSortOrderFields.Symbol;
+                    //        gWatchlists[idxWLMain].iSortOrderAscDesc = 0; //0 - ascending, 1 - descending 
+                    //    }
                 }
 
                 for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWLMain].WLItems.length; idxWLItem++) {
@@ -11283,6 +13457,7 @@ function GetWatchlistPrices() {
 
                             //get GL value
                             oWLItemDetail.averagePrice = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.averagePrice;
+                            oWLItemDetail.averagePriceF = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.averagePrice;
                             oWLItemDetail.GLUpdateDate = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.GLUpdateDate;
 
                             //get purchased date
@@ -11352,6 +13527,12 @@ function GetWatchlistPrices() {
                                 if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
                                     oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
                                 }
+                                if (!isUndefined(oMDQ[sSymbol]["52WkHigh"])) {
+                                    oWLItemDetail.highPrice52Wk = oMDQ[sSymbol]["52WkHigh"];
+                                }
+                                if (!isUndefined(oMDQ[sSymbol]["52WkLow"])) {
+                                    oWLItemDetail.lowPrice52Wk = oMDQ[sSymbol]["52WkLow"];
+                                }
                                 if (!isUndefined(oMDQ[sSymbol].netChange)) {
                                     oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
                                 }
@@ -11373,6 +13554,12 @@ function GetWatchlistPrices() {
                                 }
                                 if (!isUndefined(oMDQ[sSymbol].lowPrice)) {
                                     oWLItemDetail.lowPrice = oMDQ[sSymbol].lowPrice;
+                                }
+                                if (!isUndefined(oMDQ[sSymbol]["52WkHigh"])) {
+                                    oWLItemDetail.highPrice52Wk = oMDQ[sSymbol]["52WkHigh"];
+                                }
+                                if (!isUndefined(oMDQ[sSymbol]["52WkLow"])) {
+                                    oWLItemDetail.lowPrice52Wk = oMDQ[sSymbol]["52WkLow"];
                                 }
                                 if (!isUndefined(oMDQ[sSymbol].netChange)) {
                                     oWLItemDetail.netChange = oMDQ[sSymbol].netChange;
@@ -11410,6 +13597,7 @@ function GetWatchlistPrices() {
                             }
                             //get GL value
                             oWLItemDetail.averagePrice = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.averagePrice;
+                            oWLItemDetail.averagePriceF = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.averagePrice;
                             oWLItemDetail.GLUpdateDate = gWatchlists[idxWLMain].WLItems[idxWLItem].priceInfo.GLUpdateDate;
 
                             //get purchased date
@@ -11529,12 +13717,15 @@ function GetWatchlistPrices() {
                 let sdefaultUpdateGLDate = gWatchlists[idxWLMain].defaultUpdateGLDate;
                 let bViewable = gWatchlists[idxWLMain].bViewable;
 
+                let sOutsideBorderColor = "border-color:Black;";
+                let sOutsideBorderWidth = "border-width:2px;";
+
                 if (bDoingAccountWL) {
                     if (iTotalWidth < parseInt(lengthsWL.WLWidth)) {
                         iTotalWidth = parseInt(lengthsWL.WLWidth);
                     }
                     sThisDiv = sThisDiv + "<div style=\"width:" + iTotalWidth.toString() + "px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%; background-color:" + gsWLTableHeadingBackgroundColor + "; " + sOutsideBorderWidth + " border-style:solid; border-spacing:1px; " + sOutsideBorderColor + " font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                     sThisDiv = sThisDiv + "<tr>";
                     //sThisDiv = sThisDiv + "<div style=\"width:" + lengthsWL.WLWidth + "; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
                     //sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:" + lengthsWL.WLWidth + "; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
@@ -11562,11 +13753,11 @@ function GetWatchlistPrices() {
                         iTotalWidth = parseInt(lengthsWL.WLWidth);
                     }
                     sThisDiv = sThisDiv + "<div style=\"width:" + iTotalWidth.toString() + "px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\">";
-                    sThisDiv = sThisDiv + "<table cellspacing=0 cellpadding=0 style=\"width:100%; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-spacing:1px; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+                    sThisDiv = sThisDiv + "<table cellspacing=0 cellpadding=0 style=\"width:100%; background-color:" + gsWLTableHeadingBackgroundColor + "; " + sOutsideBorderWidth + " border-style:solid; border-spacing:1px; " + sOutsideBorderColor + " font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
                     sThisDiv = sThisDiv + "<tr>";
 
 
-                     //&#2399; - should be print symbol
+                    //&#2399; - should be print symbol
                     //ShowAddPopup(watchlistId, sLastWLAccountId)
                     if (bDoingShared) {
                         sThisDiv = sThisDiv + "<th style=\"width:" + (lengthsWL.WLColOpenLabelWidth + lengthsWL.WLColOpenEntryWidth + lengthsWL.WLColAcquiredDateEntryWidth + 40).toString() + "px; text-align:left; vertical-align:middle;border-top-width:1px;border-bottom-width:1px;border-left-width:1px;border-right-width:0px;border-style:solid;border-spacing:0px;border-color:White\">" +
@@ -11620,7 +13811,11 @@ function GetWatchlistPrices() {
                             "<img id=\"IconShow" + sThisId + "\" name=\"IconShow" + sThisId + "\" title=\"" + gksWLIconShowTitle.replace("xx", iHiddenCnt.toString()) + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconShow + "\" onclick=\"ShowUnhideSelection('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                             "&nbsp;<img id=\"IconHide" + sThisId + "\" name=\"IconHide" + sThisId + "\" title=\"" + gksWLIconHideTitle + "\" width=\"20\" height=\"20\" style=\"display:inline; vertical-align:middle\" src=\"" + gksWLIconHide + "\" onclick=\"DoWLOpenSymbols(3,'" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
                             "&nbsp;<img title=\"Update G/L\" width=\"20\" height=\"20\" style=\"vertical-align:middle\" src=\"update.png\" onclick=\"DoWLCloseSymbol('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" />" +
-                            "&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing G/L values or leave blank to udpate the GL for all starting from the last update date.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + sdefaultUpdateGLDate + "\"></th>";
+                            "&nbsp;" +
+                            "</th>";
+
+                        //"&nbsp;<input title=\"Enter a date as yyyy-mm-dd when initializing G/L values or leave blank to udpate the GL for all starting from the last update date.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + sdefaultUpdateGLDate + "\">" +
+
 
                         sThisDiv = sThisDiv + "<th title=\"Close\" style=\"width:" + lengthsWL.WLCol2Width.toString() + "px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDiv('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\">&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;&nbsp;</th>";
 
@@ -11673,20 +13868,20 @@ function GetWatchlistPrices() {
                         "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
                         "&nbsp;&nbsp;&nbsp;<span title=\"Last time the Update G/L button was pressed that caused a G/L value to change\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
 
-                //} else if (bDoingCurrentTrade) {
-                //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
-                //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
-                //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
-                //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
-                //        "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
-                //        "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">" +
-                //        "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
-                //        "<input id=\"txtWLshares" + sThisId + "\" name=\"txtWLshares" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">Shares";
+                    //} else if (bDoingCurrentTrade) {
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkSave" + sThisId + "\" name=\"chkSave" + sThisId + "\" value=\"\" > Save";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkPlace" + sThisId + "\" name=\"chkPlace" + sThisId + "\" value=\"\" > Place";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;<input style=\"vertical-align:middle\" type=\"checkbox\" id=\"chkLimit" + sThisId + "\" name=\"chkLimit" + sThisId + "\" value=\"\" > Limit";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id=\"txtWLpercent" + sThisId + "\" name=\"txtWLpercent" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">%" +
+                    //        "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
+                    //        "&dollar;<input id=\"txtWLdollars" + sThisId + "\" name=\"txtWLdollars" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">" +
+                    //        "&nbsp;&nbsp;OR&nbsp;&nbsp;" +
+                    //        "<input id=\"txtWLshares" + sThisId + "\" name=\"txtWLshares" + sThisId + "\" type=\"text\" style=\"font-family:Arial,Helvetica, sans-serif; font-size:10pt; width:50px\" value=\"\">Shares";
 
-                //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
-                //        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
-                //        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
-                //        "&nbsp;&nbsp;&nbsp;<span title=\"Last time the Update G/L button was pressed that caused a G/L value to change\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
+                    //    sThisDiv = sThisDiv + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLBuy('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Buy\" >" +
+                    //        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLSell('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Sell\" >" +
+                    //        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"button\" style=\"border-radius:5px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;\"  onclick=\"DoWLTrailingStop('" + gWatchlists[idxWLMain].watchlistId + "','" + sLastWLAccountId + "')\" value=\"Trailing Stop\" >" +
+                    //        "&nbsp;&nbsp;&nbsp;<span title=\"Last time the Update G/L button was pressed that caused a G/L value to change\" id=\"spanLastUpdateDate" + sThisId + "\" style=\"font-size:8pt;\">" + sLastUpdateDate + "</span>";
 
                 } else if (bDoingShared) {
                     sThisDiv = sThisDiv + "&nbsp;";
@@ -11734,7 +13929,7 @@ function GetWatchlistPrices() {
 
                 sThisTableTitleInside = sThisTableTitleInside + "<tr style=\"height:" + giTitleHeight.toString() + "px; \">";
 
-                let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + "000";
+                let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + gsTopCheckboxIdSuffix;
 
                 let sAcquiredSpaces = "";
                 if (bDoingDividendWL) {
@@ -11789,6 +13984,7 @@ function GetWatchlistPrices() {
                 let dTotalAmt = 0.0;
                 let dTotalHoldingsGain = 0.0;
                 let dTotalGain = 0.0;
+                let dTotalGainF = 0.0; //does not include the value of currently owned shares
                 let dTotalDayGain = 0.0;
 
                 iLineCnt = 0;
@@ -11873,16 +14069,15 @@ function GetWatchlistPrices() {
                                     }
 
                                     let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWLMain, 3, "0") + FormatIntegerNumber(parseInt(sThisidxWLItem), 3, "0");
-
                                     if (oWLItemDetail.shares < 0.0) {
                                         oLines[gsSortOrderFields.Symbol] = "<td " + gsFieldColSpanWL.Symbol + " style=\"" + gsFieldWidthsWL.Symbol + "text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
                                             "<input style=\"text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + ";vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
-                                            "<span " + sSymbolTitle + "style=\"text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + ";vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                                            "<span onclick=\"ShowPriceHistory('" + sSymbol + "', 0)\"" + sSymbolTitle + "style=\"text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + ";vertical-align:" + sTableRowVerticalAlignment + "; \">" +
                                             "<b>" + sSymbol + "</b>" + sTmp + "</span></td>";
                                     } else {
                                         oLines[gsSortOrderFields.Symbol] = "<td " + gsFieldColSpanWL.Symbol + " style=\"" + gsFieldWidthsWL.Symbol + "text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" +
                                             "<input style=\"text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + ";vertical-align:" + sTableRowVerticalAlignment + ";\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" type=\"checkbox\" " + sChecked + " value=\"\" onclick=\"wlMarkSelectedItem(" + idxWLMain.toString() + ", " + sThisidxWLItem + ")\">" +
-                                            "<span " + sSymbolTitle + "style=\"text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + ";vertical-align:" + sTableRowVerticalAlignment + "; \">" +
+                                            "<span onclick=\"ShowPriceHistory('" + sSymbol + "', 0)\"" + sSymbolTitle + "style=\"text-align:" + oWLCols[gsSortOrderFields.Symbol].aligndata + ";vertical-align:" + sTableRowVerticalAlignment + "; \">" +
                                             sSymbol + sTmp + "</span></td>";
                                     }
                                 }
@@ -11899,6 +14094,8 @@ function GetWatchlistPrices() {
                                         "bidPrice": oWLItemDetail.bidPrice,
                                         "highPrice": oWLItemDetail.highPrice,
                                         "lowPrice": oWLItemDetail.lowPrice,
+                                        "highPrice52Wk": oWLItemDetail.highPrice52Wk,
+                                        "lowPrice52Wk": oWLItemDetail.lowPrice52Wk,
                                         "lastPrice": oWLItemDetail.lastPrice,
                                         "netChange": oWLItemDetail.netChange,
                                         "netPercentChangeInDouble": oWLItemDetail.netPercentChangeInDouble,
@@ -11912,6 +14109,7 @@ function GetWatchlistPrices() {
                                         "gain": oWLItemDetail.gain,
                                         "gainPercent": oWLItemDetail.gainPercent,
                                         "averagePrice": oWLItemDetail.averagePrice,
+                                        "averagePriceF": oWLItemDetail.averagePriceF,
                                         "peRatio": oWLItemDetail.peRatio,
                                         "divAmount": oWLItemDetail.divAmount,
                                         "divDate": oWLItemDetail.divDate,
@@ -12503,6 +14701,68 @@ function GetWatchlistPrices() {
                                     }
                                 }
 
+                                //G/LF
+                                dTmpOrig = 0.0;
+                                dTmpOrig = oWLItemDetail.averagePriceF;
+                                if (dQty > 0) {
+                                    dTmpOrig = dTmpOrig + (dQty * oWLItemDetail.costPerShare);
+                                }
+                                dTmpOrig = dTmpOrig + oWLItemDetail.oldgl;
+                                sTmp = FormatDecimalNumber(dTmpOrig, 5, 2, "");
+                                dTmp = parseFloat(sTmp);
+                                dTotalGainF = dTotalGainF + dTmp;
+                                if (dTmp == 0) {
+                                    sTmp = "";
+                                }
+                                if (!oWLDisplayed.bHidden) {
+                                    if (goWLDisplayed[sThisId + sSymbol].averagePriceF == dTmpOrig) {
+                                        if (dTmp < 0.0) {
+                                            if (!isUndefined(oWLCols[gsSortOrderFields.GLF])) {
+                                                if (oWLCols[gsSortOrderFields.GLF].selected) {
+                                                    oLines[gsSortOrderFields.GLF] = "<td " + gsFieldColSpanWL.GLF + "style=\"color:" + gsNegativeColor + ";" + gsFieldWidthsWL.GLF + "text-align:" + oWLCols[gsSortOrderFields.GLF].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                }
+                                            }
+                                        } else if (dTmp > 0.0) {
+                                            if (!isUndefined(oWLCols[gsSortOrderFields.GLF])) {
+                                                if (oWLCols[gsSortOrderFields.GLF].selected) {
+                                                    oLines[gsSortOrderFields.GLF] = "<td " + gsFieldColSpanWL.GLF + "style=\"color:green;" + gsFieldWidthsWL.GLF + "text-align:" + oWLCols[gsSortOrderFields.GLF].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                                }
+                                            }
+                                        } else {
+                                            if (!isUndefined(oWLCols[gsSortOrderFields.GLF])) {
+                                                if (oWLCols[gsSortOrderFields.GLF].selected) {
+                                                    oLines[gsSortOrderFields.GLF] = "<td " + gsFieldColSpanWL.GLF + " style=\"" + gsFieldWidthsWL.GLF + "text-align:" + oWLCols[gsSortOrderFields.GLF].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        if (dTmp < 0.0) {
+                                            if (!isUndefined(oWLCols[gsSortOrderFields.GLF])) {
+                                                if (oWLCols[gsSortOrderFields.GLF].selected) {
+                                                    oLines[gsSortOrderFields.GLF] = "<td  " + gsFieldColSpanWL.GLF + "style=\"color:" + gsNegativeColor + ";" + gsFieldWidthsWL.GLF + "text-align:" + oWLCols[gsSortOrderFields.GLF].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                }
+                                            }
+                                        } else if (dTmp > 0.0) {
+                                            if (!isUndefined(oWLCols[gsSortOrderFields.GLF])) {
+                                                if (oWLCols[gsSortOrderFields.GLF].selected) {
+                                                    oLines[gsSortOrderFields.GLF] = "<td  " + gsFieldColSpanWL.GLF + "style=\"color:green;" + gsFieldWidthsWL.GLF + "text-align:" + oWLCols[gsSortOrderFields.GLF].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \"><b>" + sTmp + "</b></td>";
+                                                }
+                                            }
+                                        } else {
+                                            if (!isUndefined(oWLCols[gsSortOrderFields.GLF])) {
+                                                if (oWLCols[gsSortOrderFields.GLF].selected) {
+                                                    oLines[gsSortOrderFields.GLF] = "<td " + gsFieldColSpanWL.GLF + " style=\"" + gsFieldWidthsWL.GLF + "text-align:" + oWLCols[gsSortOrderFields.GLF].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                                }
+                                            }
+                                        }
+                                        goWLDisplayed[sThisId + sSymbol].averagePriceF = dTmpOrig;
+                                    }
+                                } else {
+                                    if (!(goWLDisplayed[sThisId + sSymbol].averagePriceF == dTmpOrig)) {
+                                        goWLDisplayed[sThisId + sSymbol].averagePriceF = dTmpOrig;
+                                    }
+                                }
+
                                 if (!isUndefined(oWLCols[gsSortOrderFields.MktValue])) {
                                     if (oWLCols[gsSortOrderFields.MktValue].selected) {
                                         //Mkt Value
@@ -12563,6 +14823,34 @@ function GetWatchlistPrices() {
                                                 oLines[gsSortOrderFields.Low] = "<td " + gsFieldColSpanWL.Low + " style=\"" + gsFieldWidthsWL.Low + "text-align:" + oWLCols[gsSortOrderFields.Low].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
                                             } else {
                                                 oLines[gsSortOrderFields.Low] = "<td " + gsFieldColSpanWL.Low + " style=\"" + gsFieldWidthsWL.Low + "text-align:" + oWLCols[gsSortOrderFields.Low].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!isUndefined(oWLCols[gsSortOrderFields.High52Wk])) {
+                                    if (oWLCols[gsSortOrderFields.High52Wk].selected) {
+                                        //52Wk High Value
+                                        if (!oWLDisplayed.bHidden) {
+                                            sTmp = FormatDecimalNumber(oWLItemDetail.highPrice52Wk, 5, 2, "");
+                                            if (parseFloat(sTmp) == 0.0) {
+                                                oLines[gsSortOrderFields.High52Wk] = "<td " + gsFieldColSpanWL.High52Wk + " style=\"" + gsFieldWidthsWL.High52Wk + "text-align:" + oWLCols[gsSortOrderFields.High52Wk].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                            } else {
+                                                oLines[gsSortOrderFields.High52Wk] = "<td " + gsFieldColSpanWL.High52Wk + " style=\"" + gsFieldWidthsWL.High52Wk + "text-align:" + oWLCols[gsSortOrderFields.High52Wk].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!isUndefined(oWLCols[gsSortOrderFields.Low52Wk])) {
+                                    if (oWLCols[gsSortOrderFields.Low52Wk].selected) {
+                                        //Low Value
+                                        if (!oWLDisplayed.bHidden) {
+                                            sTmp = FormatDecimalNumber(oWLItemDetail.lowPrice52Wk, 5, 2, "");
+                                            if (parseFloat(sTmp) == 0.0) {
+                                                oLines[gsSortOrderFields.Low52Wk] = "<td " + gsFieldColSpanWL.Low52Wk + " style=\"" + gsFieldWidthsWL.Low52Wk + "text-align:" + oWLCols[gsSortOrderFields.Low52Wk].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">&nbsp;</td>";
+                                            } else {
+                                                oLines[gsSortOrderFields.Low52Wk] = "<td " + gsFieldColSpanWL.Low52Wk + " style=\"" + gsFieldWidthsWL.Low52Wk + "text-align:" + oWLCols[gsSortOrderFields.Low52Wk].aligndata + "; vertical-align:" + sTableRowVerticalAlignment + "; border-width:0px; \">" + sTmp + "</td>";
                                             }
                                         }
                                     }
@@ -12718,6 +15006,7 @@ function GetWatchlistPrices() {
                                 sThisTableTotalsInside = sThisTableTotalsInside + sPrecedingSpaces + "<I>Total</I>&nbsp;&nbsp;" +
                                     "<span style=\"color:green\">" + iTotalSymbolsUpRealized.toString() + "</span>:" +
                                     "<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDownRealized.toString() + "</span>";
+                                //G/L
                                 sThisTableTotalsInside = sThisTableTotalsInside + "&nbsp;&nbsp;G/L:&nbsp;";
                                 sTmp = FormatDecimalNumber(dTotalGain, 5, 2, "");
                                 if (dTotalGain < 0.0) {
@@ -12725,6 +15014,16 @@ function GetWatchlistPrices() {
                                 } else {
                                     sThisTableTotalsInside = sThisTableTotalsInside + "<span style=\"color:green;\">" + sTmp + "</span>";
                                 }
+
+                                //G/LF
+                                sThisTableTotalsInside = sThisTableTotalsInside + "&nbsp;&nbsp;G/LF:&nbsp;";
+                                sTmp = FormatDecimalNumber(dTotalGainF, 5, 2, "");
+                                if (dTotalGainF < 0.0) {
+                                    sThisTableTotalsInside = sThisTableTotalsInside + "<span style=\"color:" + gsNegativeColor + ";\">" + sTmp + "</span>";
+                                } else {
+                                    sThisTableTotalsInside = sThisTableTotalsInside + "<span style=\"color:green;\">" + sTmp + "</span>";
+                                }
+
                             }
                             //    sThisTable = sThisTable + "&nbsp;&nbsp;&nbsp;Up:&nbsp;<span style=\"color:green\">" + iTotalSymbolsUp.toString() + "</span>";
                             //    sThisTable = sThisTable + "&nbsp;&nbsp;Down:&nbsp;<span style=\"color:" + gsNegativeColor + "\">" + iTotalSymbolsDown.toString() + "</span>";
@@ -12744,7 +15043,7 @@ function GetWatchlistPrices() {
                     }
 
                     if (!gWatchlists[idxWLMain].bShowMaximized) {
-                    //if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWLMain].bShowMaximized)) {
+                        //if ((iLineCnt > giLineLimit) && (!gWatchlists[idxWLMain].bShowMaximized)) {
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflow, gsTableHeightOverflow);
                         sThisTableTitle = sThisTableTitle.replace(gsReplaceTableHeightOverflowTitle, gsTableHeightOverflowTitle);
                         sThisDiv = sThisDiv.replace("xxximgMaxRestorexxx", gsMaximizeWindowImg);
@@ -13032,6 +15331,20 @@ function GetWatchlistsNew(bDoingReset) {
                 gWatchlists[gWatchlists.length] = oWL;
             } else {
                 if (sLastWL != "") {
+                    for (let idxWLCur = 0; idxWLCur < oOldWL.length; idxWLCur++) {
+                        if ((oWL.accountId == oOldWL[idxWLCur].accountId) &&
+                            (oWL.name == oOldWL[idxWLCur].name)) {
+                            oWL.spanName = oOldWL[idxWLCur].spanName;
+                            if (oOldWL[idxWLCur].bSelected) {
+                                oWL.bSelected = true;
+                                oWL.bSelectedTemp = true;
+                                oWL.sSortOrderFields = oOldWL[idxWLCur].sSortOrderFields; //6/23/21
+                                oWL.iSortOrderAscDesc = oOldWL[idxWLCur].iSortOrderAscDesc; //10/20/21
+                                oWL.bShowMaximized = oOldWL[idxWLCur].bShowMaximized;
+                            }
+                            break;
+                        }
+                    }
                     gWatchlists[gWatchlists.length] = oWL;
                 }
             }
@@ -13118,7 +15431,7 @@ function GetWatchlistsNew(bDoingReset) {
                                     oWL.wlcolumnsselected[vTmp[0].toString()].sortonthisfield = (vTmp[3] == "1" ? true : false);
                                     oWL.wlcolumnsselected[vTmp[0].toString()].sortascdesc = parseInt(vTmp[4]);
                                     if (oWL.wlcolumnsselected[vTmp[0].toString()].sortonthisfield) {
-                                        oWL.sSortOrderFields = vTmp[0].toString(); 
+                                        oWL.sSortOrderFields = vTmp[0].toString();
                                         oWL.iSortOrderAscDesc = oWL.wlcolumnsselected[vTmp[0].toString()].sortascdesc; //0 - ascending, 1 - descending 
                                     }
                                 }
@@ -13212,6 +15525,13 @@ function GetWatchlistsNew(bDoingReset) {
                 }
             }
         }
+    } else {
+        if (bDoingReset) {
+            for (let idxWLCur = 0; idxWLCur < gWatchlists.length; idxWLCur++) {
+                oOldWL[oOldWL.length] = gWatchlists[idxWLCur]
+            }
+        }
+        gWatchlists.length = 0;
     }
 
     //add an Account watchlist for each account that has stock positions
@@ -13676,11 +15996,11 @@ function GetWatchlistSO() {
                         //sThisTableTitleInside = sThisTableTitleInside + "</tr>";
                         //sThisTableTitleInside = sThisTableTitleInside + "<tr style=\"height:" + giTitleHeight.toString() + "px; \">";
 
-                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
+                        let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix;
                         let sonClickChangeOrderBase = "onclick =\"wlChangeOrderSO(" + idxWL.toString() + ", 'xxx')\"";
                         let sonClickChangeOrder = sonClickChangeOrderBase.replace("xxx", gsSortOrderFieldsSO.Action);
 
-                        //let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000";
+                        //let sThischkItemId = "chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix;
                         sThisTableTitleInside = sThisTableTitleInside + "<td style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + ";border-width:0px;\">" +
                             "<input xxthisWillBeReplacedxx style=\"text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \" type=\"checkbox\" id=\"" + sThischkItemId + "\" name=\"" + sThischkItemId + "\" value=\"\" onclick=\"wlMarkSelectedItem(" + idxWL.toString() + ", " + "-1" + ")\">" +
                             "<span  " + sonClickChangeOrder + " style=\"" + gsFieldWidthsWLSO.Action + "text-align:left;vertical-align:" + sTableRowVerticalAlignment + "; \">" +
@@ -14921,7 +17241,7 @@ p_gllaststartdate varchar (20),
 p_gllastenddate varchar (20),
 p_hidden char(1),
 p_oldgl varchar (20),
-p_catalystdate varchar (10))
+p_catalystdate varchar (20))
                      * 
                      * */
                     s = "<?xml version=\"1.0\"?>" + "\r\n";
@@ -15028,17 +17348,21 @@ function InitializeColumns(oWL, bSetAllSelectedToFalse) {
     }
 }
 
-function IsMarketOpen() {
+function IsMarketOpen(sDateToCheckIn) {
     let iTryCount = 0;
     let idx = 0;
     let bReturn = false;
-
+    let sDateToCheck = "";
     let oCM;
+
+    if (!isUndefined(sDateToCheckIn)) {
+        sDateToCheck = "?date=" + sDateToCheckIn;
+    }
 
     //debugger
     while (iTryCount < 2) {
         //-------------------------------------------------------------------------------------------------
-        let sServerUrl = "https://api.tdameritrade.com/v1/marketdata/EQUITY/hours"
+        let sServerUrl = "https://api.tdameritrade.com/v1/marketdata/EQUITY/hours" + sDateToCheck;
 
         let xhttp = null;
         let iInnerTryCount = 0;
@@ -15484,6 +17808,20 @@ function MoveDivs(bMoveDown, iAmountToChangeIn) {
         }
     }
 
+    if (gChartInfo.length > 0) {
+        for (let idx = 0; idx < gChartInfo.length; idx++) {
+            if (gChartInfo[idx].spanName != "") {
+                if (document.getElementById(gChartInfo[idx].spanName) != null) {
+                    oDiv = document.getElementById(gChartInfo[idx].spanName);
+                    if (oDiv.offsetLeft < iLeftLimit) {
+                        oDivs[oDivs.length] = oDiv;
+                    }
+                }
+            }
+        }
+    }
+
+
     if (oDivs.length > 0) {
         for (let idxDivs = 0; idxDivs < oDivs.length; idxDivs++) {
             oDiv = oDivs[idxDivs];
@@ -15702,6 +18040,9 @@ function OpenSocket() {
                                                 case "8": //totalVolume
                                                     {
                                                         oT.totalVolume = oData.data[idxData].content[idxContent][ky];
+                                                        //if (oData.data[idxData].content[idxContent].key == "T") {
+                                                        //    window.setTimeout("ChartDataChanged('" + oData.data[idxData].content[idxContent].key + "')" , 1);
+                                                        //}
                                                         break;
                                                     }
                                                 case "9": //lastSize
@@ -15809,6 +18150,9 @@ function OpenSocket() {
                                                 case "43": //regularMarketLastPrice
                                                     {
                                                         oT.regularMarketLastPrice = oData.data[idxData].content[idxContent][ky];
+                                                        //if (oData.data[idxData].content[idxContent].key == "T") {
+                                                        //    window.setTimeout("ChartDataChanged('" + oData.data[idxData].content[idxContent].key + "')", 1);
+                                                        //}
                                                         break;
                                                     }
                                                 case "44": //regularMarketLastSize
@@ -16241,6 +18585,8 @@ function PageLoad() {
                     }
                 case "https://bhalp.github.io/mySiteTest/default.htm":
                     {
+                        gsGetDataSite = "https://hapappe.com/test/";
+                        gbInTestMode = true;
                         break;
                     }
                 case "https://hapappe.com/defaultCell.htm":
@@ -16301,6 +18647,8 @@ function PageLoad() {
                     }
                 case "https://bhalp.github.io/mySiteTest/default.htm":
                     {
+                        gsGetDataSite = "https://hapappe.com/test/";
+                        gbInTestMode = true;
                         break;
                     }
                 case "https://hapappe.com/defaultCell.htm":
@@ -16771,6 +19119,7 @@ function PageLoad() {
     drag_divPH("tblSymbols");
     drag_divPH("tblDetail");
     window.setTimeout("GetSectionHeights()", 10);
+    window.setTimeout("DoUpdateCharts()", 1000);
 }
 
 function PastCopiedSymbols(bFirstTime, iProgressIncrementIn, idxItemStart, idxWL, iStartDateIn, iEndDateIn) {
@@ -19167,7 +21516,7 @@ function printdiv_do_finish() {
 
 function PutPopupOnTop(sThisId) {
     giZIndex++;
-    document.getElementById(sThisId).style.zindex = giZIndex.toString();
+    document.getElementById(sThisId).style.zIndex = giZIndex.toString();
 }
 
 function RemoveAllSymbolDetailDivs() {
@@ -19487,8 +21836,8 @@ function SelectAllUnhidden(idxWL, sSymbolsToShow) {
     }
 
     if ((bAllChecked) && (iNumSelected != 0)) {
-        if ((!isUndefined(document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000"))) && (document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000") != null)) {
-            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = true;
+        if ((!isUndefined(document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix))) && (document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix) != null)) {
+            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked = true;
         }
     }
     if (iNumSelected == 0) {
@@ -19921,6 +22270,27 @@ function SetDefault() {
     }
 }
 
+function setDefaultPHPopup(sThisId) {
+    if (document.getElementById("radioChart1Month" + sThisId) != null) {
+        document.getElementById("radioChart1Month" + sThisId).enabled = true;
+    }
+    if (document.getElementById("radioChart2Month" + sThisId) != null) {
+        document.getElementById("radioChart2Month" + sThisId).enabled = true;
+    }
+    if (document.getElementById("radioChart3Month" + sThisId) != null) {
+        document.getElementById("radioChart3Month" + sThisId).enabled = true;
+    }
+    if (document.getElementById("radioChart12Month" + sThisId) != null) {
+        document.getElementById("radioChart12Month" + sThisId).enabled = true;
+    }
+    if (document.getElementById("radioChart1Today" + sThisId) != null) {
+        document.getElementById("radioChart1Today" + sThisId).enabled = true;
+    }
+    if (document.getElementById("radioChartLastHour" + sThisId) != null) {
+        document.getElementById("radioChartLastHour" + sThisId).enabled = true;
+    }
+}
+
 function SetDefaultWL(idxWL) {
     let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     if ((document.getElementById("chkPlace" + sThisId) != null) && (!isUndefined(document.getElementById("chkPlace" + sThisId)))) {
@@ -20127,7 +22497,7 @@ function SetupIndexes() {
                     }
                     marketIndex.tdName = "tdMarket" + idx.toString();
                     gMarketIndexes[gMarketIndexes.length] = marketIndex;
-                    sRow1 = sRow1 + "<td id=\"" + marketIndex.tdName + "\" style=\"color:black; vertical-align:top; text-align:center; width:" + gsMarketWidth + "px\"></td>";
+                    sRow1 = sRow1 + "<td onclick=\"DoShowIndexPriceHistory(" + (gMarketIndexes.length - 1).toString() + ")\" id=\"" + marketIndex.tdName + "\" style=\"color:black; vertical-align:top; text-align:center; width:" + gsMarketWidth + "px\"></td>";
                     sRow2 = sRow2 + "<td id=\"" + marketIndex.tdName + "Value\" style=\"color:black; vertical-align:top; text-align:center; width:" + gsMarketWidth + "px\"></td>";
                     sRow3 = sRow3 + "<td style=\"vertical-align:middle; text-align:center; width:" + gsMarketWidth + "px\" >" +
                         "<input style=\"padding-left:2px; padding-right:0px; padding-top:0px; padding-bottom:0px; border-width:0px; font-family:Arial, Helvetica, sans-serif; font-size:10pt; text-align:center; width:" + gsMarketWidthChange + "px; height:20px; visibility:visible\" type=\"button\" id=\"" + marketIndex.tdName + "Change\" name=\"" + marketIndex.tdName + "Change\" value=\"0\" onclick=\"DoChangeIndexChange()\">" +
@@ -20376,10 +22746,16 @@ function SetupWLColumnDefaults() {
     gsWLColumnsDefault["GL"].selected = true;
     gsWLColumnsDefault["MktValue"] = clone(gsWLColumnsAll["MktValue"]);
     gsWLColumnsDefault["MktValue"].selected = true;
+    gsWLColumnsDefault["GLF"] = clone(gsWLColumnsAll["GLF"]);
+    gsWLColumnsDefault["GLF"].selected = false;
     gsWLColumnsDefault["High"] = clone(gsWLColumnsAll["High"]);
     gsWLColumnsDefault["High"].selected = false;
     gsWLColumnsDefault["Low"] = clone(gsWLColumnsAll["Low"]);
     gsWLColumnsDefault["Low"].selected = false;
+    gsWLColumnsDefault["High52Wk"] = clone(gsWLColumnsAll["High52Wk"]);
+    gsWLColumnsDefault["High52Wk"].selected = false;
+    gsWLColumnsDefault["Low52Wk"] = clone(gsWLColumnsAll["Low52Wk"]);
+    gsWLColumnsDefault["Low52Wk"].selected = false;
     gsWLColumnsDefault["PE"] = clone(gsWLColumnsAll["PE"]);
     gsWLColumnsDefault["PE"].selected = false;
     gsWLColumnsDefault["OldGL"] = clone(gsWLColumnsAll["OldGL"]);
@@ -20474,10 +22850,16 @@ function SetupWLColumnDefaults() {
     gsWLColumnsDiv["High"].selected = false;
     gsWLColumnsDiv["Low"] = clone(gsWLColumnsAll["Low"]);
     gsWLColumnsDiv["Low"].selected = false;
+    gsWLColumnsDiv["High52Wk"] = clone(gsWLColumnsAll["High52Wk"]);
+    gsWLColumnsDiv["High52Wk"].selected = false;
+    gsWLColumnsDiv["Low52Wk"] = clone(gsWLColumnsAll["Low52Wk"]);
+    gsWLColumnsDiv["Low52Wk"].selected = false;
     gsWLColumnsDiv["PE"] = clone(gsWLColumnsAll["PE"]);
     gsWLColumnsDiv["PE"].selected = false;
     gsWLColumnsDiv["GL"] = clone(gsWLColumnsAll["GL"]);
     gsWLColumnsDiv["GL"].selected = false;
+    gsWLColumnsDiv["GLF"] = clone(gsWLColumnsAll["GLF"]);
+    gsWLColumnsDiv["GLF"].selected = false;
     gsWLColumnsDiv["OldGL"] = clone(gsWLColumnsAll["OldGL"]);
     gsWLColumnsDiv["OldGL"].selected = false;
 
@@ -20574,10 +22956,16 @@ function SetupWLColumnDefaults() {
     gsWLColumnsCurrentTrades["GL"].selected = true;
     gsWLColumnsCurrentTrades["MktValue"] = clone(gsWLColumnsAll["MktValue"]);
     gsWLColumnsCurrentTrades["MktValue"].selected = true;
+    gsWLColumnsCurrentTrades["GLF"] = clone(gsWLColumnsAll["GLF"]);
+    gsWLColumnsCurrentTrades["GLF"].selected = true;
     gsWLColumnsCurrentTrades["High"] = clone(gsWLColumnsAll["High"]);
     gsWLColumnsCurrentTrades["High"].selected = false;
     gsWLColumnsCurrentTrades["Low"] = clone(gsWLColumnsAll["Low"]);
     gsWLColumnsCurrentTrades["Low"].selected = false;
+    gsWLColumnsCurrentTrades["High52Wk"] = clone(gsWLColumnsAll["High52Wk"]);
+    gsWLColumnsCurrentTrades["High52Wk"].selected = false;
+    gsWLColumnsCurrentTrades["Low52Wk"] = clone(gsWLColumnsAll["Low52Wk"]);
+    gsWLColumnsCurrentTrades["Low52Wk"].selected = false;
     gsWLColumnsCurrentTrades["OldGL"] = clone(gsWLColumnsAll["OldGL"]);
     gsWLColumnsCurrentTrades["OldGL"].selected = false;
     gsWLColumnsCurrentTrades["PurchaseDate"] = clone(gsWLColumnsAll["PurchaseDate"]);
@@ -20628,7 +23016,9 @@ function SetupWLColumnSelection(idxWL) {
 function SetupWLColumnSelectionChangeOrder(idxWL) {
 
     let s = SetupWLColumnSelectionHTML(idxWL, gWatchlists[idxWL].wlcolumnsselectedtemp);
-    document.getElementById("divWLSelectColumn").innerHTML = s;
+
+    let sTitle = "<div style=\"width:100%; text-align:center; font-family:Arial, Helvetica, sans-serif; font-size:14pt;\"><b>Column Selection for " + gWatchlists[idxWL].accountName + "--" + gWatchlists[idxWL].name + "</b></div>";
+    document.getElementById("divWLSelectColumn").innerHTML = sTitle + s;
 }
 
 function SetupWLColumnSelectionHTML(idxWL, wlcolumnsselected) {
@@ -20929,6 +23319,27 @@ function SetWait() {
     }
 }
 
+function setWaitPHPopup(sThisId) {
+    if (document.getElementById("radioChart1Month" + sThisId) != null) {
+        document.getElementById("radioChart1Month" + sThisId).enabled = false;
+    }
+    if (document.getElementById("radioChart2Month" + sThisId) != null) {
+        document.getElementById("radioChart2Month" + sThisId).enabled = false;
+    }
+    if (document.getElementById("radioChart3Month" + sThisId) != null) {
+        document.getElementById("radioChart3Month" + sThisId).enabled = false;
+    }
+    if (document.getElementById("radioChart12Month" + sThisId) != null) {
+        document.getElementById("radioChart12Month" + sThisId).enabled = false;
+    }
+    if (document.getElementById("radioChart1Today" + sThisId) != null) {
+        document.getElementById("radioChart1Today" + sThisId).enabled = false;
+    }
+    if (document.getElementById("radioChartLastHour" + sThisId) != null) {
+        document.getElementById("radioChartLastHour" + sThisId).enabled = false;
+    }
+}
+
 function SetWaitWL(idxWL) {
     let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     if ((document.getElementById("chkPlace" + sThisId) != null) && (!isUndefined(document.getElementById("chkPlace" + sThisId)))) {
@@ -20960,16 +23371,18 @@ function ShowAddPopup(watchlistId, sLastWLAccountId) {
             sThisDiv = sThisDiv + "<tr>";
 
             sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:550px; text-align:center; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
-                "Add Symbol</th>";
-            sThisDiv = sThisDiv + "<th title=\"Cancel\" style=\"width:50px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDivPopup('" + sThisId + "')\"><span class=\"close-btn\">&times;</span>&nbsp;&nbsp;</th>";
+                "Add Symbol";
+            sThisDiv = sThisDiv + "</th>";
+            sThisDiv = sThisDiv + "<th title=\"Cancel\" style=\"width:50px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDivPopup('" + sThisId + "')\"><span class=\"close-btn\">&times;</span>&nbsp;&nbsp;";
+            sThisDiv = sThisDiv + "</th>";
 
             sThisDiv = sThisDiv + "</tr>";
             sThisDiv = sThisDiv + "<tr>";
             sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:0px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
 
-
             sThisDiv = sThisDiv + "<table cellspacing=\"0\" cellpadding=\"0\" style=\"width:600px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-style:none; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
 
+            sThisDiv = sThisDiv + "<tr>";
             sThisDiv = sThisDiv + "<td colspan=\"2\" style=\"border-style:none;\">" +
                 "&nbsp;" +
                 "</td > ";
@@ -21641,7 +24054,7 @@ function ShowCopyPastePopupSelection(idxWL) {
     let sThisDiv = "";
 
     let sThisId = "";
-
+    let sThisName = gWatchlists[idxWL].accountName + " -- " + gWatchlists[idxWL].name;
     sThisIdCurrentDiv = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     sThisId = "CPPS" + gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
@@ -21670,7 +24083,7 @@ function ShowCopyPastePopupSelection(idxWL) {
         "&nbsp;" +
         "</td > ";
     sThisDiv = sThisDiv + "<td style=\"height: 30px; width:200px; text-align:center; vertical-align:middle;border-style:none;\">" +
-        "<input style=\"border-radius:15px;\" type=\"button\" value=\"Copy\" onclick=\"DoCopySymbols(2, " + idxWL.toString() + ", '" + sThisId + "')\">" +
+        "<input style=\"border-radius:15px;\" type=\"button\" value=\"Copy from (" + sThisName + ")\" onclick=\"DoCopySymbols(2, " + idxWL.toString() + ", '" + sThisId + "')\">" +
         "</td > ";
     sThisDiv = sThisDiv + "<td style=\"width:100px; text-align:right; vertical-align:top;border-style:none;\">" +
         "&nbsp;" +
@@ -21682,7 +24095,7 @@ function ShowCopyPastePopupSelection(idxWL) {
         "&nbsp;" +
         "</td > ";
     sThisDiv = sThisDiv + "<td style=\"height: 30px; width:200px; text-align:center; vertical-align:middle;border-style:none;\">" +
-        "<input style=\"border-radius:15px;\" type=\"button\" value=\"Paste\" onclick=\"DoPasteSymbols(2, " + idxWL.toString() + ", '" + sThisId + "')\">" +
+        "<input style=\"border-radius:15px;\" type=\"button\" value=\"Paste from (" + gWatchlistItemsToCopy[0].wlName + ")\" onclick=\"DoPasteSymbols(2, " + idxWL.toString() + ", '" + sThisId + "')\">" +
         "</td > ";
     sThisDiv = sThisDiv + "<td style=\"width:100px; text-align:right; vertical-align:top;border-style:none;\">" +
         "&nbsp;" +
@@ -21876,6 +24289,29 @@ function ShowGLInitializePopupSelection(watchlistId, sLastWLAccountId) {
         let sThisDiv = "";
         let sThisId = "";
 
+        let sSymbolsToLookup = "";
+        let sSymbolsToLookupSep = "";
+        let iNumSelected = 0;
+        for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+            if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                iNumSelected++;
+                sSymbolsToLookup = sSymbolsToLookup + sSymbolsToLookupSep + gWatchlists[idxWL].WLItems[idxWLItem].symbol;
+                sSymbolsToLookupSep = ", ";
+            }
+        }
+
+        //if ((iNumSelected > 0) && (sDollars != "")) {
+        //    //if (iNumSelected > 0) {
+        //    window.setTimeout("ShowGLInitializePopupSelection('" + watchlistId + "', '" + sLastWLAccountId + "')", 10); //initialize all or only selected
+        //} else {
+        //    if (sDollars != "") {
+        //        WLInitializeGLSymbols(2, idxWL); //initialize all
+        //    } else {
+        //        WLInitializeGLSymbols(3, idxWL); //update all
+        //    }
+        //}
+
+
         sThisIdCurrentDiv = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
         sThisId = "GLUPS" + gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
@@ -21884,7 +24320,7 @@ function ShowGLInitializePopupSelection(watchlistId, sLastWLAccountId) {
         sThisDiv = sThisDiv + "<tr>";
 
         sThisDiv = sThisDiv + "<th style=\"height:24.5px; width:550px; text-align:center; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style:solid; border-spacing:1px; border-color:White\">" +
-            "Initialize the Selected Symbols or All Symbols</th>";
+            "Update G/L</th>";
         sThisDiv = sThisDiv + "<th title=\"Cancel\" style=\"width:50px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style:solid; border-spacing:1px; border-color: White\" onclick=\"wlDoRemoveDivPopup('" + sThisId + "')\"><span class=\"close-btn\">&times;</span>&nbsp;&nbsp;</th>";
 
         sThisDiv = sThisDiv + "</tr>";
@@ -21900,11 +24336,38 @@ function ShowGLInitializePopupSelection(watchlistId, sLastWLAccountId) {
         sThisDiv = sThisDiv + "</tr>";
 
         sThisDiv = sThisDiv + "<tr>";
+        sThisDiv = sThisDiv + "<td colspan=\"3\" style=\"width:100px; text-align:center; vertical-align:middle;border-style:none;\">" +
+            "Initialization Start Date:&nbsp;" +
+            "<input title=\"Enter a date as yyyy-mm-dd when initializing G/L values.\" id=\"txtwlclose" + sThisId + "\" name=\"txtwlclose" + sThisId + "\" type=\"search\" style=\"width:" + lengthsWL.WLColCloseEntryWidth.toString() + "px;font-family:Arial,Helvetica, sans-serif; font-size:10pt; \" value=\"" + gWatchlists[idxWL].defaultUpdateGLDate + "\">" +
+            "</td > ";
+        sThisDiv = sThisDiv + "</tr>";
+
+        sThisDiv = sThisDiv + "<tr>";
+        sThisDiv = sThisDiv + "<td colspan=\"3\" style=\"border-style:none;\">" +
+            "&nbsp;" +
+            "</td > ";
+        sThisDiv = sThisDiv + "</tr>";
+
+        if (iNumSelected > 0) {
+            sThisDiv = sThisDiv + "<tr>";
+            sThisDiv = sThisDiv + "<td style=\"width:100px; text-align:right; vertical-align:top;border-style:none;\">" +
+                "&nbsp;" +
+                "</td > ";
+            sThisDiv = sThisDiv + "<td style=\"height: 30px; width:200px; text-align:center; vertical-align:middle;border-style:none;\">" +
+                "<input style=\"border-radius:15px;\" type=\"button\" value=\"Initialize G/L for Selected Symbols\" onclick=\"DoWLInitializeGLSymbols(1, " + idxWL.toString() + ", '" + sThisId + "')\">" +
+                "</td > ";
+            sThisDiv = sThisDiv + "<td style=\"width:100px; text-align:right; vertical-align:top;border-style:none;\">" +
+                "&nbsp;" +
+                "</td > ";
+            sThisDiv = sThisDiv + "</tr>";
+        }
+
+        sThisDiv = sThisDiv + "<tr>";
         sThisDiv = sThisDiv + "<td style=\"width:100px; text-align:right; vertical-align:top;border-style:none;\">" +
             "&nbsp;" +
             "</td > ";
         sThisDiv = sThisDiv + "<td style=\"height: 30px; width:200px; text-align:center; vertical-align:middle;border-style:none;\">" +
-            "<input style=\"border-radius:15px;\" type=\"button\" value=\"Initialize Selected Symbols\" onclick=\"DoWLInitializeGLSymbols(1, " + idxWL.toString() + ", '" + sThisId + "')\">" +
+            "<input style=\"border-radius:15px;\" type=\"button\" value=\"Initialize G/L for All Symbols\" onclick=\"DoWLInitializeGLSymbols(2, " + idxWL.toString() + ", '" + sThisId + "')\">" +
             "</td > ";
         sThisDiv = sThisDiv + "<td style=\"width:100px; text-align:right; vertical-align:top;border-style:none;\">" +
             "&nbsp;" +
@@ -21916,7 +24379,7 @@ function ShowGLInitializePopupSelection(watchlistId, sLastWLAccountId) {
             "&nbsp;" +
             "</td > ";
         sThisDiv = sThisDiv + "<td style=\"height: 30px; width:200px; text-align:center; vertical-align:middle;border-style:none;\">" +
-            "<input style=\"border-radius:15px;\" type=\"button\" value=\"Initialize All Symbols\" onclick=\"DoWLInitializeGLSymbols(2, " + idxWL.toString() + ", '" + sThisId + "')\">" +
+            "<input style=\"border-radius:15px;\" type=\"button\" value=\"Update G/L for All Symbols\" onclick=\"DoWLInitializeGLSymbols(3, " + idxWL.toString() + ", '" + sThisId + "')\">" +
             "</td > ";
         sThisDiv = sThisDiv + "<td style=\"width:100px; text-align:right; vertical-align:top;border-style:none;\">" +
             "&nbsp;" +
@@ -22043,6 +24506,239 @@ function ShowIndexSelectionLater(bSetCookie, bChecked) {
         }
     }
     gbDoingShowSection = false;
+}
+
+function ShowPriceHistory(sSymbolsIn, iSymbolIdxIn, sDescriptionIn) {
+    //sSymbolsIn - a list of comma separated symbols 
+    //iSymbolIdxIn - the index of the symbol to process
+    let iSymbolIdx = iSymbolIdxIn;
+    let aSymbols = sSymbolsIn.split(",");
+
+    let sSymbolIn = aSymbols[iSymbolIdx];
+    //is the symbol already shown
+    let bShown = false;
+    let bExists = false;
+    let sThisId = "";
+    //let sThisIdCurrentDiv = "divIndexDisplay";
+    let idxCurr = 0;
+    let idxWL = -1;
+    let sDescription = sSymbolIn;
+    let sFontSize = "font-size:8pt;";
+    //let sTDWidth = "width:75px;";
+    let sTDWidth = "";
+    let iCurrentChartType = 5; //default to today by minute
+    let bRealTime = false;
+    let bShowRealTime = false;
+
+    if (!isUndefined(sDescriptionIn)) {
+        sDescription = sDescriptionIn;
+    }
+
+    //if (watchlistId != "") {
+    //    idxWL = wlGetIdxWL(watchlistId, sLastWLAccountId);
+    //    if (idxWL != -1) {
+    //        sThisIdCurrentDiv = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    //    }
+    //}
+
+    if (gChartInfo.length > 0) {
+        for (let idx = 0; idx < gChartInfo.length; idx++) {
+            if (gChartInfo[idx].symbol == sSymbolIn) {
+                bExists = true;
+                if (gChartInfo[idx].spanName != "") {
+                    if (document.getElementById(gChartInfo[idx].spanName) != null) {
+                        bShown = true;
+                    }
+                    idxCurr = idx;
+                    iCurrentChartType = gChartInfo[idx].chartType;
+                    bRealTime = gChartInfo[idx].bRealTime;
+                }
+                break;
+            }
+        }
+    }
+    let oCI = new CIChartInfo();
+    if (!bExists) {
+        oCI.symbol = sSymbolIn;
+        oCI.spanName = "CHART" + sSymbolIn;
+        gChartInfo[gChartInfo.length] = oCI;
+        idxCurr = gChartInfo.length - 1;
+    } else {
+        oCI = gChartInfo[idxCurr];
+    }
+    sThisId = oCI.spanName;
+
+    if (!bShown) {
+//        sThisId = "CHART" + sSymbolIn;
+
+        let sThisDiv = "";
+        sThisDiv = sThisDiv + "<div style=\"width:350px; font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\">";
+        //sThisDiv = sThisDiv + "<table style=\"border-collapse:collapse; width:300px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-width:1px; border-style:solid; border-color:White; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+        sThisDiv = sThisDiv + "<table style=\"border-collapse:collapse; width:300px; background-color:" + gsWLTableEvenRowBackgroundColor + "; border-width:1px; border-style:solid; border-color:White; font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\">";
+        sThisDiv = sThisDiv + "<tr>";
+
+        sThisDiv = sThisDiv + "<th style=\"width:300px; text-align:center; vertical-align: middle; border-top-width:1px; border-bottom-width:1px; border-left-width:1px; border-right-width:0px; border-style: solid none solid solid; border-spacing:0px; border-color:White\">" +
+            "Chart for " + sDescription;
+        sThisDiv = sThisDiv + "</th>";
+        sThisDiv = sThisDiv + "<th title=\"Cancel\" style=\"width:50px; text-align:right; vertical-align:middle; border-top-width:1px; border-bottom-width:1px; border-left-width:0px; border-right-width:1px; border-style: solid solid solid none; border-spacing:0px; border-color: White\" onclick=\"wlDoRemoveDivPopupNoClear('" + sThisId + "')\"><span class=\"close-btn\">&times;</span>&nbsp;&nbsp;";
+        sThisDiv = sThisDiv + "</th>";
+
+        sThisDiv = sThisDiv + "</tr>";
+        sThisDiv = sThisDiv + "<tr>";
+        sThisDiv = sThisDiv + "<th colspan=\"2\" style=\"text-align:left; vertical-align:middle; border-top-width:0px; border-bottom-width:1px; border-left-width:1px; border-right-width:1px; border-style:solid;border-spacing:0px;border-color:White\" >";
+
+        //sThisDiv = sThisDiv + "<table border-collapse:separate; style=\"width:300px; background-color:" + gsWLTableHeadingBackgroundColor + "; border-style:none; font-family:Arial, Helvetica, sans-serif; font-size:10pt; \">";
+        sThisDiv = sThisDiv + "<table border-collapse:separate; style=\"width:350px; background-color:" + gsWLTableEvenRowBackgroundColor + "; border-style:none; font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\">";
+
+        //sThisDiv = sThisDiv + "<tr>";
+        //sThisDiv = sThisDiv + "<td colspan=\"2\" style=\"border-style:none;\">" +
+        //    "&nbsp;" +
+        //    "</td > ";
+        //sThisDiv = sThisDiv + "</tr>";
+        let sChecked = "";
+        if (iCurrentChartType == 1) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        sThisDiv = sThisDiv + "<tr>";
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChart1Month" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"1\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 1)\" />1 Month</label>";
+        sThisDiv = sThisDiv + "</td>";
+        if (iCurrentChartType == 2) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChart2Month" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"2\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 2)\" />2 Months</label>";
+        sThisDiv = sThisDiv + "</td>";
+        //sThisDiv = sThisDiv + "</tr>";
+
+        if (iCurrentChartType == 3) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        //sThisDiv = sThisDiv + "<tr>";
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChart3Month" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"3\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 3)\" />3 Months</label>";
+        sThisDiv = sThisDiv + "</td>";
+        if (iCurrentChartType == 4) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChart12Month" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"12\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 4)\" />12 Months</label>";
+        sThisDiv = sThisDiv + "</td>";
+        sThisDiv = sThisDiv + "</tr>";
+
+        sThisDiv = sThisDiv + "<tr>";
+        if (iCurrentChartType == 5) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChartToday1" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"today\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 5)\" />Today 1</label>";
+        sThisDiv = sThisDiv + "</td>";
+        if (iCurrentChartType == 6) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChartToday10" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"today\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 6)\" />Today 10</label>";
+        sThisDiv = sThisDiv + "</td>";
+
+        if (iCurrentChartType == 7) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChartToday30" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"today\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 7)\" />Today 30</label>";
+        sThisDiv = sThisDiv + "</td>";
+
+        //if (bShowRealTime) {
+        //    sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        //    sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChartToday30" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"today\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 7)\" />Today 30</label>";
+        //    sThisDiv = sThisDiv + "</td>";
+        //    if (bRealTime) {
+        //        sChecked = "checked=\"checked\"";
+        //    } else {
+        //        sChecked = "";
+        //    }
+        //    sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        //    sThisDiv = sThisDiv + "<label id=\"spanRealTime" + sThisId + "\" style =\"visibility:visible;font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"chkRealTime" + sThisId + "\" type=\"checkbox\" name=\"chkRealTime" + sThisId + "\" value=\"\" onclick=\"DoUpdateGraph('" + sSymbolIn + "','" + sThisId + "')\" />Real Time</label>";
+        //    sThisDiv = sThisDiv + "</td>";
+        //} else {
+        //    sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        //    sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChartToday30" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"today\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 7)\" />Today 30</label>";
+        //    sThisDiv = sThisDiv + "</td>";
+        //    if (bRealTime) {
+        //        sChecked = "checked=\"checked\"";
+        //    } else {
+        //        sChecked = "";
+        //    }
+        //    sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        //    sThisDiv = sThisDiv + "<label id=\"spanRealTime" + sThisId + "\" style =\"visibility:hidden;font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"chkRealTime" + sThisId + "\" type=\"checkbox\" name=\"chkRealTime" + sThisId + "\" value=\"\" onclick=\"DoUpdateGraph('" + sSymbolIn + "','" + sThisId + "')\" />Real Time</label>";
+        //    sThisDiv = sThisDiv + "</td>";
+        //}
+
+        if (iCurrentChartType == 8) {
+            sChecked = "checked=\"checked\"";
+        } else {
+            sChecked = "";
+        }
+        sThisDiv = sThisDiv + "<td style=\"padding:0px;" + sTDWidth + " text-align:left; vertical-align:middle; border-style:none;\" >";
+        sThisDiv = sThisDiv + "<label style=\"font-family:Arial, Helvetica, sans-serif; " + sFontSize + "\"><input " + sChecked + " id=\"radioChartLastHour" + sThisId + "\" type=\"radio\" name=\"radioChart" + sThisId + "\" value=\"lasthr\" onclick=\"UpdateGraph('" + sSymbolIn + "','" + sThisId + "', 8)\" />Last Hour</label>";
+        sThisDiv = sThisDiv + "</td>";
+
+
+        sThisDiv = sThisDiv + "</tr>";
+
+        sThisDiv = sThisDiv + "</table>";
+        sThisDiv = sThisDiv + "<canvas id=\"cvsDetail" + sThisId + "\" width=\"298\" height=\"298\"></canvas>";
+
+        sThisDiv = sThisDiv + "</th></tr></table></div>";
+
+        if (document.getElementById(sThisId) == null) {
+
+            let iPwdFormHeight = document.getElementById("pwdForm").clientHeight + 30;
+            let iDetailTop = 0;
+            let iDetailLeft = 0;
+            //let iDetailTop = document.getElementById(sThisIdCurrentDiv).offsetTop + giPopupOffset - document.getElementById(sThisIdCurrentDiv).scrollTop;
+            //let iDetailLeft = (document.getElementById(sThisIdCurrentDiv).clientWidth / 2 - 300) + document.getElementById(sThisIdCurrentDiv).offsetLeft + 10;
+            //if (gbUsingCell) {
+            //    if (document.getElementById("myProgress") != null) {
+            //        iDetailLeft = document.getElementById("myProgress").offsetLeft + 10;
+            //    } else {
+            //        iDetailLeft = iDetailLeft + 100;
+            //    }
+            //    iDetailTop = iPwdFormHeight;
+            //}
+
+            if (document.getElementById("myProgress") != null) {
+                iDetailLeft = document.getElementById("myProgress").offsetLeft + 10;
+            } else {
+                iDetailLeft = iDetailLeft + 100;
+            }
+            iDetailTop = iPwdFormHeight + (iSymbolIdx * 50);
+            iDetailLeft = iDetailLeft + (iSymbolIdx * 50);
+
+            AddDiv(sThisId, sThisDiv, iDetailTop, iDetailLeft);
+            if (document.getElementById(sThisId) != null) {
+                //do settimeout here
+                window.setTimeout("PutPopupOnTop('" + sThisId + "')", 100);
+            }
+        }
+
+    }
+
+    //now get the data
+    window.setTimeout("GetStockPriceHistoryData('" + sSymbolsIn + "','" + sThisId + "', " + iCurrentChartType.toString() + "," + iSymbolIdx.toString() + ")", 10);
 }
 
 function ShowPriceHistorySelection(ev) {
@@ -22754,6 +25450,12 @@ function sortWL(a, b) {
                 }
                 break;
             }
+        case gsSortOrderFields.GLF:
+            {
+                aAmt = a.WLItemDetails[0].averagePriceF;
+                bAmt = b.WLItemDetails[0].averagePriceF;
+                break;
+            }
         case gsSortOrderFields.High:
             {
                 aAmt = a.WLItemDetails[0].highPrice;
@@ -22764,6 +25466,18 @@ function sortWL(a, b) {
             {
                 aAmt = a.WLItemDetails[0].lowPrice;
                 bAmt = b.WLItemDetails[0].lowPrice;
+                break;
+            }
+        case gsSortOrderFields.High52Wk:
+            {
+                aAmt = a.WLItemDetails[0].highPrice52Wk;
+                bAmt = b.WLItemDetails[0].highPrice52Wk;
+                break;
+            }
+        case gsSortOrderFields.Low52Wk:
+            {
+                aAmt = a.WLItemDetails[0].lowPrice52Wk;
+                bAmt = b.WLItemDetails[0].lowPrice52Wk;
                 break;
             }
         case gsSortOrderFields.MktValue:
@@ -23178,6 +25892,11 @@ function sortWLSO(a, b) {
     return iReturn;
 }
 
+function UpdateGraph(sSymbolIn, sThisId, iWhatToShowIn) {
+    window.setTimeout("GetStockPriceHistoryData('" + sSymbolIn + "', '" + sThisId + "', " + iWhatToShowIn.toString() + ", 0)", 10);
+    return;
+}
+
 function UpdateOGLSymbol(sWhatToUpdate, sAccountIdIn, sSymbolIn, sSymbolDescIn, sOldGLIn) {
     /*sWhatToUpdate = 0 - just insert all and return symbolid, 1 - update/insert all fields, 2 - update/insert sym_description, 3 = update/insert oldgl */
     let sAccountId = sAccountIdIn;
@@ -23428,9 +26147,13 @@ function UpdateSymbolsChangeAcquiredDate(bFirstTime, iProgressIncrementIn, idxIt
     wlDoRemoveDivPopup(sThisPopupId);
 }
 
-function UpdateSymbolsChangeAll(idxWL, sThisPopupId, sSymbolToChangeIn, sAcquiredDateIn, sCatalystDateIn, sDescriptionIn, sOldGLIn) {
+function UpdateSymbolsChangeAll(idxWL, sThisPopupId, sSymbolToChangeIn, sAcquiredDateIn, sCatalystDateIn, sDescriptionIn, sOldGLIn, idxSelectedIn) {
     //updating one symbol
+    let idxSelected = -1;
 
+    if (!isUndefined(idxSelectedIn)) {
+        idxSelected = idxSelectedIn;
+    }
     gsLastErrors.length = 0;
     gsAllSuccess.length = 0;
 
@@ -23446,15 +26169,22 @@ function UpdateSymbolsChangeAll(idxWL, sThisPopupId, sSymbolToChangeIn, sAcquire
 
     if (gsLastErrors.length == 0) {
         if (gsAllSuccess.length > 0) {
-//            gbDoResetWatchlists = true;
-            for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
-                if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
-                    gWatchlists[idxWL].WLItems[idxWLItem].purchasedDate = sAcquiredDateIn;
-                    gWatchlists[idxWL].WLItems[idxWLItem].catalystDate = sCatalystDateIn;
-                    gWatchlists[idxWL].WLItems[idxWLItem].symbolDescription = sDescriptionIn;
-                    gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.oldgl = parseFloat(sOldGLIn);
-                    break;
+            //            gbDoResetWatchlists = true;
+            if (idxSelected == -1) {
+                for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
+                    if (gWatchlists[idxWL].WLItems[idxWLItem].bSelectedForOrder) {
+                        gWatchlists[idxWL].WLItems[idxWLItem].purchasedDate = sAcquiredDateIn;
+                        gWatchlists[idxWL].WLItems[idxWLItem].catalystDate = sCatalystDateIn;
+                        gWatchlists[idxWL].WLItems[idxWLItem].symbolDescription = sDescriptionIn;
+                        gWatchlists[idxWL].WLItems[idxWLItem].priceInfo.oldgl = parseFloat(sOldGLIn);
+                        break;
+                    }
                 }
+            } else {
+                gWatchlists[idxWL].WLItems[idxSelected].purchasedDate = sAcquiredDateIn;
+                gWatchlists[idxWL].WLItems[idxSelected].catalystDate = sCatalystDateIn;
+                gWatchlists[idxWL].WLItems[idxSelected].symbolDescription = sDescriptionIn;
+                gWatchlists[idxWL].WLItems[idxSelected].priceInfo.oldgl = parseFloat(sOldGLIn);
             }
         }
     } else {
@@ -24156,14 +26886,16 @@ function wlAddSymbol(idxWL, sThisPopupId) {
         if (stxtwlcatalyst.length > 3) {
             sTmp = stxtwlcatalyst.substr(0, 4) + "-01-01";
             if (!ValidateTDDate(sTmp, false)) {
-                alert("Please enter a catalyst date as yyyy-mm-dd.");
+                alert("Please enter a valid year in the catalyst date as yyyy.");
+                return;
+            } else if (stxtwlcatalyst.length > 20) {
+                alert("Catalyst date too long - 20 characters max including the year.");
                 return;
             }
-        } else if (stxtwlcatalyst.length > 10) {
-            alert("Please enter a catalyst date as yyyy-mm-dd.");
         } else {
-            alert("Please enter a catalyst date as yyyy-mm-dd.");
-        }
+            alert("Please enter a Catalyst date as yyyy... 20 characters max including the year.");
+            return;
+        } 
     }
 
     if (stxtwlacquired != "") {
@@ -24212,27 +26944,32 @@ function wlAddSymbol(idxWL, sThisPopupId) {
     //check to see if already in watchlist
     let bFound = false;
     let bHidden = false;
+    let idxWLItenToBeChanged = -1;
     bFound = false;
     for (let idxWLItem = 0; idxWLItem < gWatchlists[idxWL].WLItems.length; idxWLItem++) {
         if (sSymbolsToLookup == gWatchlists[idxWL].WLItems[idxWLItem].symbol) {
             bFound = true;
             bHidden = gWatchlists[idxWL].WLItems[idxWLItem].bHidden;
+            idxWLItenToBeChanged = idxWLItem;
             break;
         }
     }
 
     if (bFound) {
         if (bHidden) {
-            sConfirmMsg = sSymbolsToLookup + " already exists. Do you want to unhide it?"
+            sConfirmMsg = sSymbolsToLookup + " already exists. Do you want to unhide and change it?"
             if (!window.confirm(sConfirmMsg)) {
                 return;
             }
-            //unhide it
+            //unhide and change it
             if (UpdateSymbolChangeHidden(idxWL, sSymbolsToLookup, false)) {
-                //now hide this popup and then show the change symbol popup
-                wlDoRemoveDivPopup(sThisPopupId);
+                //now change it
+                UpdateSymbolsChangeAll(idxWL, sThisPopupId, sSymbolsToLookup, stxtwlacquired, stxtwlcatalyst, stxtwldescription, stxtwloldgl, idxWLItenToBeChanged);
+
+                ////now hide this popup and then show the change symbol popup
+                //wlDoRemoveDivPopup(sThisPopupId);
                 gbDoingCreateOrders = false;
-                window.setTimeout("ShowChangePopup('" + gWatchlists[idxWL].watchlistId + "', '" + gWatchlists[idxWL].accountId + "', '" + sSymbolsToLookup + "')", 10);
+                //window.setTimeout("ShowChangePopup('" + gWatchlists[idxWL].watchlistId + "', '" + gWatchlists[idxWL].accountId + "', '" + sSymbolsToLookup + "')", 10);
                 return;
             } else {
                 //an error occurred trying to unhide the symbol
@@ -24712,19 +27449,22 @@ function wlChangeSymbols(iWhatToDo, idxWL, sThisPopupId, sSelectedSymbolIn) {
         stxtwloldgl = TrimLikeVB(document.getElementById("txtwloldgl" + sThisPopupId).value);
     }
 
+
     if (stxtwlcatalyst != "") {
         //allow yyyy and then anything else up to total of 10 chars
         let sTmp = "";
         if (stxtwlcatalyst.length > 3) {
             sTmp = stxtwlcatalyst.substr(0, 4) + "-01-01";
             if (!ValidateTDDate(sTmp, false)) {
-                alert("Please enter a catalyst date as yyyy-mm-dd.");
+                alert("Please enter a valid year in the catalyst date as yyyy.");
+                return;
+            } else if (stxtwlcatalyst.length > 20) {
+                alert("Catalyst date too long - 20 characters max including the year.");
                 return;
             }
-        } else if (stxtwlcatalyst.length > 10) {
-            alert("Please enter a catalyst date as yyyy-mm-dd.");
         } else {
-            alert("Please enter a catalyst date as yyyy-mm-dd.");
+            alert("Please enter a Catalyst date as yyyy... 20 characters max including the year.");
+            return;
         }
     }
 
@@ -24950,6 +27690,15 @@ function wlHideAllWatchlists() {
             }
         }
     }
+    if (gChartInfo.length > 0) {
+        for (let idx = 0; idx < gChartInfo.length; idx++) {
+            if (gChartInfo[idx].spanName != "") {
+                if (document.getElementById(gChartInfo[idx].spanName) != null) {
+                    document.getElementById(gChartInfo[idx].spanName).style.display = "none";
+                }
+            }
+        }
+    }
 }
 
 function WLInitializeGLSymbols(iSelectedOrAll, idxWL) {
@@ -24963,7 +27712,7 @@ function WLInitializeGLSymbols(iSelectedOrAll, idxWL) {
         }
     }
 
-    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
+    let sThisId = "GLUPS" + gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
 
     let sDollars = TrimLikeVB(document.getElementById("txtwlclose" + sThisId).value);
 
@@ -24977,14 +27726,14 @@ function WLInitializeGLSymbols(iSelectedOrAll, idxWL) {
         if (ValidateTDDate(sDollars, false)) {
             if (sDollars > sEndDate) {
                 alert("Invalid initialization start date. Please enter a start date less than or equal to " + sEndDate + ".");
-                gbDoingCreateOrders = false;
-                DoGetTDData();
+                //gbDoingCreateOrders = false;
+                //DoGetTDData();
                 return;
             }
             if (sEndDate > sCurrentDate) {
                 alert("Invalid initialization end date. Please enter an end date less than or equal to " + sCurrentDate + ".");
-                gbDoingCreateOrders = false;
-                DoGetTDData();
+                //gbDoingCreateOrders = false;
+                //DoGetTDData();
                 return;
             }
             let bInitAll = iSelectedOrAll == 2 ? true : false;
@@ -24998,10 +27747,11 @@ function WLInitializeGLSymbols(iSelectedOrAll, idxWL) {
 
                     gWatchlists[idxWL].defaultUpdateGLDate = sDollars;
 
+                    wlDoRemoveDivPopupNoClear(sThisId);
                     window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", true, '', " + iEndDate + ", '', true, '', '', '', '', true)", 10);
                 } else {
-                    gbDoingCreateOrders = false;
-                    DoGetTDData();
+                    //gbDoingCreateOrders = false;
+                    //DoGetTDData();
                     return;
                 }
             } else { //only initialize the GL for the selected symbols
@@ -25011,8 +27761,8 @@ function WLInitializeGLSymbols(iSelectedOrAll, idxWL) {
                 iHighestUpdateDate = GetHighestUpdateDate(idxWL, true);
                 if (iHighestUpdateDate == -1) {
                     //what does this mean
-                    gbDoingCreateOrders = false;
-                    DoGetTDData();
+                    //gbDoingCreateOrders = false;
+                    //DoGetTDData();
                     return;
                 }
 
@@ -25040,17 +27790,18 @@ function WLInitializeGLSymbols(iSelectedOrAll, idxWL) {
 
                     gWatchlists[idxWL].defaultUpdateGLDate = sDollars;
 
+                    wlDoRemoveDivPopupNoClear(sThisId);
                     window.setTimeout("GetTradesAutoBase(true, " + iStartDate + ", " + idxWL + ", true, '" + sSymbolsToLookup.toUpperCase() + "', " + iHighestUpdateDate + ", '', false, '', '', '', '', true)", 10);
                 } else {
-                    gbDoingCreateOrders = false;
-                    DoGetTDData();
+                    //gbDoingCreateOrders = false;
+                    //DoGetTDData();
                     return;
                 }
             }
         } else {
             alert("Please enter an initialization start date as yyyy-mm-dd.")
-            gbDoingCreateOrders = false;
-            DoGetTDData();
+            //gbDoingCreateOrders = false;
+            //DoGetTDData();
             return;
         }
     } else { //update all
@@ -25062,16 +27813,17 @@ function WLInitializeGLSymbols(iSelectedOrAll, idxWL) {
             let iHighestUpdateDate = 0;
             iHighestUpdateDate = GetHighestUpdateDate(idxWL, true);
             if (iHighestUpdateDate == -1) {
-                gbDoingCreateOrders = false;
-                DoGetTDData();
+                //gbDoingCreateOrders = false;
+                //DoGetTDData();
                 return;
             }
 
+            wlDoRemoveDivPopupNoClear(sThisId);
             //get the trade info for the selected symbols
             window.setTimeout("GetTradesAutoBase(true, " + iHighestUpdateDate + ", " + idxWL + ", false, '', " + iEndDate + ", '', false, '', '', '', '', true)", 10);
         } else {
-            gbDoingCreateOrders = false;
-            DoGetTDData();
+            //gbDoingCreateOrders = false;
+            //DoGetTDData();
             return;
         }
     }
@@ -25142,44 +27894,50 @@ function wlMarkSelectedColumnToMove(idxWL, key) {
 }
 
 function wlMarkSelectedItem(idxWL, idxWLItem) {
+    let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
     if (idxWLItem == -1) { //top of column checked to select or deselect everything
-        if (!gbDoingGetTDData) {
-            if (giGetTDDataTimeoutId != 0) {
-                window.clearTimeout(giGetTDDataTimeoutId);
-                giGetTDDataTimeoutId = 0;
-                let sThisId = gWatchlists[idxWL].watchlistId + gWatchlists[idxWL].accountId;
-                let bChecked = false;
-                if (document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked) {
-                    bChecked = true;
-                }
+        if (gbDoingCreateOrders) {
+            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked = !document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked;
+        } else {
+            if (!gbDoingGetTDData) {
+                if (giGetTDDataTimeoutId != 0) {
+                    window.clearTimeout(giGetTDDataTimeoutId);
+                    giGetTDDataTimeoutId = 0;
+                    let bChecked = false;
+                    if (document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked) {
+                        bChecked = true;
+                    }
 
-                let iNumSelected = 0;
-                for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
-                    if ((gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) &&
-                        (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
-                        gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = bChecked;
-                        if (bChecked) {
-                            iNumSelected++;
+                    let iNumSelected = 0;
+                    for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
+                        if ((gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) &&
+                            (!gWatchlists[idxWL].WLItems[idxItem].bHidden)) {
+                            gWatchlists[idxWL].WLItems[idxItem].bSelectedForOrder = bChecked;
+                            if (bChecked) {
+                                iNumSelected++;
+                            }
                         }
                     }
-                }
-                if (iNumSelected == 0) {
-                    document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                    if (iNumSelected == 0) {
+                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
+                    } else {
+                        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "(" + FormatIntegerNumber(iNumSelected, 3, "") + ")&nbsp;&nbsp;";
+                    }
+
+                    giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
+
                 } else {
-                    document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "(" + FormatIntegerNumber(iNumSelected, 3, "") + ")&nbsp;&nbsp;";
+                    window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
                 }
-
-                giGetTDDataTimeoutId = window.setTimeout("GetTDData(false)", 10);
-
             } else {
                 window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
             }
-        } else {
-            window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
         }
 
     } else {
-        if (!gbDoingGetTDData) {
+        if (gbDoingCreateOrders) {
+            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(idxWLItem, 3, "0")).checked = !document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + FormatIntegerNumber(idxWLItem, 3, "0")).checked;
+        } else {
             if (giGetTDDataTimeoutId != 0) {
                 window.clearTimeout(giGetTDDataTimeoutId);
                 giGetTDDataTimeoutId = 0;
@@ -25210,7 +27968,7 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                 //        }
                 //    }
                 //    if ((bAllChecked) && (iNumSelected != 0)) {
-                //        document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = true;
+                //        document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked = true;
                 //    }
                 //    if (iNumSelected == 0) {
                 //        document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
@@ -25228,7 +27986,7 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
                 //        }
                 //    }
                 //    //set the top checkbox to unchecked
-                //    document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = false;
+                //    document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked = false;
                 //    let iNumSelected = 0;
                 //    for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
                 //        if ((gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) &&
@@ -25250,8 +28008,6 @@ function wlMarkSelectedItem(idxWL, idxWLItem) {
             } else {
                 window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
             }
-        } else {
-            window.setTimeout("wlMarkSelectedItem(" + idxWL.toString() + "," + idxWLItem.toString() + ")", 100);
         }
     }
 }
@@ -25282,9 +28038,9 @@ function wlMarkSelectedItemDoMark(idxWL, idxWLItem) {
             }
         }
         if ((bAllChecked) && (iNumSelected != 0)) {
-            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = true;
+            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked = true;
         } else {
-            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = false;
+            document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked = false;
         }
         if (iNumSelected == 0) {
             document.getElementById("spanWLNumChecked" + sThisId).innerHTML = "&nbsp;";
@@ -25302,7 +28058,7 @@ function wlMarkSelectedItemDoMark(idxWL, idxWLItem) {
             }
         }
         //set the top checkbox to unchecked
-        document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + "000").checked = false;
+        document.getElementById("chkWLItem" + sThisId + FormatIntegerNumber(idxWL, 3, "0") + gsTopCheckboxIdSuffix).checked = false;
         let iNumSelected = 0;
         for (let idxItem = 0; idxItem < gWatchlists[idxWL].WLItems.length; idxItem++) {
             if ((gWatchlists[idxWL].WLItems[idxItem].bCheckboxEnabled) &&
@@ -25714,6 +28470,15 @@ function wlShowAllWatchlists() {
                 if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO) || (gWatchlists[idxWL].bSelectedWLSummary) || (gWatchlists[idxWL].bSelectedOGL)) {
 //                if ((gWatchlists[idxWL].bSelected) || (gWatchlists[idxWL].bSelectedO) || (gWatchlists[idxWL].bSelectedSO)) {
                     document.getElementById(gWatchlists[idxWL].spanName).style.display = "block";
+                }
+            }
+        }
+    }
+    if (gChartInfo.length > 0) {
+        for (let idx = 0; idx < gChartInfo.length; idx++) {
+            if (gChartInfo[idx].spanName != "") {
+                if (document.getElementById(gChartInfo[idx].spanName) != null) {
+                    document.getElementById(gChartInfo[idx].spanName).style.display = "block";
                 }
             }
         }

@@ -68,6 +68,7 @@
                 color: lightgray;
             }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         var scrADOJS = document.createElement("script");
         scrADOJS.src = "adojs.js" + "?ts=" + new Date().getTime();
@@ -91,7 +92,7 @@
 
 </HEAD>
 <!--<BODY id="TheBody" style="background-color:#99CCFF; -webkit-text-size-adjust: none;" onload="window_onLoad()" onKeyUp ="onKeyUp(event)"  onkeydown="onKeyDown(event)">-->
-<BODY id="TheBody" style="background-color:#99CCFF; -webkit-text-size-adjust: 100%;" onload="window_onLoad()" onKeyUp="onKeyUp(event)" onkeydown="onKeyDown(event)">
+<BODY id="TheBody" style="height:2000px;background-color:#99CCFF; -webkit-text-size-adjust: 100%;" onload="window_onLoad()" onKeyUp="onKeyUp(event)" onkeydown="onKeyDown(event)">
     <span id="spanWL" style="position:absolute; top:40px; left:800px; font-family:Arial, Helvetica, sans-serif; font-size:10pt;"></span>
     <form id="wlForm" name="wlForm" style="display:none;font-family:Arial, Helvetica, sans-serif; ">
         <div id="divWLSelect"></div>
@@ -172,6 +173,7 @@
                 <tr>
                     <td style="vertical-align:middle; text-align:left">
                         <input title="Get trade history." style="border-radius:15px; font-family:Arial, Helvetica, sans-serif; font-size:12pt;width: 110px; height:25px; visibility: visible" type="button" id="btnGetTrades" name="btnGetTrades" value="Get Trades" onclick="DoGetTrades()">
+                        &nbsp;&nbsp;&nbsp;<input title="Show charts for the entered symbols." style="border-radius:15px; font-family:Arial, Helvetica, sans-serif; font-size:12pt;width: 120px; height:25px; visibility: visible" type="button" id="btnShowCharts" name="btnShowCharts" value="Show Charts" onclick="DoShowCharts()">
                     </td>
                 </tr>
             </table>
